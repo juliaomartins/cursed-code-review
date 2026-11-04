@@ -205,6 +205,18 @@ describe("review placement and posting", () => {
   });
 });
 
+describe("review errors", () => {
+  it("explains GitHub's own-pull-request rule", async () => {
+    const gh = fakeGitHub({
+      "GET /repos/o/r/pulls/5/files?per_page=100&page=1": () => ({ json: [] }),
+      "POST /repos/o/r/pulls/5/reviews": () => ({ status: 422, json: { message: "Unprocessable Entity", errors: ["Review Can not approve your own pull request"] } }),
+    });
+    await expect(
+      createReview("tok", { ref: { owner: "o", repo: "r", number: 5 }, commitId: "b".repeat(40), event: "APPROVE", body: "ok", comments: [] }, { fetch: gh.fetch }),
+    ).rejects.toMatchObject({ code: "own_pull_request", message: expect.stringContaining("Choose “Comment”") });
+  });
+});
+
 describe("token refresh", () => {
   const session = { user: { login: "u", name: "U", avatarUrl: "" }, accessToken: "old", refreshToken: "r1", expiresAt: 1_000_000 };
 

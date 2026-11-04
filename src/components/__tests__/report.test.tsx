@@ -68,6 +68,30 @@ describe("Report", () => {
     expect(await screen.findByText("5 inline comments on kiro-labs/haunted-shop#42.")).toBeInTheDocument();
   });
 
+  it("only offers Comment on your own pull request", async () => {
+    const user = userEvent.setup();
+    let posted: Record<string, unknown> = {};
+    mockApi({
+      "GET /api/auth/session": () => ({ json: { mode: "live", user: { login: "Mara-Lantern", name: "Mara" } } }),
+      "POST /api/github/review": (init) => {
+        posted = JSON.parse(String(init?.body));
+        return { json: { url: "https://github.com/kiro-labs/haunted-shop/pull/42#pullrequestreview-2", inline: 5, folded: 0 } };
+      },
+    });
+    // fixturePullRequest() is authored by "mara-lantern"
+    seedReview(reviewFromPullRequest(fixturePullRequest()));
+    renderApp(<ReportView />);
+    await user.click(await screen.findByRole("button", { name: /Post review to GitHub PR/ }));
+    const dialog = screen.getByRole("dialog", { name: "Post review to GitHub" });
+    expect(within(dialog).getByText(/This is your own pull request/)).toBeInTheDocument();
+    expect(within(dialog).getByRole("radio", { name: /Comment/ })).toBeChecked();
+    expect(within(dialog).getByRole("radio", { name: /Request changes/ })).toBeDisabled();
+    expect(within(dialog).getByRole("radio", { name: /Approve/ })).toBeDisabled();
+    await user.click(within(dialog).getByRole("button", { name: "Post review" }));
+    expect(await within(dialog).findByText("Your review is on the pull request.")).toBeInTheDocument();
+    expect(posted.event).toBe("COMMENT");
+  });
+
   it("explains that posting is unavailable until GitHub sign-in is connected", async () => {
     const user = userEvent.setup();
     mockApi({ "GET /api/auth/session": () => ({ json: { mode: "off", user: null } }) });
