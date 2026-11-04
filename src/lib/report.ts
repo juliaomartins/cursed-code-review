@@ -57,27 +57,35 @@ export function toMarkdown(review: Review, now = new Date()): string {
   return out.join("\n") + "\n";
 }
 
-/** Inline comments for every monster that is still lurking or was banished (suggesting the fix). */
+/**
+ * Inline review comments for every monster that is lurking or was banished (ignored ones are skipped).
+ * Positions and suggestions come from the original scan, because GitHub comments refer to the
+ * PR's code, not to the fixes applied in the crypt.
+ */
 export function toReviewComments(review: Review): ReviewComment[] {
   return review.files.flatMap((file) =>
     file.findings
       .filter((f) => f.status !== "ignored")
-      .map((f) => ({
-        path: file.path,
-        line: primaryLine(f),
-        body: [
+      .map((f) => {
+        const init = file.initialFindings.find((i) => i.id === f.id) ?? f;
+        const start = init.fix.startLine;
+        const end = start + Math.max(init.fix.before.length, 1) - 1;
+        const body = [
           `**${MONSTERS[f.kind].name} · ${f.bug}** (${f.severity})`,
           "",
           f.why,
           "",
           "```suggestion",
-          ...f.fix.after,
+          ...init.fix.after,
           "```",
           f.fix.note ? `\n_${f.fix.note}_` : "",
+          "",
+          "<sub>Found by Cursed Code Review</sub>",
         ]
           .join("\n")
-          .trim(),
-      })),
+          .trim();
+        return end > start ? { path: file.path, line: end, startLine: start, body } : { path: file.path, line: start, body };
+      }),
   );
 }
 

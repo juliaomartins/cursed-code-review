@@ -11,4 +11,5 @@
 - [x] 9. Bestiary page and 404
 - [x] 10. Mock GitHub sign-in and PR API
 - [x] 11. Unit, component and e2e tests; mobile overflow checks _(Req 5.x)_
-- [ ] 12. Replace mocks with a real backend (GitHub OAuth, PR API, LLM explanations)
+- [x] 12. Real GitHub via a GitHub App: sign-in, install, PR files, posting reviews (mocks remain as demo mode)
+- [ ] 13. Webhooks for automatic reviews; LLM explanations

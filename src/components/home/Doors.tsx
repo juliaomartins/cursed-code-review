@@ -1,8 +1,9 @@
 "use client";
 
-import { useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "@/providers/AuthProvider";
 import { fetchPullRequest, GitHubError, parsePrUrl } from "@/lib/github";
+import { fetchPullRequestLive } from "@/lib/githubLive";
 import { reviewFromPaste, reviewFromPullRequest, reviewFromSamples } from "@/lib/review/factory";
 import { SAMPLES } from "@/lib/samples";
 import { detectLanguage, LANGUAGE_LABEL, MAX_LINES, scan } from "@/lib/scanner";
@@ -18,7 +19,10 @@ const field =
   "box-border w-full rounded-[10px] border border-line-strong bg-well text-[15px] text-ink transition-colors hover:border-ink-4 focus:border-ember aria-[invalid=true]:border-sev-high";
 const label = "text-sm font-medium text-ink-2";
 
-const SAMPLE_MONSTERS = SAMPLES.map((s) => ({ ...s, findings: scan(s.code, s.language) }));
+const SAMPLE_MONSTERS = SAMPLES.map((s) => ({
+  ...s,
+  findings: scan(s.code, s.language),
+}));
 
 export function Doors() {
   const { summon, overlay, busy } = useSummon();
@@ -30,7 +34,12 @@ export function Doors() {
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-5">
         <SampleDoor onPick={(id) => summon("Opening the crypt", () => reviewFromSamples(id))} disabled={busy} />
         <PasteDoor onSubmit={(code, lang) => summon("Smelling your code", () => reviewFromPaste(code, lang))} disabled={busy} />
-        <PrDoor onLoaded={(build, label) => summon("Hunting the diff", build, [`Fetched ${label}`, "Scanning changed lines only", "Writing explanations and fixes", "Summoning monsters"])} disabled={busy} />
+        <PrDoor
+          onLoaded={(build, label) =>
+            summon("Hunting the diff", build, [`Fetched ${label}`, "Scanning changed lines only", "Writing explanations and fixes", "Summoning monsters"])
+          }
+          disabled={busy}
+        />
       </div>
       {overlay}
     </section>
@@ -155,12 +164,36 @@ function PasteDoor({ onSubmit, disabled }: { onSubmit: (code: string, lang: Lang
 }
 
 const EXAMPLES = ["kiro-labs/haunted-shop/pull/42", "acme/private-vault/pull/7"];
+const DRAFT_KEY = "ccr:pr-draft";
 
 function PrDoor({ onLoaded, disabled }: { onLoaded: (build: () => ReturnType<typeof reviewFromPullRequest>, label: string) => void; disabled: boolean }) {
   const id = useId();
-  const { user, requestSignIn } = useAuth();
+  const { user, requestSignIn, mode, installApp } = useAuth();
+  const live = mode === "live";
   const [url, setUrl] = useState("");
-  const [error, setError] = useState<{ message: string; auth?: boolean } | null>(null);
+  const [error, setError] = useState<{
+    message: string;
+    auth?: boolean;
+    install?: boolean;
+  } | null>(null);
+
+  // Keep the link across the round-trip to GitHub for sign-in or install.
+  useEffect(() => {
+    try {
+      const draft = window.sessionStorage.getItem(DRAFT_KEY);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- restore after returning from GitHub
+      if (draft) setUrl(draft);
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
+  const saveDraft = () => {
+    try {
+      window.sessionStorage.setItem(DRAFT_KEY, url);
+    } catch {
+      /* storage unavailable */
+    }
+  };
   const [loading, setLoading] = useState(false);
   const abort = useRef<AbortController | null>(null);
 
@@ -168,16 +201,35 @@ function PrDoor({ onLoaded, disabled }: { onLoaded: (build: () => ReturnType<typ
     e?.preventDefault();
     const parsed = parsePrUrl(url);
     if (!parsed.ok) return setError({ message: parsed.error });
+    if (live && !user)
+      return setError({
+        message: "Sign in with GitHub to open pull requests.",
+        auth: true,
+      });
     setError(null);
     setLoading(true);
     abort.current = new AbortController();
     try {
-      const pr = await fetchPullRequest(parsed.ref, { signedIn: !!user, signal: abort.current.signal });
+      const pr = live
+        ? await fetchPullRequestLive(parsed.ref, abort.current.signal)
+        : await fetchPullRequest(parsed.ref, {
+            signedIn: !!user,
+            signal: abort.current.signal,
+          });
+      try {
+        window.sessionStorage.removeItem(DRAFT_KEY);
+      } catch {
+        /* storage unavailable */
+      }
       onLoaded(() => reviewFromPullRequest(pr), `${pr.owner}/${pr.repo}#${pr.number}`);
     } catch (err) {
       if ((err as Error).name === "AbortError") return;
       const gh = err instanceof GitHubError ? err : null;
-      setError({ message: gh?.message ?? "Could not reach GitHub. Check your connection and try again.", auth: gh?.code === "auth_required" });
+      setError({
+        message: gh?.message ?? "Could not reach GitHub. Check your connection and try again.",
+        auth: gh?.code === "auth_required",
+        install: gh?.code === "not_installed",
+      });
     } finally {
       setLoading(false);
     }
@@ -205,32 +257,60 @@ function PrDoor({ onLoaded, disabled }: { onLoaded: (build: () => ReturnType<typ
         aria-describedby={error ? `${id}-err` : undefined}
         className={cx(field, "min-h-[46px] px-3 text-sm")}
       />
-      <div className="flex flex-wrap items-center gap-2 text-xs text-ink-3">
-        <span>Try:</span>
-        {EXAMPLES.map((ex) => (
-          <button
-            key={ex}
-            type="button"
-            onClick={() => {
-              setUrl(`https://github.com/${ex}`);
-              setError(null);
-            }}
-            className="min-h-8 rounded-full border border-line px-2.5 font-mono text-[11px] text-ink-2 hover:border-ember/60 hover:text-ink"
-          >
-            {ex.replace("/pull/", "#")}
-          </button>
-        ))}
-      </div>
+      {!live && (
+        <div className="flex flex-wrap items-center gap-2 text-xs text-ink-3">
+          <span>Try:</span>
+          {EXAMPLES.map((ex) => (
+            <button
+              key={ex}
+              type="button"
+              onClick={() => {
+                setUrl(`https://github.com/${ex}`);
+                setError(null);
+              }}
+              className="min-h-8 rounded-full border border-line px-2.5 font-mono text-[11px] text-ink-2 hover:border-ember/60 hover:text-ink"
+            >
+              {ex.replace("/pull/", "#")}
+            </button>
+          ))}
+        </div>
+      )}
       {error && (
-        <div id={`${id}-err`} role="alert" className="flex flex-col gap-2 rounded-[10px] border border-sev-high/40 bg-sev-high/[0.07] p-3 text-[13px] text-[#ffc9c2]">
+        <div
+          id={`${id}-err`}
+          role="alert"
+          className="flex flex-col gap-2 rounded-[10px] border border-sev-high/40 bg-sev-high/[0.07] p-3 text-[13px] text-[#ffc9c2]"
+        >
           <span className="flex items-start gap-2">
             <Icon name="alert" size={16} className="mt-px flex-none text-sev-high" />
             {error.message}
           </span>
           {error.auth && (
-            <Button size="sm" variant="outline" onClick={requestSignIn} className="self-start">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                saveDraft();
+                requestSignIn();
+              }}
+              className="self-start"
+            >
               <Icon name="github" size={16} />
               Sign in with GitHub
+            </Button>
+          )}
+          {error.install && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                saveDraft();
+                installApp();
+              }}
+              className="self-start"
+            >
+              <Icon name="github" size={16} />
+              Install on this repository
             </Button>
           )}
         </div>
@@ -238,7 +318,15 @@ function PrDoor({ onLoaded, disabled }: { onLoaded: (build: () => ReturnType<typ
       <Button type="submit" variant="ember-outline" loading={loading} disabled={disabled} className="min-h-12">
         {loading ? "Fetching the PR…" : "Open the PR in the crypt"}
       </Button>
-      <p className="m-0 text-[13px] text-ink-3">{user ? `Signed in as @${user.login}. Private repos unlocked.` : "Private repos need GitHub sign-in."}</p>
+      <p className="m-0 text-[13px] text-ink-3">
+        {live
+          ? user
+            ? `Signed in as @${user.login}. Works on repositories where you installed the app.`
+            : "Sign in with GitHub, then pick the repositories the crypt may read."
+          : user
+            ? `Demo mode · signed in as @${user.login}. Private repos unlocked.`
+            : "Demo mode · private repos need GitHub sign-in."}
+      </p>
     </form>
   );
 }

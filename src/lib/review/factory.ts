@@ -51,6 +51,8 @@ export function reviewFromPullRequest(pr: PullRequest): Review {
       author: pr.author,
       baseRef: pr.baseRef,
       headRef: pr.headRef,
+      headSha: pr.headSha,
+      live: !!pr.headSha,
     },
     files,
     firstWithMonsters,

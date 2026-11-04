@@ -11,22 +11,28 @@ import { Monster } from "../Monster";
 const SCOPES = [
   { title: "Read pull requests", detail: "Fetch the changed files of PRs you open in the crypt." },
   { title: "Write review comments", detail: "Post your findings back as an inline review, only when you ask." },
+  { title: "Only the repositories you choose", detail: "You pick them when you install the app. Change them any time on GitHub." },
 ];
 
 export function SignInDialog() {
-  const { signInOpen, closeSignIn, completeSignIn } = useAuth();
+  const { signInOpen, closeSignIn, completeSignIn, mode } = useAuth();
+  const live = mode === "live";
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
 
   const authorize = async () => {
     setBusy(true);
+    if (live) {
+      void completeSignIn(); // navigates to GitHub
+      return;
+    }
     const user = await completeSignIn();
     setBusy(false);
     toast({ title: `Signed in as @${user.login}`, description: "Private repos and review posting are unlocked.", tone: "success" });
   };
 
   return (
-    <Dialog open={signInOpen} onClose={closeSignIn} locked={busy} title="Sign in with GitHub" description="Demo sign-in. No real GitHub account is contacted."
+    <Dialog open={signInOpen} onClose={closeSignIn} locked={busy} title="Sign in with GitHub" description={live ? "You'll continue on github.com. We never see your password." : "Demo mode. No real GitHub account is contacted."}
       footer={
         <>
           <Button variant="ghost" onClick={closeSignIn} disabled={busy}>
@@ -34,7 +40,7 @@ export function SignInDialog() {
           </Button>
           <Button variant="primary" onClick={authorize} loading={busy} data-autofocus>
             <Icon name="github" />
-            {busy ? "Authorizing…" : "Authorize"}
+            {live ? (busy ? "Opening GitHub…" : "Continue to GitHub") : busy ? "Authorizing…" : "Authorize"}
           </Button>
         </>
       }
