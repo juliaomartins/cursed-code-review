@@ -1,0 +1,152 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: var(--font-grenze), "Grenze Gotisch", Georgia, serif;
+  --font-sans: var(--font-space), "Space Grotesk", system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, monospace;
+
+  /* Crypt surfaces */
+  --color-crypt: #0d0a12;
+  --color-crypt-report: #120e17;
+  --color-panel: #110d18;
+  --color-card: #15101d;
+  --color-card-2: #17121f;
+  --color-well: #1d1628;
+  --color-track: #241b33;
+  --color-chip: #2a2139;
+  --color-line: #2e2440;
+  --color-line-strong: #3d3154;
+
+  /* Ink */
+  --color-ink: #f1eaf8;
+  --color-ink-2: #d9cfe6;
+  --color-ink-3: #ada0c2;
+  --color-ink-4: #948aab;
+  --color-ink-body: #e4dbef;
+
+  /* Lantern */
+  --color-ember: #ff8a3d;
+  --color-ember-soft: #ffb27a;
+  --color-ember-pale: #ffd2ae;
+  --color-ember-gold: #ffd27a;
+  --color-ember-ink: #1a0b02;
+
+  /* Severity & status */
+  --color-sev-high: #ff6b5b;
+  --color-sev-med: #ffb547;
+  --color-sev-low: #7fd8f5;
+  --color-banished: #9df7c9;
+  --color-fix-del: #ffb9b0;
+  --color-fix-add: #a6f7cf;
+
+  /* Lights-on editor */
+  --color-parchment: #fbf7f0;
+  --color-parchment-ink: #1e1726;
+  --color-parchment-dim: #6b6378;
+  --color-parchment-line: #e2d6c4;
+
+  --animate-float: ccr-float 3s ease-in-out infinite;
+  --animate-flicker: ccr-flicker 1.6s ease-in-out infinite;
+  --animate-spin-slow: ccr-spin 40s linear infinite;
+  --animate-banish: ccr-banish 0.7s ease-in forwards;
+  --animate-rise: ccr-rise 0.5s ease-out both;
+}
+
+@keyframes ccr-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes ccr-flicker {
+  0%, 100% { opacity: 1; transform: scaleY(1); }
+  40% { opacity: 0.8; transform: scaleY(0.9); }
+  60% { opacity: 1; transform: scaleY(1.08); }
+}
+@keyframes ccr-spin { to { transform: rotate(360deg); } }
+@keyframes ccr-banish {
+  0% { transform: scale(1); opacity: 1; }
+  35% { transform: scale(1.2); opacity: 1; filter: brightness(2.2) drop-shadow(0 0 18px #ff8a3d); }
+  100% { transform: scale(0.15) translateY(-50px); opacity: 0; filter: brightness(3) blur(6px); }
+}
+@keyframes ccr-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* Per-monster idle behaviours from the bestiary sheet */
+@keyframes ccr-wraith { 0%, 100% { opacity: 1; } 45% { opacity: 1; } 50% { opacity: 0.35; } 55% { opacity: 0.9; } 60% { opacity: 0.45; } 65% { opacity: 1; } }
+@keyframes ccr-leech { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.09); } }
+@keyframes ccr-possessor { 0%, 100% { filter: drop-shadow(0 0 2px #ff5d4d00); } 50% { filter: drop-shadow(0 0 10px #ff5d4dcc); } }
+@keyframes ccr-imp { 0%, 60%, 100% { transform: translateY(0); } 70% { transform: translateY(-9px) rotate(-6deg); } 80% { transform: translateY(0); } 88% { transform: translateY(-4px); } }
+@keyframes ccr-zombie { 0%, 100% { transform: rotate(-4deg) translateX(-1px); } 50% { transform: rotate(4deg) translateX(1px); } }
+@keyframes ccr-twins { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
+@keyframes ccr-gremlin { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes ccr-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+.behave-wraith { animation: ccr-wraith 4.2s ease-in-out infinite; }
+.behave-leech { animation: ccr-leech 2.8s ease-in-out infinite; }
+.behave-possessor { animation: ccr-possessor 1.8s ease-in-out infinite, ccr-float 3s ease-in-out infinite; }
+.behave-imp { animation: ccr-imp 2.4s ease-in-out infinite; }
+.behave-zombie { animation: ccr-zombie 3.6s ease-in-out infinite; transform-origin: 50% 90%; }
+.behave-twins { animation: ccr-twins 1.4s ease-in-out infinite; }
+.behave-gremlin { animation: ccr-gremlin 2.2s ease-in-out infinite; transition: transform 160ms ease-out; }
+/* The gremlin darts away when your cursor gets close */
+.code-row:hover .gremlin-dart { transform: translateX(14px) rotate(8deg); transition: transform 160ms ease-out; }
+
+.skeleton {
+  background: linear-gradient(90deg, #17121f 0%, #241b33 50%, #17121f 100%);
+  background-size: 200% 100%;
+  animation: ccr-shimmer 1.6s linear infinite;
+}
+
+@layer base {
+  html { color-scheme: dark; -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--color-crypt);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: var(--color-ember-soft); }
+  a:hover { color: var(--color-ember-pale); }
+  :where(button, a, input, textarea, select, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-ember);
+    outline-offset: 2px;
+  }
+  ::selection { background: rgba(255, 138, 61, 0.35); color: #fff; }
+  button:not(:disabled) { cursor: pointer; }
+  input::placeholder, textarea::placeholder { color: #8a7fa0; }
+}
+
+/* Syntax colours */
+.tok-keyword { color: #c9a7ff; }
+.tok-string { color: #a6f7cf; }
+.tok-comment { color: #8b81a1; font-style: italic; }
+.tok-number { color: #ffb27a; }
+.tok-fn { color: #8bd5ff; }
+.tok-type { color: #ffd27a; }
+.tok-variable { color: #f7a8d8; }
+.lights-on .tok-keyword { color: #6b3fc9; }
+.lights-on .tok-string { color: #1e7a50; }
+.lights-on .tok-comment { color: #7a7187; }
+.lights-on .tok-number { color: #a8480f; }
+.lights-on .tok-fn { color: #1f6fa8; }
+.lights-on .tok-type { color: #855600; }
+.lights-on .tok-variable { color: #a12f7a; }
+
+.scrollbar-thin { scrollbar-width: thin; scrollbar-color: #3d3154 transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Code must show exactly what was typed: `<=` is the Imp's whole crime. */
+.font-mono, code, pre, kbd, textarea {
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
+}

@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Scanner rule changed → run tests",
+  "description": "When a monster rule changes, run the scanner and review tests and make sure the cursed samples still summon the expected monsters.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["src/lib/scanner/**/*.ts", "src/lib/review/**/*.ts", "src/lib/samples.ts"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A scanner or fix-engine file changed. Run `npx vitest run src/lib` and fix any failure. If the cursed samples now produce different monsters, update the expectations only if the new result is more correct, and explain why."
+  }
+}
