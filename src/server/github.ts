@@ -15,6 +15,8 @@ export class ApiError extends Error {
     public code: string,
     message: string,
     public installUrl?: string,
+    /** GitHub's own error code, e.g. "incorrect_client_credentials". Safe to show; never a secret. */
+    public detail?: string,
   ) {
     super(message);
   }
@@ -39,11 +41,18 @@ async function tokenRequest(config: GitHubAppConfig, params: Record<string, stri
   const f = deps.fetch ?? fetch;
   const res = await f("https://github.com/login/oauth/access_token", {
     method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/json" },
-    body: JSON.stringify({ client_id: config.clientId, client_secret: config.clientSecret, ...params }),
+    headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "cursed-code-review" },
+    body: new URLSearchParams({ client_id: config.clientId, client_secret: config.clientSecret, ...params }).toString(),
   });
   const data = (await res.json().catch(() => ({}))) as TokenResponse;
-  if (!res.ok || !data.access_token) throw new ApiError(401, "auth_required", data.error_description ?? "GitHub did not accept the sign-in. Please try again.");
+  if (!res.ok || !data.access_token)
+    throw new ApiError(
+      401,
+      "auth_required",
+      data.error_description ?? `GitHub answered ${res.status} to the token request.`,
+      undefined,
+      data.error ?? (res.ok ? "no_token" : `http_${res.status}`),
+    );
   const now = (deps.now ?? Date.now)();
   return { accessToken: data.access_token, refreshToken: data.refresh_token, expiresAt: data.expires_in ? now + data.expires_in * 1000 : undefined };
 }
@@ -292,4 +301,82 @@ export async function convertManifest(code: string, deps: GitHubDeps = {}): Prom
   if (!res.ok) throw new ApiError(502, "network", `GitHub returned ${res.status} while finishing the setup.`);
   const d = (await res.json()) as { slug: string; name: string; client_id: string; client_secret: string; html_url: string; owner?: { login?: string } };
   return { slug: d.slug, name: d.name, clientId: d.client_id, clientSecret: d.client_secret, htmlUrl: d.html_url, owner: d.owner?.login ?? "" };
+}
+
+export interface SetupCheck {
+  id: "app" | "client_id" | "client_secret";
+  ok: boolean | null;
+  label: string;
+  fix?: string;
+}
+
+/**
+ * Checks the three GitHub App variables against GitHub, without signing anyone in:
+ * the app exists under the slug, the Client ID belongs to it, and GitHub accepts the client secret.
+ * `ok: null` means GitHub could not be asked (network); nothing is assumed.
+ */
+export async function checkSetup(config: GitHubAppConfig, deps: GitHubDeps = {}): Promise<SetupCheck[]> {
+  const f = deps.fetch ?? fetch;
+  const headers = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "cursed-code-review" };
+  const checks: SetupCheck[] = [];
+
+  let appClientId: string | null = null;
+  try {
+    const res = await f(`${API}/apps/${enc(config.slug)}`, { headers, cache: "no-store" });
+    if (res.ok) {
+      const app = (await res.json()) as { client_id?: string; name?: string };
+      appClientId = app.client_id ?? null;
+      checks.push({ id: "app", ok: true, label: `GITHUB_APP_SLUG "${config.slug}" is the GitHub App "${app.name ?? config.slug}"` });
+    } else
+      checks.push({
+        id: "app",
+        ok: res.status === 404 ? false : null,
+        label: `GITHUB_APP_SLUG "${config.slug}"`,
+        fix:
+          res.status === 404
+            ? "No public GitHub App has this slug. Open your app's settings: the slug is the last part of the address github.com/settings/apps/<slug>. Also check “Where can this GitHub App be installed?” is set to “Any account”."
+            : `GitHub answered ${res.status}; try again in a minute.`,
+      });
+  } catch {
+    checks.push({ id: "app", ok: null, label: `GITHUB_APP_SLUG "${config.slug}"`, fix: "Couldn't reach GitHub to check it." });
+  }
+
+  if (appClientId)
+    checks.push(
+      appClientId === config.clientId
+        ? { id: "client_id", ok: true, label: "GITHUB_APP_CLIENT_ID belongs to that app" }
+        : {
+            id: "client_id",
+            ok: false,
+            label: "GITHUB_APP_CLIENT_ID belongs to that app",
+            fix: `It doesn't: that app's Client ID ends in “…${appClientId.slice(-4)}”, but Vercel has one ending in “…${config.clientId.slice(-4)}”. Copy the Client ID from the same app's General page.`,
+          },
+    );
+  else checks.push({ id: "client_id", ok: null, label: "GITHUB_APP_CLIENT_ID belongs to that app", fix: "Checked once the slug is right." });
+
+  // "Check a token" with an obviously invalid token: 401 = GitHub rejects the app's credentials,
+  // 404/422 = credentials accepted (the dummy token simply doesn't exist).
+  try {
+    const res = await f(`${API}/applications/${enc(config.clientId)}/token`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json", Authorization: `Basic ${Buffer.from(`${config.clientId}:${config.clientSecret}`).toString("base64")}` },
+      body: JSON.stringify({ access_token: "ghu_cursedcodereviewsetupcheck000000000000" }),
+      cache: "no-store",
+    });
+    checks.push(
+      res.status === 401 || res.status === 403
+        ? {
+            id: "client_secret",
+            ok: false,
+            label: "GitHub accepts GITHUB_APP_CLIENT_SECRET",
+            fix: "GitHub rejected the Client ID + client secret pair. On the app's General page click “Generate a new client secret”, copy the whole value, replace it in Vercel, and redeploy.",
+          }
+        : res.status === 404 || res.status === 422 || res.ok
+          ? { id: "client_secret", ok: true, label: "GitHub accepts GITHUB_APP_CLIENT_SECRET" }
+          : { id: "client_secret", ok: null, label: "GitHub accepts GITHUB_APP_CLIENT_SECRET", fix: `GitHub answered ${res.status}; try again in a minute.` },
+    );
+  } catch {
+    checks.push({ id: "client_secret", ok: null, label: "GitHub accepts GITHUB_APP_CLIENT_SECRET", fix: "Couldn't reach GitHub to check it." });
+  }
+  return checks;
 }

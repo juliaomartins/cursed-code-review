@@ -70,7 +70,13 @@ const pull = {
   base: { ref: "main" },
   head: { ref: "feat", sha: "a".repeat(40), repo: { full_name: "fork/r" } },
 };
-const loginPatch = ["@@ -0,0 +1,16 @@", ...login.code.split("\n").slice(0, 16).map((l) => `+${l}`)].join("\n");
+const loginPatch = [
+  "@@ -0,0 +1,16 @@",
+  ...login.code
+    .split("\n")
+    .slice(0, 16)
+    .map((l) => `+${l}`),
+].join("\n");
 
 const asUser = { token: "tok", asUser: true, signInAvailable: true };
 const anonymous = { asUser: false, signInAvailable: false };
@@ -107,7 +113,9 @@ describe("getPullRequest", () => {
   it("rejects PRs with no readable files", async () => {
     const gh = fakeGitHub({
       "GET /repos/o/r/pulls/5": () => ({ json: pull }),
-      "GET /repos/o/r/pulls/5/files?per_page=100&page=1": () => ({ json: [{ filename: "a.go", status: "added", additions: 1, deletions: 0, patch: "@@ -0,0 +1 @@\n+x" }] }),
+      "GET /repos/o/r/pulls/5/files?per_page=100&page=1": () => ({
+        json: [{ filename: "a.go", status: "added", additions: 1, deletions: 0, patch: "@@ -0,0 +1 @@\n+x" }],
+      }),
     });
     await expect(getPullRequest({ owner: "o", repo: "r", number: 5 }, asUser, { fetch: gh.fetch })).rejects.toMatchObject({ code: "unsupported" });
   });
@@ -169,7 +177,9 @@ describe("review placement and posting", () => {
   it("posts a review against the head commit", async () => {
     let posted: Record<string, unknown> = {};
     const gh = fakeGitHub({
-      "GET /repos/o/r/pulls/5/files?per_page=100&page=1": () => ({ json: [{ filename: "f.js", status: "modified", additions: 3, deletions: 1, patch: PATCH }] }),
+      "GET /repos/o/r/pulls/5/files?per_page=100&page=1": () => ({
+        json: [{ filename: "f.js", status: "modified", additions: 3, deletions: 1, patch: PATCH }],
+      }),
       "POST /repos/o/r/pulls/5/reviews": (init) => {
         posted = JSON.parse(String(init?.body));
         return { json: { html_url: "https://github.com/o/r/pull/5#pullrequestreview-1" } };
@@ -207,7 +217,11 @@ describe("token refresh", () => {
     const res = await ensureFresh(config, session, { now: () => 990_000, fetch: gh.fetch });
     expect(res.refreshed).toBe(true);
     expect(res.session).toMatchObject({ accessToken: "new", refreshToken: "r2", expiresAt: 990_000 + 28_800_000 });
-    expect(JSON.parse(String(gh.calls[0].init?.body))).toMatchObject({ grant_type: "refresh_token", refresh_token: "r1", client_id: "Iv1.abc" });
+    expect(Object.fromEntries(new URLSearchParams(String(gh.calls[0].init?.body)))).toMatchObject({
+      grant_type: "refresh_token",
+      refresh_token: "r1",
+      client_id: "Iv1.abc",
+    });
   });
 
   it("asks to sign in again without a refresh token", async () => {
