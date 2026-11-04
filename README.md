@@ -4,7 +4,7 @@
 
 Built for **Kiroween 2026 · Costume Contest**.
 
-> **Status:** the static checks are real (a rule-based scanner that runs in the browser). GitHub works for real once you connect a GitHub App (see below); without one, the app runs in **demo mode** with mocked GitHub so it can still be tried end to end.
+> **Status:** everything is real. The static checks run in the browser, and pull requests are fetched live from GitHub. **Public** PRs work with no setup at all. Signing in, **private** repositories and posting reviews back to GitHub need the GitHub App described below.
 
 ## Try it
 
@@ -22,7 +22,7 @@ Open http://localhost:3000 and pick **Try a cursed sample**, or go straight to h
 
 | Screen | Features |
 | --- | --- |
-| **Home** `/` | Three doors: cursed samples (one click), paste code (validation, language auto-detect, Ctrl+Enter), GitHub PR link (validation, loading, private-repo sign-in). Summoning progress overlay. Resume banner for an unfinished hunt. |
+| **Home** `/` | Three doors: cursed samples (one click), paste code (validation, language auto-detect, Ctrl+Enter), GitHub PR link (fetched live from GitHub; sign-in and install prompts for private repos). Summoning progress overlay. Resume banner for an unfinished hunt. |
 | **The Crypt** `/crypt` | Syntax-highlighted code with monsters on their lines, sized by severity. Cursor-following lantern, Lights on/off. Detail panel with "What is wrong" / "Explain it simply", the fix as a diff, Banish (burn-away animation, applies the fix) and Ignore. Graveyard with restore, undo everywhere, "summon them again", multi-file navigation, PR changed-line gutter. Keyboard spells (`?`). |
 | **Report** `/report` | Verdict, room light, trapped monsters, stats, worst severity, findings table, patch of every applied fix, Markdown export/copy, post to GitHub PR (Comment / Request changes / Approve). |
 | **Bestiary** `/bestiary` | The seven monsters, their bug type, behaviour and an example fix. |
@@ -45,41 +45,41 @@ Languages: JavaScript, TypeScript, Python, PHP (not every rule applies to every 
 
 Every user signs in with their own GitHub account and picks which repositories the app may read. Tokens stay on the server in an encrypted, HTTP-only cookie; code is scanned and never stored.
 
-### 1. Create the GitHub App
+### 1. One-click setup (recommended)
+
+1. Open **`/setup`** on your deployment, e.g. `https://cursed-code-review.vercel.app/setup`.
+2. Click **Create the GitHub App**. GitHub opens with every setting filled in (callback URL, permissions, install-time sign-in); click **Create GitHub App** there.
+3. GitHub sends you back to `/setup/complete` with the three keys in one block. Click **Copy all**.
+4. In Vercel → Project → **Settings → Environment Variables**, click the first **Key** box and paste. Vercel splits the block into three variables. Click **Save**.
+5. **Deployments → ⋯ → Redeploy**. Then `/setup` says **GitHub is connected**.
+
+The keys are shown once and never stored by the site.
+
+### 2. Or set it up by hand
 
 GitHub → **Settings → Developer settings → GitHub Apps → New GitHub App**:
 
 | Field | Value |
 | --- | --- |
-| GitHub App name | `Cursed Code Review` (must be unique; its URL name becomes the **slug**) |
+| GitHub App name | `Cursed Code Review` (must be unique) |
 | Homepage URL | `https://cursed-code-review.vercel.app` |
 | Callback URL | `https://cursed-code-review.vercel.app/api/auth/callback/github` |
-| Callback URL (add a second one for local dev) | `http://localhost:3000/api/auth/callback/github` |
 | Expire user authorization tokens | ✅ checked |
 | Request user authorization (OAuth) during installation | ✅ checked |
-| Enable Device Flow | unchecked |
-| Setup URL | leave empty |
 | Webhook → Active | unchecked |
-| Repository permissions → **Contents** | Read-only |
-| Repository permissions → **Pull requests** | Read and write |
-| Repository permissions → Metadata | Read-only (automatic) |
-| Account permissions | none |
+| Repository permissions | **Contents:** Read-only · **Pull requests:** Read and write |
 | Where can this GitHub App be installed? | **Any account** |
 
-Then on the app's page: copy the **Client ID**, click **Generate a new client secret** and copy it. The App ID and private key are not needed.
+Then add these in Vercel → **Settings → Environment Variables** (and `.env.local` for local dev, see `.env.example`):
 
-### 2. Add environment variables
-
-In Vercel → Project → **Settings → Environment Variables** (and in `.env.local` for local dev, see `.env.example`):
-
-| Name | Value |
+| Name | Where to find it |
 | --- | --- |
-| `GITHUB_APP_CLIENT_ID` | the Client ID |
-| `GITHUB_APP_CLIENT_SECRET` | the client secret |
-| `GITHUB_APP_SLUG` | the app's URL name, from `github.com/apps/<slug>` |
-| `SESSION_SECRET` | 32+ random characters: `openssl rand -base64 48` |
+| `GITHUB_APP_CLIENT_ID` | App's **General** page → "Client ID" (starts with `Iv`) |
+| `GITHUB_APP_CLIENT_SECRET` | Same page → **Generate a new client secret** (shown once) |
+| `GITHUB_APP_SLUG` | The last part of the address bar on the app's settings page: `github.com/settings/apps/<slug>` |
+| `SESSION_SECRET` | Optional. 32+ random characters; derived from the client secret if omitted |
 
-Redeploy. `GET /api/auth/session` now answers `"mode":"live"`.
+Redeploy. `GET /api/auth/session` answers `"mode":"live"`; while something is missing it answers `"mode":"off"` with the names of the missing variables.
 
 ### 3. What users see
 
@@ -96,16 +96,14 @@ Redeploy. `GET /api/auth/session` now answers `"mode":"live"`.
 | `GET /api/auth/callback/github` | GitHub redirects here; checks `state`, exchanges the code, sets the session |
 | `GET /api/auth/session` | `{ mode, user }`, never tokens |
 | `POST /api/auth/logout` | Clears the session |
-| `GET /api/github/pr?url=…` | PR metadata, changed files at the head commit, added lines |
+| `GET /api/github/pr?url=…` | PR metadata, changed files at the head commit, added lines. Signed out: public repos only |
 | `POST /api/github/review` | Creates the review on the head commit |
 
 Tokens refresh automatically before they expire (GitHub App user tokens last 8 hours).
 
-### Demo switches for the mocked GitHub (demo mode only)
+### Without the GitHub App
 
-- Any `github.com/<owner>/<repo>/pull/<n>` link (or `owner/repo#n`) returns a deterministic PR.
-- Repo names containing `private` need **Sign in with GitHub** (a demo consent screen).
-- PR numbers `≥ 9000` return "not found"; a repo named `rate-limit` simulates a rate limit.
+Public pull requests still open: the server reads them anonymously from GitHub (file contents come from `raw.githubusercontent.com`, which doesn't count against GitHub's API limit). The "Sign in with GitHub" button is hidden, and posting a review explains that it isn't available yet. To raise the anonymous API limit (60 requests per hour per server IP), you can optionally set `GITHUB_TOKEN` to a fine-grained personal access token with **public repositories, read-only** access.
 
 ## Keyboard spells (in the crypt)
 
@@ -121,8 +119,8 @@ npm test
 npm run build && npm run test:e2e
 ```
 
-- **Vitest** (101 tests): every scanner rule, the fix engine (apply / relocate / stale), reducer, selectors, PR URL parsing, mock API, diff, Markdown export, highlighter, component tests for the crypt, home doors and report, and server tests for the GitHub routes (sign-in state check, encrypted session, token refresh, PR loading, review placement) against a fake GitHub API.
-- **Playwright** on desktop and Pixel 7: full hunt → report → export, keyboard + undo, private PR → sign in → post review, paste flow, and a no-horizontal-scroll check on every page.
+- **Vitest** (111 tests): every scanner rule, the fix engine (apply / relocate / stale), reducer, selectors, PR URL parsing, mock API, diff, Markdown export, highlighter, component tests for the crypt, home doors and report, and server tests for the GitHub routes (sign-in state check, encrypted session, token refresh, PR loading, review placement) against a fake GitHub API.
+- **Playwright** on desktop and Pixel 7: full hunt → report → export, keyboard + undo, PR → sign in → post review (GitHub responses mocked in the browser), no fake sign-in without the app, paste flow, and a no-horizontal-scroll check on every page.
 
 Also: `npm run lint`, `npm run typecheck`.
 

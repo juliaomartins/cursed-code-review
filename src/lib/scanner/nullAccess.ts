@@ -8,20 +8,47 @@ interface Source {
   desc: string;
 }
 
+/**
+ * The value assigned is only nullable when the risky call is the whole right-hand side:
+ * `a.find(...)` yes; `f(a.get(...))`, `a.get(k).x` or `a.get(k) ?? d` no.
+ */
+export function isWholeCall(rhs: string, method: RegExp): boolean {
+  const expr = rhs.trim().replace(/;$/, "").replace(/^await\s+/, "").trim();
+  let depth = 0;
+  for (let i = 0; i < expr.length; i++) {
+    const ch = expr[i];
+    if (ch === "(" || ch === "[" || ch === "{") depth++;
+    else if (ch === ")" || ch === "]" || ch === "}") depth--;
+    else if (depth === 0 && (expr.startsWith("??", i) || expr.startsWith("||", i))) return false;
+    if (depth === 0 && ch === "." ) {
+      const m = method.exec(expr.slice(i));
+      if (!m || m.index !== 0) continue;
+      // find the matching close paren of this call; it must end the expression
+      let d = 0;
+      for (let j = i + m[0].length - 1; j < expr.length; j++) {
+        if (expr[j] === "(") d++;
+        else if (expr[j] === ")" && --d === 0) return expr.slice(j + 1).trim() === "";
+      }
+      return false;
+    }
+  }
+  return false;
+}
+
 function jsSource(rhs: string): Source | null {
-  if (/\.find\(|\.findLast\(/.test(rhs)) return { depth: 1, desc: "`.find()`, which returns undefined when nothing matches" };
-  if (/querySelector\(|getElementById\(|closest\(/.test(rhs))
-    return { depth: 1, desc: "a DOM lookup that returns null when the element is missing" };
-  if (/\.match\(|\.exec\(/.test(rhs)) return { depth: 1, desc: "a regex match that returns null when it fails" };
-  if (/localStorage\.getItem\(|\.get\(/.test(rhs)) return { depth: 1, desc: "a lookup that returns nothing for a missing key" };
-  if (/^await\b/.test(rhs)) return { depth: 2, desc: "an awaited call that can come back empty" };
+  if (isWholeCall(rhs, /^\.(find|findLast)\(/)) return { depth: 1, desc: "`.find()`, which returns undefined when nothing matches" };
+  if (isWholeCall(rhs, /^\.(querySelector|getElementById|closest)\(/)) return { depth: 1, desc: "a DOM lookup that returns null when the element is missing" };
+  if (isWholeCall(rhs, /^\.(match|exec)\(/)) return { depth: 1, desc: "a regex match that returns null when it fails" };
+  if (isWholeCall(rhs, /^\.(getItem|get)\(/)) return { depth: 1, desc: "a lookup that returns nothing for a missing key" };
+  if (/^await\b/.test(rhs) && !/\?\?|\|\|/.test(rhs)) return { depth: 2, desc: "an awaited call that can come back empty" };
   return null;
 }
 
 function pySource(rhs: string): Source | null {
-  if (/\bre\.(match|search|fullmatch)\(/.test(rhs)) return { depth: 1, desc: "a regex match that returns None when it fails" };
-  if (/\.get\(/.test(rhs)) return { depth: 1, desc: "`.get()`, which returns None for a missing key" };
-  if (/\.(find_one|first|fetchone)\(/.test(rhs)) return { depth: 1, desc: "a query that returns None when no row matches" };
+  if (/\bor\b/.test(rhs)) return null;
+  if (isWholeCall(rhs, /^\.(match|search|fullmatch)\(/) && /\bre\./.test(rhs)) return { depth: 1, desc: "a regex match that returns None when it fails" };
+  if (isWholeCall(rhs, /^\.get\(/)) return { depth: 1, desc: "`.get()`, which returns None for a missing key" };
+  if (isWholeCall(rhs, /^\.(find_one|first|fetchone)\(/)) return { depth: 1, desc: "a query that returns None when no row matches" };
   return null;
 }
 

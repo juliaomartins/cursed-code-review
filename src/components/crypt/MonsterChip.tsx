@@ -32,8 +32,9 @@ export function MonsterChip({
       className={cx(
         "inline-flex min-h-11 flex-none items-center gap-2.5 rounded-full py-0.5 pr-3 pl-1.5 font-sans text-[13px] font-bold transition-[background,border-color] duration-150",
         selected
-          ? cx("border-[1.5px] border-ember", lights ? "bg-[#FFE9D6]" : "bg-ember/[0.14]")
-          : cx("border", lights ? "border-[#D8CCBB] bg-white hover:border-[#bfae96]" : "border-line-strong bg-[rgba(29,22,40,0.85)] hover:border-ink-4"),
+          ? cx("border-[1.5px] border-ember", lights ? "bg-[#FFE9D6]" : "bg-[#2b1c1f]")
+          : cx("border", lights ? "border-[#D8CCBB] bg-white hover:border-[#bfae96]" : "border-line-strong bg-well hover:border-ink-4"),
+        lights ? "shadow-[-14px_0_14px_#FBF7F0]" : "shadow-[-14px_0_14px_#110D18]",
       )}
     >
       <span className={cx("block", banishing ? "animate-banish" : `behave-${finding.kind}`, finding.kind === "gremlin" && !banishing && "gremlin-dart")} style={banishing ? undefined : { animationDelay: `${delay}s` }}>

@@ -53,6 +53,7 @@ export function reviewFromPullRequest(pr: PullRequest): Review {
       headRef: pr.headRef,
       headSha: pr.headSha,
       live: !!pr.headSha,
+      skippedFiles: pr.skippedFiles,
     },
     files,
     firstWithMonsters,

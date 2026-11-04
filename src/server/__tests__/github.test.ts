@@ -52,7 +52,7 @@ function fakeGitHub(routes: Record<string, (init?: RequestInit) => { status?: nu
   const calls: { key: string; init?: RequestInit }[] = [];
   const fetch = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
     const url = new URL(String(input));
-    const key = `${init?.method ?? "GET"} ${url.hostname === "github.com" ? url.pathname : url.pathname + url.search}`;
+    const key = `${init?.method ?? "GET"} ${url.hostname === "api.github.com" ? url.pathname + url.search : url.pathname}`;
     calls.push({ key, init });
     const route = routes[key];
     if (!route) return new Response(JSON.stringify({ message: "Not Found" }), { status: 404 });
@@ -72,6 +72,9 @@ const pull = {
 };
 const loginPatch = ["@@ -0,0 +1,16 @@", ...login.code.split("\n").slice(0, 16).map((l) => `+${l}`)].join("\n");
 
+const asUser = { token: "tok", asUser: true, signInAvailable: true };
+const anonymous = { asUser: false, signInAvailable: false };
+
 describe("getPullRequest", () => {
   it("loads the PR, its supported files at the head commit, and the added lines", async () => {
     const gh = fakeGitHub({
@@ -85,7 +88,7 @@ describe("getPullRequest", () => {
       }),
       [`GET /repos/fork/r/contents/src/auth/cursed-login.js?ref=${"a".repeat(40)}`]: () => ({ text: login.code }),
     });
-    const pr = await getPullRequest(config, "tok", { owner: "o", repo: "r", number: 5 }, { fetch: gh.fetch });
+    const pr = await getPullRequest({ owner: "o", repo: "r", number: 5 }, asUser, { fetch: gh.fetch });
     expect(pr).toMatchObject({ title: "Add login", author: "octo", headSha: "a".repeat(40), baseRef: "main", headRef: "feat", skippedFiles: 2 });
     expect(pr.files).toHaveLength(1);
     expect(pr.files[0]).toMatchObject({ path: "src/auth/cursed-login.js", language: "javascript" });
@@ -95,7 +98,7 @@ describe("getPullRequest", () => {
 
   it("explains missing access as 'not installed' with an install link", async () => {
     const gh = fakeGitHub({});
-    await expect(getPullRequest(config, "tok", { owner: "o", repo: "r", number: 5 }, { fetch: gh.fetch })).rejects.toMatchObject({
+    await expect(getPullRequest({ owner: "o", repo: "r", number: 5 }, asUser, { fetch: gh.fetch })).rejects.toMatchObject({
       code: "not_installed",
       installUrl: "/api/auth/github/login?install=1",
     });
@@ -106,12 +109,38 @@ describe("getPullRequest", () => {
       "GET /repos/o/r/pulls/5": () => ({ json: pull }),
       "GET /repos/o/r/pulls/5/files?per_page=100&page=1": () => ({ json: [{ filename: "a.go", status: "added", additions: 1, deletions: 0, patch: "@@ -0,0 +1 @@\n+x" }] }),
     });
-    await expect(getPullRequest(config, "tok", { owner: "o", repo: "r", number: 5 }, { fetch: gh.fetch })).rejects.toMatchObject({ code: "unsupported" });
+    await expect(getPullRequest({ owner: "o", repo: "r", number: 5 }, asUser, { fetch: gh.fetch })).rejects.toMatchObject({ code: "unsupported" });
+  });
+
+  it("opens public PRs without a token, downloading files from raw.githubusercontent.com", async () => {
+    const gh = fakeGitHub({
+      "GET /repos/o/r/pulls/5": () => ({ json: pull }),
+      "GET /repos/o/r/pulls/5/files?per_page=100&page=1": () => ({
+        json: [{ filename: "src/auth/cursed-login.js", status: "added", additions: 16, deletions: 0, patch: loginPatch }],
+      }),
+      [`GET /fork/r/${"a".repeat(40)}/src/auth/cursed-login.js`]: () => ({ text: login.code }),
+    });
+    const pr = await getPullRequest({ owner: "o", repo: "r", number: 5 }, anonymous, { fetch: gh.fetch });
+    expect(pr.files[0].code).toBe(login.code);
+    expect(gh.calls.every((c) => !(c.init?.headers as Record<string, string> | undefined)?.Authorization)).toBe(true);
+    expect(gh.calls.map((c) => c.key)).toContain(`GET /fork/r/${"a".repeat(40)}/src/auth/cursed-login.js`);
+  });
+
+  it("explains missing public PRs, and suggests sign-in when it's available", async () => {
+    const gh = fakeGitHub({});
+    await expect(getPullRequest({ owner: "o", repo: "r", number: 5 }, anonymous, { fetch: gh.fetch })).rejects.toMatchObject({
+      code: "not_found",
+      message: expect.stringContaining("Only public repositories"),
+    });
+    await expect(getPullRequest({ owner: "o", repo: "r", number: 5 }, { ...anonymous, signInAvailable: true }, { fetch: gh.fetch })).rejects.toMatchObject({
+      code: "auth_required",
+      status: 401,
+    });
   });
 
   it("maps rate limits", async () => {
     const gh = fakeGitHub({ "GET /repos/o/r/pulls/5": () => ({ status: 403, json: { message: "rate" }, headers: { "x-ratelimit-remaining": "0" } }) });
-    await expect(getPullRequest(config, "tok", { owner: "o", repo: "r", number: 5 }, { fetch: gh.fetch })).rejects.toMatchObject({ code: "rate_limited" });
+    await expect(getPullRequest({ owner: "o", repo: "r", number: 5 }, asUser, { fetch: gh.fetch })).rejects.toMatchObject({ code: "rate_limited" });
   });
 });
 

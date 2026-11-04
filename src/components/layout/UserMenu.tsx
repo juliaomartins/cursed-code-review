@@ -24,6 +24,8 @@ export function UserMenu({ compact = false }: { compact?: boolean }) {
   }, [open]);
 
   if (!hydrated) return <span className="skeleton block h-11 w-44 rounded-[10px]" aria-hidden="true" />;
+  // Sign-in only exists when the GitHub App is connected on this deployment.
+  if (mode !== "live") return null;
 
   if (!user)
     return (
@@ -62,17 +64,15 @@ export function UserMenu({ compact = false }: { compact?: boolean }) {
             <p className="m-0 text-sm font-bold">{user.name}</p>
             <p className="m-0 font-mono text-xs text-ink-3">@{user.login}</p>
           </div>
-          {mode === "live" && (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={installApp}
-              className="flex min-h-11 w-full items-center gap-2.5 px-4 text-left text-sm text-ink-2 hover:bg-white/5 hover:text-ink"
-            >
-              <Icon name="github" size={16} />
-              Manage repositories
-            </button>
-          )}
+          <button
+            type="button"
+            role="menuitem"
+            onClick={installApp}
+            className="flex min-h-11 w-full items-center gap-2.5 px-4 text-left text-sm text-ink-2 hover:bg-white/5 hover:text-ink"
+          >
+            <Icon name="github" size={16} />
+            Manage repositories
+          </button>
           <button
             type="button"
             role="menuitem"

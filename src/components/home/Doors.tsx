@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "@/providers/AuthProvider";
-import { fetchPullRequest, GitHubError, parsePrUrl } from "@/lib/github";
+import { GitHubError, parsePrUrl } from "@/lib/github";
 import { fetchPullRequestLive } from "@/lib/githubLive";
 import { reviewFromPaste, reviewFromPullRequest, reviewFromSamples } from "@/lib/review/factory";
 import { SAMPLES } from "@/lib/samples";
@@ -163,7 +163,8 @@ function PasteDoor({ onSubmit, disabled }: { onSubmit: (code: string, lang: Lang
   );
 }
 
-const EXAMPLES = ["kiro-labs/haunted-shop/pull/42", "acme/private-vault/pull/7"];
+/** A real, public pull request anyone can open to see the PR flow. */
+const EXAMPLE_PR = "juliaomartins/cursed-code-review/pull/1";
 const DRAFT_KEY = "ccr:pr-draft";
 
 function PrDoor({ onLoaded, disabled }: { onLoaded: (build: () => ReturnType<typeof reviewFromPullRequest>, label: string) => void; disabled: boolean }) {
@@ -171,11 +172,12 @@ function PrDoor({ onLoaded, disabled }: { onLoaded: (build: () => ReturnType<typ
   const { user, requestSignIn, mode, installApp } = useAuth();
   const live = mode === "live";
   const [url, setUrl] = useState("");
-  const [error, setError] = useState<{
-    message: string;
-    auth?: boolean;
-    install?: boolean;
-  } | null>(null);
+  const [error, setError] = useState<{ message: string; code?: GitHubError["code"] } | null>(null);
+  // Decided at render time, so the right button shows even if sign-in status loads late.
+  const offerSignIn = live && error?.code === "auth_required";
+  const offerInstall = live && error?.code === "not_installed";
+  const [loading, setLoading] = useState(false);
+  const abort = useRef<AbortController | null>(null);
 
   // Keep the link across the round-trip to GitHub for sign-in or install.
   useEffect(() => {
@@ -186,7 +188,9 @@ function PrDoor({ onLoaded, disabled }: { onLoaded: (build: () => ReturnType<typ
     } catch {
       /* storage unavailable */
     }
+    return () => abort.current?.abort();
   }, []);
+
   const saveDraft = () => {
     try {
       window.sessionStorage.setItem(DRAFT_KEY, url);
@@ -194,28 +198,16 @@ function PrDoor({ onLoaded, disabled }: { onLoaded: (build: () => ReturnType<typ
       /* storage unavailable */
     }
   };
-  const [loading, setLoading] = useState(false);
-  const abort = useRef<AbortController | null>(null);
 
   const submit = async (e?: FormEvent) => {
     e?.preventDefault();
     const parsed = parsePrUrl(url);
     if (!parsed.ok) return setError({ message: parsed.error });
-    if (live && !user)
-      return setError({
-        message: "Sign in with GitHub to open pull requests.",
-        auth: true,
-      });
     setError(null);
     setLoading(true);
     abort.current = new AbortController();
     try {
-      const pr = live
-        ? await fetchPullRequestLive(parsed.ref, abort.current.signal)
-        : await fetchPullRequest(parsed.ref, {
-            signedIn: !!user,
-            signal: abort.current.signal,
-          });
+      const pr = await fetchPullRequestLive(parsed.ref, abort.current.signal);
       try {
         window.sessionStorage.removeItem(DRAFT_KEY);
       } catch {
@@ -225,11 +217,7 @@ function PrDoor({ onLoaded, disabled }: { onLoaded: (build: () => ReturnType<typ
     } catch (err) {
       if ((err as Error).name === "AbortError") return;
       const gh = err instanceof GitHubError ? err : null;
-      setError({
-        message: gh?.message ?? "Could not reach GitHub. Check your connection and try again.",
-        auth: gh?.code === "auth_required",
-        install: gh?.code === "not_installed",
-      });
+      setError({ message: gh?.message ?? "Could not reach GitHub. Check your connection and try again.", code: gh?.code });
     } finally {
       setLoading(false);
     }
@@ -257,24 +245,19 @@ function PrDoor({ onLoaded, disabled }: { onLoaded: (build: () => ReturnType<typ
         aria-describedby={error ? `${id}-err` : undefined}
         className={cx(field, "min-h-[46px] px-3 text-sm")}
       />
-      {!live && (
-        <div className="flex flex-wrap items-center gap-2 text-xs text-ink-3">
-          <span>Try:</span>
-          {EXAMPLES.map((ex) => (
-            <button
-              key={ex}
-              type="button"
-              onClick={() => {
-                setUrl(`https://github.com/${ex}`);
-                setError(null);
-              }}
-              className="min-h-8 rounded-full border border-line px-2.5 font-mono text-[11px] text-ink-2 hover:border-ember/60 hover:text-ink"
-            >
-              {ex.replace("/pull/", "#")}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="flex flex-wrap items-center gap-2 text-xs text-ink-3">
+        <span>Try a real one:</span>
+        <button
+          type="button"
+          onClick={() => {
+            setUrl(`https://github.com/${EXAMPLE_PR}`);
+            setError(null);
+          }}
+          className="min-h-8 rounded-full border border-line px-2.5 font-mono text-[11px] text-ink-2 hover:border-ember/60 hover:text-ink"
+        >
+          {EXAMPLE_PR.replace("/pull/", "#")}
+        </button>
+      </div>
       {error && (
         <div
           id={`${id}-err`}
@@ -285,7 +268,7 @@ function PrDoor({ onLoaded, disabled }: { onLoaded: (build: () => ReturnType<typ
             <Icon name="alert" size={16} className="mt-px flex-none text-sev-high" />
             {error.message}
           </span>
-          {error.auth && (
+          {offerSignIn && (
             <Button
               size="sm"
               variant="outline"
@@ -299,7 +282,7 @@ function PrDoor({ onLoaded, disabled }: { onLoaded: (build: () => ReturnType<typ
               Sign in with GitHub
             </Button>
           )}
-          {error.install && (
+          {offerInstall && (
             <Button
               size="sm"
               variant="outline"
@@ -319,13 +302,11 @@ function PrDoor({ onLoaded, disabled }: { onLoaded: (build: () => ReturnType<typ
         {loading ? "Fetching the PR…" : "Open the PR in the crypt"}
       </Button>
       <p className="m-0 text-[13px] text-ink-3">
-        {live
-          ? user
-            ? `Signed in as @${user.login}. Works on repositories where you installed the app.`
-            : "Sign in with GitHub, then pick the repositories the crypt may read."
+        {!live
+          ? "Public repositories. Fetched live from GitHub."
           : user
-            ? `Demo mode · signed in as @${user.login}. Private repos unlocked.`
-            : "Demo mode · private repos need GitHub sign-in."}
+            ? `Signed in as @${user.login}. Public repos, plus private ones where you installed the app.`
+            : "Public repos work right away. Sign in with GitHub for private ones."}
       </p>
     </form>
   );

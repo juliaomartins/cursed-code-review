@@ -20,12 +20,15 @@ export async function withGitHub(req: NextRequest, run: (ctx: { config: GitHubAp
     if (refreshed) writeSession(req, res, session, config.sessionSecret);
     return res;
   } catch (e) {
-    if (e instanceof ApiError) {
-      const res = NextResponse.json({ code: e.code, message: e.message, installUrl: e.installUrl }, { status: e.status });
-      if (e.code === "auth_required") clearSession(req, res);
-      return res;
-    }
-    console.error("GitHub route failed", e);
-    return NextResponse.json({ code: "network", message: "Could not reach GitHub. Try again." }, { status: 502 });
+    const res = errorResponse(e);
+    if (e instanceof ApiError && e.code === "auth_required") clearSession(req, res);
+    return res;
   }
+}
+
+/** Turns any thrown error into the JSON shape the frontend expects. */
+export function errorResponse(e: unknown) {
+  if (e instanceof ApiError) return NextResponse.json({ code: e.code, message: e.message, installUrl: e.installUrl }, { status: e.status });
+  console.error("GitHub route failed", e);
+  return NextResponse.json({ code: "network", message: "Could not reach GitHub. Try again." }, { status: 502 });
 }

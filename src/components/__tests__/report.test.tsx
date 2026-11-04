@@ -1,14 +1,15 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ReportView } from "../report/ReportView";
-import { fetchPullRequest } from "@/lib/github";
+import { fixturePullRequest } from "@/test/fixtures";
 import { reviewFromPullRequest, reviewFromSamples } from "@/lib/review/factory";
 import { reviewReducer, initialState } from "@/lib/review/reducer";
-import { KEYS } from "@/lib/storage";
-import { renderApp, seedReview } from "./utils";
+import { mockApi, renderApp, seedReview } from "./utils";
 
 describe("Report", () => {
+  afterEach(() => vi.restoreAllMocks());
+
   it("shows an empty state without a review", async () => {
     renderApp(<ReportView />);
     expect(await screen.findByRole("heading", { name: "No hunt to report." })).toBeInTheDocument();
@@ -43,21 +44,36 @@ describe("Report", () => {
     expect(await screen.findByText("Report exported")).toBeInTheDocument();
   });
 
-  it("posts a PR review after signing in", async () => {
+  it("posts a review to the real PR when signed in", async () => {
     const user = userEvent.setup();
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    const pr = await fetchPullRequest({ owner: "kiro-labs", repo: "haunted-shop", number: 42 }, { signedIn: true, latencyMs: 0 });
-    seedReview(reviewFromPullRequest(pr));
-    window.localStorage.setItem(KEYS.user, JSON.stringify({ login: "midnight-dev", name: "Midnight Dev" }));
+    let posted: Record<string, unknown> = {};
+    mockApi({
+      "GET /api/auth/session": () => ({ json: { mode: "live", user: { login: "octo", name: "Octo Cat" } } }),
+      "POST /api/github/review": (init) => {
+        posted = JSON.parse(String(init?.body));
+        return { json: { url: "https://github.com/kiro-labs/haunted-shop/pull/42#pullrequestreview-9", inline: 5, folded: 1 } };
+      },
+    });
+    seedReview(reviewFromPullRequest(fixturePullRequest()));
     renderApp(<ReportView />);
     await user.click(await screen.findByRole("button", { name: /Post review to GitHub PR/ }));
     const dialog = screen.getByRole("dialog", { name: "Post review to GitHub" });
     expect(within(dialog).getByRole("radio", { name: /Request changes/ })).toBeChecked();
     expect(within(dialog).getByRole("radio", { name: /Approve/ })).toBeDisabled();
     await user.click(within(dialog).getByRole("button", { name: "Post change request" }));
-    await vi.advanceTimersByTimeAsync(1500);
-    await waitFor(() => expect(within(dialog).getByText("Your review is on the pull request.")).toBeInTheDocument());
-    expect(within(dialog).getByRole("link", { name: /View review on GitHub/ })).toHaveAttribute("href", expect.stringContaining("kiro-labs/haunted-shop/pull/42#pullrequestreview-"));
-    vi.useRealTimers();
+    expect(await within(dialog).findByText("Your review is on the pull request.")).toBeInTheDocument();
+    expect(within(dialog).getByRole("link", { name: /View review on GitHub/ })).toHaveAttribute("href", "https://github.com/kiro-labs/haunted-shop/pull/42#pullrequestreview-9");
+    expect(posted).toMatchObject({ owner: "kiro-labs", repo: "haunted-shop", number: 42, commitId: "c".repeat(40), event: "REQUEST_CHANGES" });
+    expect((posted.comments as unknown[]).length).toBeGreaterThan(0);
+    expect(await screen.findByText("5 inline comments on kiro-labs/haunted-shop#42.")).toBeInTheDocument();
+  });
+
+  it("explains that posting is unavailable until GitHub sign-in is connected", async () => {
+    const user = userEvent.setup();
+    mockApi({ "GET /api/auth/session": () => ({ json: { mode: "off", user: null } }) });
+    seedReview(reviewFromPullRequest(fixturePullRequest()));
+    renderApp(<ReportView />);
+    await user.click(await screen.findByRole("button", { name: /Post review to GitHub PR/ }));
+    expect(screen.getByRole("dialog")).toHaveTextContent("isn't available on this site yet");
   });
 });

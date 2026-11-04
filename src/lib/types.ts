@@ -65,8 +65,10 @@ export type ReviewSource =
       baseRef: string;
       headRef: string;
       headSha?: string;
-      /** True when the PR came from the real GitHub API rather than demo data. */
+      /** True when the PR came from the GitHub API. */
       live?: boolean;
+      /** Changed files the crypt could not scan (other languages, removed, or over the limit). */
+      skippedFiles?: number;
     };
 
 export interface Review {

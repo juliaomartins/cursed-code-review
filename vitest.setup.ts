@@ -10,6 +10,7 @@ if (typeof window !== "undefined") {
   afterEach(() => {
     cleanup();
     window.localStorage.clear();
+    window.sessionStorage.clear();
   });
 
   if (!window.matchMedia) {

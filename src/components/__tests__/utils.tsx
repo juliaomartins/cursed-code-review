@@ -1,4 +1,5 @@
 import { render } from "@testing-library/react";
+import { vi } from "vitest";
 import type { ReactElement } from "react";
 import { SignInDialog } from "../auth/SignInDialog";
 import { ToastProvider } from "../ui/Toast";
@@ -16,7 +17,7 @@ export function seedReview(review: Review) {
 export function renderApp(ui: ReactElement) {
   return render(
     <ToastProvider>
-      <AuthProvider signInDelayMs={0}>
+      <AuthProvider>
         <ReviewProvider banishMs={0}>
           {ui}
           <SignInDialog />
@@ -24,4 +25,18 @@ export function renderApp(ui: ReactElement) {
       </AuthProvider>
     </ToastProvider>,
   );
+}
+
+type Handler = (init?: RequestInit) => { status?: number; json?: unknown };
+
+/** Fakes this app's own /api routes for component tests. Unmatched calls fail like a network error. */
+export function mockApi(routes: Record<string, Handler>) {
+  return vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+    const url = new URL(String(input), "http://localhost");
+    const key = `${init?.method ?? "GET"} ${url.pathname}`;
+    const route = routes[key];
+    if (!route) throw new TypeError(`fetch failed: ${key}`);
+    const r = route(init);
+    return new Response(JSON.stringify(r.json ?? {}), { status: r.status ?? 200, headers: { "Content-Type": "application/json" } });
+  });
 }
