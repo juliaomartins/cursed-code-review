@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useAuth } from "@/providers/AuthProvider";
 import { useReview } from "@/providers/ReviewProvider";
 import { postReview } from "@/lib/github";
+import { postReviewLive } from "@/lib/githubLive";
 import { toReviewComments } from "@/lib/report";
 import { reviewStats } from "@/lib/review/selectors";
 import type { Review } from "@/lib/types";
@@ -38,9 +39,16 @@ export function PostReviewDialog({ open, onClose, review }: { open: boolean; onC
     setBusy(true);
     setError(null);
     try {
-      const url = await postReview({ ref: { owner: src.owner, repo: src.repo, number: src.number }, event, body, comments }, { signedIn: !!user });
+      const input = { ref: { owner: src.owner, repo: src.repo, number: src.number }, event, body, comments };
+      let url: string;
+      let inline = comments.length;
+      if (src.live && src.headSha) {
+        const res = await postReviewLive({ ...input, commitId: src.headSha });
+        url = res.url;
+        inline = res.inline;
+      } else url = await postReview(input, { signedIn: !!user });
       dispatch({ type: "posted", url });
-      toast({ title: "Review posted", description: `${comments.length} inline comment${comments.length === 1 ? "" : "s"} on ${src.label}.`, tone: "success" });
+      toast({ title: "Review posted", description: `${inline} inline comment${inline === 1 ? "" : "s"} on ${src.label}.`, tone: "success" });
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -75,7 +83,7 @@ export function PostReviewDialog({ open, onClose, review }: { open: boolean; onC
             <Icon name="check" size={28} />
           </span>
           <p className="m-0 text-lg font-bold">Your review is on the pull request.</p>
-          <p className="m-0 text-sm text-ink-3">Demo mode: the link below points to where the review would live.</p>
+          {!src.live && <p className="m-0 text-sm text-ink-3">Demo mode: the link below points to where the review would live.</p>}
           <a href={posted} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 font-medium">
             View review on GitHub <Icon name="external" size={16} />
           </a>
@@ -130,7 +138,8 @@ export function PostReviewDialog({ open, onClose, review }: { open: boolean; onC
               {comments.map((c) => (
                 <li key={`${c.path}:${c.line}`} className="flex flex-col gap-1">
                   <span className="font-mono text-xs text-ember-soft">
-                    {c.path}:{c.line}
+                    {c.path}:{c.startLine ? `${c.startLine}-` : ""}
+                    {c.line}
                   </span>
                   <pre className="m-0 font-mono text-xs whitespace-pre-wrap text-ink-2">{c.body}</pre>
                 </li>

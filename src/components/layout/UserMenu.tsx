@@ -1,12 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/providers/AuthProvider";
 import { Button } from "../ui/Button";
 import { Icon } from "../ui/Icon";
 
 export function UserMenu({ compact = false }: { compact?: boolean }) {
-  const { user, hydrated, requestSignIn, signOut } = useAuth();
+  const { user, hydrated, requestSignIn, signOut, mode, installApp } = useAuth();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -46,7 +47,11 @@ export function UserMenu({ compact = false }: { compact?: boolean }) {
         onClick={() => setOpen((o) => !o)}
         className="flex min-h-11 items-center gap-2 rounded-full border border-line-strong py-1 pr-3 pl-1 text-sm font-medium text-ink hover:border-ink-4"
       >
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#5865e6] to-[#b23f8e] text-xs font-bold">{initials}</span>
+        {user.avatarUrl ? (
+          <Image src={user.avatarUrl} alt="" width={32} height={32} className="h-8 w-8 rounded-full" />
+        ) : (
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#5865e6] to-[#b23f8e] text-xs font-bold">{initials}</span>
+        )}
         <span className="hidden sm:inline">@{user.login}</span>
         <Icon name="chevronDown" size={14} />
       </button>
@@ -57,11 +62,22 @@ export function UserMenu({ compact = false }: { compact?: boolean }) {
             <p className="m-0 text-sm font-bold">{user.name}</p>
             <p className="m-0 font-mono text-xs text-ink-3">@{user.login}</p>
           </div>
+          {mode === "live" && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={installApp}
+              className="flex min-h-11 w-full items-center gap-2.5 px-4 text-left text-sm text-ink-2 hover:bg-white/5 hover:text-ink"
+            >
+              <Icon name="github" size={16} />
+              Manage repositories
+            </button>
+          )}
           <button
             type="button"
             role="menuitem"
             onClick={() => {
-              signOut();
+              void signOut();
               setOpen(false);
             }}
             className="flex min-h-11 w-full items-center gap-2.5 px-4 text-left text-sm text-ink-2 hover:bg-white/5 hover:text-ink"

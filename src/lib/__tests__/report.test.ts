@@ -56,6 +56,18 @@ describe("report", () => {
   });
 });
 
+describe("review comments for real PRs", () => {
+  it("anchors comments to the original lines with multi-line suggestions", () => {
+    let s = reviewReducer(initialState, { type: "start", review: reviewFromSamples("leaky-cache") });
+    s = reviewReducer(s, { type: "banish", findingId: "leaky-cache:leech:9" }); // shifts later lines by one
+    const comments = toReviewComments(s.review!).filter((c) => c.path === "services/leaky-cache.py");
+    const twins = comments.find((c) => c.body.includes("Twin Ghosts"))!;
+    expect(twins).toMatchObject({ startLine: 14, line: 16 });
+    expect(twins.body).toContain("```suggestion\n    with _balance_lock:");
+    expect(comments.find((c) => c.body.includes("Void Wraith"))!.line).toBe(22);
+  });
+});
+
 describe("highlight", () => {
   it("tokenizes keywords, strings, comments, numbers and calls", () => {
     const t = tokenize("const x = foo('a', 1); // hi", "javascript");

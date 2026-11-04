@@ -4,7 +4,7 @@
 
 Built for **Kiroween 2026 · Costume Contest**.
 
-> **Status: frontend prototype.** Everything runs in the browser. The static checks are real (a rule-based scanner), but GitHub sign-in, the PR API and "AI" explanations are mocked so the product can be demoed end to end without a backend.
+> **Status:** the static checks are real (a rule-based scanner that runs in the browser). GitHub works for real once you connect a GitHub App (see below); without one, the app runs in **demo mode** with mocked GitHub so it can still be tried end to end.
 
 ## Try it
 
@@ -41,7 +41,67 @@ Open http://localhost:3000 and pick **Try a cursed sample**, or go straight to h
 
 Languages: JavaScript, TypeScript, Python, PHP (not every rule applies to every language).
 
-### Demo switches for the mocked GitHub
+## Connect real GitHub (GitHub App)
+
+Every user signs in with their own GitHub account and picks which repositories the app may read. Tokens stay on the server in an encrypted, HTTP-only cookie; code is scanned and never stored.
+
+### 1. Create the GitHub App
+
+GitHub → **Settings → Developer settings → GitHub Apps → New GitHub App**:
+
+| Field | Value |
+| --- | --- |
+| GitHub App name | `Cursed Code Review` (must be unique; its URL name becomes the **slug**) |
+| Homepage URL | `https://cursed-code-review.vercel.app` |
+| Callback URL | `https://cursed-code-review.vercel.app/api/auth/callback/github` |
+| Callback URL (add a second one for local dev) | `http://localhost:3000/api/auth/callback/github` |
+| Expire user authorization tokens | ✅ checked |
+| Request user authorization (OAuth) during installation | ✅ checked |
+| Enable Device Flow | unchecked |
+| Setup URL | leave empty |
+| Webhook → Active | unchecked |
+| Repository permissions → **Contents** | Read-only |
+| Repository permissions → **Pull requests** | Read and write |
+| Repository permissions → Metadata | Read-only (automatic) |
+| Account permissions | none |
+| Where can this GitHub App be installed? | **Any account** |
+
+Then on the app's page: copy the **Client ID**, click **Generate a new client secret** and copy it. The App ID and private key are not needed.
+
+### 2. Add environment variables
+
+In Vercel → Project → **Settings → Environment Variables** (and in `.env.local` for local dev, see `.env.example`):
+
+| Name | Value |
+| --- | --- |
+| `GITHUB_APP_CLIENT_ID` | the Client ID |
+| `GITHUB_APP_CLIENT_SECRET` | the client secret |
+| `GITHUB_APP_SLUG` | the app's URL name, from `github.com/apps/<slug>` |
+| `SESSION_SECRET` | 32+ random characters: `openssl rand -base64 48` |
+
+Redeploy. `GET /api/auth/session` now answers `"mode":"live"`.
+
+### 3. What users see
+
+1. **Sign in with GitHub** → GitHub's own consent screen → back on the page they started from.
+2. They paste a PR link. If the app isn't installed on that repository yet, the crypt offers **Install on this repository**, where they pick repositories.
+3. Monsters appear only on the lines the PR added or changed.
+4. **Post review to GitHub PR** posts inline comments with one-click `suggestion` fixes, as that user. Comments on lines outside the diff are listed in the review summary instead.
+
+### Server routes
+
+| Route | Purpose |
+| --- | --- |
+| `GET /api/auth/github/login?returnTo=/path` | Starts sign-in (`&install=1` opens the install screen) |
+| `GET /api/auth/callback/github` | GitHub redirects here; checks `state`, exchanges the code, sets the session |
+| `GET /api/auth/session` | `{ mode, user }`, never tokens |
+| `POST /api/auth/logout` | Clears the session |
+| `GET /api/github/pr?url=…` | PR metadata, changed files at the head commit, added lines |
+| `POST /api/github/review` | Creates the review on the head commit |
+
+Tokens refresh automatically before they expire (GitHub App user tokens last 8 hours).
+
+### Demo switches for the mocked GitHub (demo mode only)
 
 - Any `github.com/<owner>/<repo>/pull/<n>` link (or `owner/repo#n`) returns a deterministic PR.
 - Repo names containing `private` need **Sign in with GitHub** (a demo consent screen).
@@ -61,7 +121,7 @@ npm test
 npm run build && npm run test:e2e
 ```
 
-- **Vitest** (79 tests): every scanner rule, the fix engine (apply / relocate / stale), reducer, selectors, PR URL parsing, mock API, diff, Markdown export, highlighter, and component tests for the crypt, home doors and report.
+- **Vitest** (101 tests): every scanner rule, the fix engine (apply / relocate / stale), reducer, selectors, PR URL parsing, mock API, diff, Markdown export, highlighter, component tests for the crypt, home doors and report, and server tests for the GitHub routes (sign-in state check, encrypted session, token refresh, PR loading, review placement) against a fake GitHub API.
 - **Playwright** on desktop and Pixel 7: full hunt → report → export, keyboard + undo, private PR → sign in → post review, paste flow, and a no-horizontal-scroll check on every page.
 
 Also: `npm run lint`, `npm run typecheck`.
@@ -84,7 +144,7 @@ The `.kiro/` folder is part of the submission:
 
 ## Roadmap
 
-Replace the mocks with a backend: GitHub OAuth, the PR files API and review API, and an LLM for richer explanations. Deploy and record the demo video.
+Webhooks so the app reviews new PRs automatically, an LLM for richer explanations, and the demo video.
 
 ## License
 

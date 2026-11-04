@@ -45,19 +45,27 @@ export interface PrFile {
   deletions: number;
 }
 
+export const SUPPORTED_EXTENSIONS = ["js", "jsx", "mjs", "cjs", "ts", "tsx", "py", "php"];
+
 export interface PullRequest extends PrRef {
   url: string;
   title: string;
   author: string;
   baseRef: string;
   headRef: string;
+  /** Head commit SHA. Required to post a real review. */
+  headSha?: string;
   files: PrFile[];
+  /** How many changed files were skipped (unsupported language, removed, too large). */
+  skippedFiles?: number;
 }
 
 export class GitHubError extends Error {
   constructor(
     message: string,
-    public code: "not_found" | "auth_required" | "rate_limited" | "network",
+    public code: "not_found" | "auth_required" | "rate_limited" | "network" | "not_installed" | "unsupported" | "bad_request" | "forbidden",
+    /** Where the user can install the GitHub App on this repository. */
+    public installUrl?: string,
   ) {
     super(message);
     this.name = "GitHubError";
@@ -144,7 +152,10 @@ export async function fetchPullRequest(ref: PrRef, opts: FetchOptions): Promise<
 
 export interface ReviewComment {
   path: string;
+  /** Last line of the comment (new-file numbering). */
   line: number;
+  /** First line, for multi-line suggestions. */
+  startLine?: number;
   body: string;
 }
 

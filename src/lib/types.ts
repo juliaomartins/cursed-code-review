@@ -64,6 +64,9 @@ export type ReviewSource =
       author: string;
       baseRef: string;
       headRef: string;
+      headSha?: string;
+      /** True when the PR came from the real GitHub API rather than demo data. */
+      live?: boolean;
     };
 
 export interface Review {
