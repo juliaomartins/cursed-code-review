@@ -3,14 +3,21 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { CreateAppForm } from "@/components/setup/CreateAppForm";
 import { Icon } from "@/components/ui/Icon";
-import { getConfig, missingEnv } from "@/server/config";
+import { CopyBlock } from "@/components/setup/CopyBlock";
+import { CALLBACK_PATH, getConfig, missingEnv } from "@/server/config";
+import { checkSetup, type SetupCheck } from "@/server/github";
+import { headers } from "next/headers";
 
 export const metadata: Metadata = { title: "Connect GitHub", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
-export default function SetupPage() {
+export default async function SetupPage() {
   const config = getConfig();
   const missing = missingEnv();
+  const checks: SetupCheck[] = config ? await checkSetup(config) : [];
+  const h = await headers();
+  const origin = config?.appUrl ?? `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
+  const allOk = checks.length > 0 && checks.every((c) => c.ok === true);
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
@@ -25,16 +32,43 @@ export default function SetupPage() {
         </div>
 
         {config ? (
-          <section className="flex flex-col gap-3 rounded-2xl border border-banished/40 bg-banished/[0.06] p-6">
+          <section className={`flex flex-col gap-5 rounded-2xl border p-6 ${allOk ? "border-banished/40 bg-banished/[0.06]" : "border-sev-med/40 bg-card"}`}>
             <h2 className="m-0 flex items-center gap-2 text-xl">
-              <span className="text-banished">
-                <Icon name="check" size={22} />
+              <span className={allOk ? "text-banished" : "text-sev-med"}>
+                <Icon name={allOk ? "check" : "alert"} size={22} />
               </span>
-              GitHub is connected
+              {allOk ? "GitHub is connected" : "GitHub is configured, but something needs fixing"}
             </h2>
-            <p className="m-0 text-[15px] text-ink-2">
-              This site uses the GitHub App <a href={`https://github.com/apps/${config.slug}`}>{config.slug}</a>. Visitors can sign in from the header.
-            </p>
+            <ul className="m-0 flex list-none flex-col gap-3 p-0" aria-label="Setup checks">
+              {checks.map((c) => (
+                <li key={c.id} className="flex gap-3 text-[15px]">
+                  <span className={`mt-0.5 flex-none ${c.ok === true ? "text-banished" : c.ok === false ? "text-sev-high" : "text-ink-3"}`}>
+                    <Icon name={c.ok === true ? "check" : c.ok === false ? "close" : "alert"} size={18} />
+                  </span>
+                  <span className="flex flex-col gap-1">
+                    <span className="text-ink">{c.label}</span>
+                    {c.fix && <span className="text-sm text-ink-3">{c.fix}</span>}
+                  </span>
+                </li>
+              ))}
+              <li className="flex gap-3 text-[15px]">
+                <span className="mt-0.5 flex-none text-ink-3">
+                  <Icon name="alert" size={18} />
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col gap-2">
+                  <span className="text-ink">The app&apos;s Callback URL on GitHub must be exactly:</span>
+                  <CopyBlock text={`${origin}${CALLBACK_PATH}`} label="CALLBACK URL" />
+                  <span className="text-sm text-ink-3">
+                    GitHub doesn&apos;t let this site read it, so check it yourself in{" "}
+                    <a href={`https://github.com/settings/apps/${config.slug}`} target="_blank" rel="noreferrer">
+                      the app&apos;s settings
+                    </a>
+                    .
+                  </span>
+                </span>
+              </li>
+            </ul>
+            {!allOk && <p className="m-0 text-sm text-ink-3">After changing a variable in Vercel, redeploy, then reload this page.</p>}
           </section>
         ) : (
           <>

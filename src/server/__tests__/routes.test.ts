@@ -15,7 +15,12 @@ const BASE = "https://ccr.example";
 const req = (path: string, cookies: Record<string, string> = {}, init?: RequestInit) =>
   new NextRequest(`${BASE}${path}`, {
     ...init,
-    headers: { cookie: Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join("; "), ...(init?.headers ?? {}) },
+    headers: {
+      cookie: Object.entries(cookies)
+        .map(([k, v]) => `${k}=${v}`)
+        .join("; "),
+      ...(init?.headers ?? {}),
+    },
   } as ConstructorParameters<typeof NextRequest>[1]);
 
 const cookieValue = (res: Response, name: string) => /([^=]+)=([^;]*)/.exec(res.headers.getSetCookie().find((c) => c.startsWith(`${name}=`)) ?? "")?.[2];
@@ -64,7 +69,8 @@ describe("auth routes", () => {
       const url = String(input);
       if (url.startsWith("https://github.com/login/oauth/access_token"))
         return new Response(JSON.stringify({ access_token: "ghu_1", refresh_token: "ghr_1", expires_in: 28800 }));
-      if (url === "https://api.github.com/user") return new Response(JSON.stringify({ login: "octo", name: "Octo Cat", avatar_url: "https://avatars.githubusercontent.com/u/1" }));
+      if (url === "https://api.github.com/user")
+        return new Response(JSON.stringify({ login: "octo", name: "Octo Cat", avatar_url: "https://avatars.githubusercontent.com/u/1" }));
       return new Response("{}", { status: 404 });
     });
     const state = seal({ state: "abc", returnTo: "/report" }, SECRET);
@@ -72,23 +78,43 @@ describe("auth routes", () => {
     expect(res.headers.get("location")).toBe(`${BASE}/report?auth=success`);
     const sealed = cookieValue(res, SESSION_COOKIE)!;
     expect(sealed).not.toContain("ghu_1");
-    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toMatchObject({ code: "c0de", redirect_uri: `${BASE}/api/auth/callback/github` });
+    expect(Object.fromEntries(new URLSearchParams(String(fetchMock.mock.calls[0][1]?.body)))).toMatchObject({
+      code: "c0de",
+      redirect_uri: `${BASE}/api/auth/callback/github`,
+    });
 
     const who = await (await session(req("/api/auth/session", { [SESSION_COOKIE]: sealed }))).json();
     expect(who).toMatchObject({ mode: "live", user: { login: "octo", name: "Octo Cat" } });
     expect(JSON.stringify(who)).not.toContain("ghu_1");
   });
 
+  it("reports GitHub's reason when the code exchange fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ error: "incorrect_client_credentials", error_description: "The client_id and/or client_secret passed are incorrect." })),
+    );
+    const state = seal({ state: "abc", returnTo: "/" }, SECRET);
+    const res = await callback(req("/api/auth/callback/github?code=c0de&state=abc", { [STATE_COOKIE]: state }));
+    expect(res.headers.get("location")).toBe(`${BASE}/?auth=error&reason=incorrect_client_credentials`);
+  });
+
+  it("explains a missing state cookie", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = await callback(req("/api/auth/callback/github?code=c0de&state=abc"));
+    expect(res.headers.get("location")).toBe(`${BASE}/?auth=error&reason=state_missing`);
+  });
+
   it("rejects a callback whose state does not match", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
     const state = seal({ state: "abc", returnTo: "/" }, SECRET);
     const res = await callback(req("/api/auth/callback/github?code=c0de&state=evil", { [STATE_COOKIE]: state }));
-    expect(res.headers.get("location")).toBe(`${BASE}/?auth=error&reason=state`);
+    expect(res.headers.get("location")).toBe(`${BASE}/?auth=error&reason=state_mismatch`);
     expect(cookieValue(res, SESSION_COOKIE)).toBeUndefined();
   });
 
   it("reports a cancelled authorization", async () => {
     const res = await callback(req("/api/auth/callback/github?error=access_denied"));
-    expect(res.headers.get("location")).toBe(`${BASE}/?auth=denied`);
+    expect(res.headers.get("location")).toBe(`${BASE}/?auth=denied&reason=access_denied`);
   });
 });
 
@@ -119,7 +145,11 @@ describe("GitHub data routes", () => {
 
   it("require sign-in to post reviews", async () => {
     const res = await review(
-      req("/api/github/review", {}, { method: "POST", body: JSON.stringify({ owner: "o", repo: "r", number: 1, commitId: "a".repeat(40), event: "COMMENT", body: "x", comments: [] }) }),
+      req(
+        "/api/github/review",
+        {},
+        { method: "POST", body: JSON.stringify({ owner: "o", repo: "r", number: 1, commitId: "a".repeat(40), event: "COMMENT", body: "x", comments: [] }) },
+      ),
     );
     expect(res.status).toBe(401);
   });

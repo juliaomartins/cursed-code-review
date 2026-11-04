@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildManifest, createAppUrl } from "@/components/setup/CreateAppForm";
 import { getConfig, missingEnv } from "../config";
-import { convertManifest } from "../github";
+import { checkSetup, convertManifest } from "../github";
 
 afterEach(() => vi.unstubAllEnvs());
 
@@ -74,5 +74,39 @@ describe("configuration", () => {
     expect(getConfig()!.sessionSecret).not.toBe(a.sessionSecret);
     vi.stubEnv("SESSION_SECRET", "x".repeat(40));
     expect(getConfig()!.sessionSecret).toBe("x".repeat(40));
+  });
+});
+
+describe("setup health check", () => {
+  const config = { clientId: "Iv23liyT4B70lC5zhvJ2", clientSecret: "s3cr3t", slug: "cursed-code-review", sessionSecret: "x".repeat(40) };
+  const fake = (app: number, appBody: unknown, token: number) =>
+    vi.fn(async (input: string | URL | Request) =>
+      String(input).includes("/apps/") ? new Response(JSON.stringify(appBody), { status: app }) : new Response("{}", { status: token }),
+    ) as unknown as typeof fetch;
+
+  it("passes when the slug, Client ID and secret all match", async () => {
+    const checks = await checkSetup(config, { fetch: fake(200, { client_id: config.clientId, name: "Cursed Code Review" }, 404) });
+    expect(checks.map((c) => [c.id, c.ok])).toEqual([
+      ["app", true],
+      ["client_id", true],
+      ["client_secret", true],
+    ]);
+  });
+
+  it("spots a wrong secret, a Client ID from another app, and an unknown slug", async () => {
+    let checks = await checkSetup(config, { fetch: fake(200, { client_id: config.clientId }, 401) });
+    expect(checks.find((c) => c.id === "client_secret")).toMatchObject({ ok: false, fix: expect.stringContaining("Generate a new client secret") });
+    checks = await checkSetup(config, { fetch: fake(200, { client_id: "Iv23otherApp9999" }, 404) });
+    expect(checks.find((c) => c.id === "client_id")).toMatchObject({ ok: false, fix: expect.stringContaining("…9999") });
+    checks = await checkSetup(config, { fetch: fake(404, {}, 404) });
+    expect(checks[0]).toMatchObject({ id: "app", ok: false });
+  });
+
+  it("sends the credentials only to GitHub's credential check, as Basic auth", async () => {
+    const f = fake(200, { client_id: config.clientId }, 404);
+    await checkSetup(config, { fetch: f });
+    const call = vi.mocked(f).mock.calls.find(([u]) => String(u).includes("/applications/"))!;
+    expect(String(call[0])).toBe("https://api.github.com/applications/Iv23liyT4B70lC5zhvJ2/token");
+    expect((call[1]?.headers as Record<string, string>).Authorization).toBe(`Basic ${Buffer.from("Iv23liyT4B70lC5zhvJ2:s3cr3t").toString("base64")}`);
   });
 });

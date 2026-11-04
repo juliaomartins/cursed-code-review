@@ -38,6 +38,19 @@ const AUTH_MESSAGES: Record<string, { title: string; description?: string; tone:
   not_configured: { title: "GitHub sign-in isn't available yet", description: "Public pull requests still work without signing in.", tone: "error" },
 };
 
+/** What went wrong during sign-in, keyed by the `reason` the callback reports. */
+export const SIGN_IN_REASONS: Record<string, string> = {
+  incorrect_client_credentials:
+    "GitHub rejected this site's Client ID + client secret pair. Generate a new client secret on the GitHub App, put it in Vercel as GITHUB_APP_CLIENT_SECRET, and redeploy. /setup checks it for you.",
+  redirect_uri_mismatch: "The GitHub App's Callback URL doesn't match this site. It must be exactly <this site>/api/auth/callback/github.",
+  bad_verification_code: "The one-time sign-in code expired or was already used. Please sign in again.",
+  state_missing: "The sign-in started on a different address, or took longer than 10 minutes. Start again from this page.",
+  state_mismatch: "Another sign-in was started in a different tab. Start again from this page.",
+  unverified_user_email: "GitHub needs you to verify your email address before signing in to apps.",
+  no_code: "GitHub didn't send a sign-in code back. Please try again.",
+  network: "This site couldn't reach GitHub. Please try again.",
+};
+
 const currentPath = () => window.location.pathname + window.location.search.replace(/([?&])auth=[^&]*&?/, "$1").replace(/[?&]$/, "");
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -69,7 +82,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const status = params.get("auth");
       if (status && AUTH_MESSAGES[status]) {
         const m = AUTH_MESSAGES[status];
-        toast({ ...m, title: status === "success" && live?.user ? `Signed in as @${live.user.login}` : m.title });
+        const reason = params.get("reason");
+        const description = status === "error" && reason ? `${SIGN_IN_REASONS[reason] ?? "Please try again."} (GitHub: ${reason})` : m.description;
+        toast({
+          ...m,
+          description,
+          title: status === "success" && live?.user ? `Signed in as @${live.user.login}` : m.title,
+          durationMs: status === "error" ? 20000 : undefined,
+        });
         params.delete("auth");
         params.delete("reason");
         const q = params.toString();
