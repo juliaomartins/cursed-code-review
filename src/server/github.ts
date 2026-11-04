@@ -265,12 +265,21 @@ export async function createReview(token: string, input: CreateReviewInput, deps
   const extra = folded.length
     ? `\n\n---\n**Also found outside the changed lines:**\n\n${folded.map((c) => `- \`${c.path}:${c.line}\` ${c.body.split("\n")[0]}`).join("\n")}`
     : "";
-  const review = await gh<{ html_url: string }>(
-    token,
-    `${repoPath(input.ref)}/pulls/${input.ref.number}/reviews`,
-    { method: "POST", body: JSON.stringify({ commit_id: input.commitId, event: input.event, body: input.body + extra, comments: inline }) },
-    deps,
-  );
+  let review: { html_url: string };
+  try {
+    review = await gh<{ html_url: string }>(
+      token,
+      `${repoPath(input.ref)}/pulls/${input.ref.number}/reviews`,
+      { method: "POST", body: JSON.stringify({ commit_id: input.commitId, event: input.event, body: input.body + extra, comments: inline }) },
+      deps,
+    );
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 422 && /own pull request/i.test(e.message))
+      throw new ApiError(422, "own_pull_request", "GitHub doesn't let you approve or request changes on your own pull request. Choose “Comment” and post again.");
+    if (e instanceof ApiError && e.status === 422 && /commit_id|sha/i.test(e.message))
+      throw new ApiError(422, "stale_commit", "The pull request has new commits since you opened it. Open the PR in the crypt again, then post.");
+    throw e;
+  }
   return { url: review.html_url, inline: inline.length, folded: folded.length };
 }
 

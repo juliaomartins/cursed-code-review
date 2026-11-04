@@ -22,7 +22,10 @@ export function PostReviewDialog({ open, onClose, review }: { open: boolean; onC
   const stats = reviewStats(review);
   const comments = useMemo(() => toReviewComments(review), [review]);
   const hasHighLurking = review.files.some((f) => f.findings.some((x) => x.status === "lurking" && x.severity === "HIGH"));
-  const [event, setEvent] = useState<Event>(hasHighLurking ? "REQUEST_CHANGES" : stats.lurking === 0 ? "APPROVE" : "COMMENT");
+  const [chosen, setEvent] = useState<Event>(hasHighLurking ? "REQUEST_CHANGES" : stats.lurking === 0 ? "APPROVE" : "COMMENT");
+  // GitHub only allows "Comment" on a pull request you opened yourself.
+  const ownPr = review.source.kind === "pr" && !!user && review.source.author.toLowerCase() === user.login.toLowerCase();
+  const event: Event = ownPr ? "COMMENT" : chosen;
   const [body, setBody] = useState(
     stats.lurking === 0
       ? `The crypt is clear. ${stats.banished} monster${stats.banished === 1 ? "" : "s"} banished with suggested fixes below.`
@@ -50,10 +53,16 @@ export function PostReviewDialog({ open, onClose, review }: { open: boolean; onC
     }
   };
 
+  const OWN = "GitHub doesn't allow this on a pull request you opened yourself.";
   const options: { v: Event; label: string; hint: string; disabled?: boolean }[] = [
     { v: "COMMENT", label: "Comment", hint: "Leave feedback without a verdict." },
-    { v: "REQUEST_CHANGES", label: "Request changes", hint: "Block merging until the monsters are gone." },
-    { v: "APPROVE", label: "Approve", hint: stats.lurking ? "Banish or ignore every monster first." : "The crypt is clear. Ship it.", disabled: stats.lurking > 0 },
+    { v: "REQUEST_CHANGES", label: "Request changes", hint: ownPr ? OWN : "Block merging until the monsters are gone.", disabled: ownPr },
+    {
+      v: "APPROVE",
+      label: "Approve",
+      hint: ownPr ? OWN : stats.lurking ? "Banish or ignore every monster first." : "The crypt is clear. Ship it.",
+      disabled: ownPr || stats.lurking > 0,
+    },
   ];
 
   const footer =
@@ -100,6 +109,11 @@ export function PostReviewDialog({ open, onClose, review }: { open: boolean; onC
         <div className="flex flex-col gap-5">
           <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
             <legend className="mb-2 text-sm font-medium text-ink-2">Review type</legend>
+            {ownPr && (
+              <p className="m-0 mb-1 text-[13px] text-ink-3">
+                This is your own pull request, so GitHub only allows a <strong>Comment</strong>. The suggested fixes are still posted inline.
+              </p>
+            )}
             {options.map((o) => (
               <label
                 key={o.v}
