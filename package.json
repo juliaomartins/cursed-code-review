@@ -2,7 +2,7 @@
   "name": "cursed-code-review",
   "version": "0.1.0",
   "private": true,
-  "description": "A haunted code review where every bug is a monster. Kiroween 2026 · Costume Contest.",
+  "description": "A haunted code review where every bug is a monster. Kiroween 2026 \u00b7 Costume Contest.",
   "license": "MIT",
   "scripts": {
     "dev": "next dev",
@@ -36,5 +36,8 @@
     "tailwindcss": "^4.3.4",
     "typescript": "^5.9.3",
     "vitest": "^5.1.0"
+  },
+  "engines": {
+    "node": ">=20.9.0"
   }
 }
