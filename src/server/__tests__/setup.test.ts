@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildManifest, createAppUrl } from "@/components/setup/CreateAppForm";
-import { getConfig, missingEnv } from "../config";
+import { getConfig, missingEnv, normalizeSlug } from "../config";
 import { checkSetup, convertManifest } from "../github";
 
 afterEach(() => vi.unstubAllEnvs());
@@ -108,5 +108,32 @@ describe("setup health check", () => {
     const call = vi.mocked(f).mock.calls.find(([u]) => String(u).includes("/applications/"))!;
     expect(String(call[0])).toBe("https://api.github.com/applications/Iv23liyT4B70lC5zhvJ2/token");
     expect((call[1]?.headers as Record<string, string>).Authorization).toBe(`Basic ${Buffer.from("Iv23liyT4B70lC5zhvJ2:s3cr3t").toString("base64")}`);
+  });
+});
+
+describe("GITHUB_APP_SLUG", () => {
+  it.each([
+    ["cursed-code-review", "cursed-code-review"],
+    ["  Cursed-Code-Review  ", "cursed-code-review"],
+    ["https://github.com/settings/apps/cursed-code-review", "cursed-code-review"],
+    ["https://github.com/settings/apps/cursed-code-review/installations/new", "cursed-code-review"],
+    ["https://github.com/apps/cursed-code-review", "cursed-code-review"],
+    ["github.com/apps/cursed-code-review/", "cursed-code-review"],
+    ["https://github.com/organizations/acme/settings/apps/haunted-bot", "haunted-bot"],
+    ['"cursed-code-review"', "cursed-code-review"],
+  ])("accepts %j", (input, slug) => {
+    expect(normalizeSlug(input)).toBe(slug);
+  });
+
+  it.each(["", "   ", "https://github.com/settings", "not a slug!"])("rejects %j", (input) => {
+    expect(normalizeSlug(input)).toBeUndefined();
+  });
+
+  it("builds a correct install link from a pasted settings URL", () => {
+    vi.stubEnv("GITHUB_APP_CLIENT_ID", "Iv23abc");
+    vi.stubEnv("GITHUB_APP_CLIENT_SECRET", "s3cr3t");
+    vi.stubEnv("GITHUB_APP_SLUG", "https://github.com/settings/apps/cursed-code-review");
+    expect(getConfig()?.slug).toBe("cursed-code-review");
+    expect(missingEnv()).toEqual([]);
   });
 });

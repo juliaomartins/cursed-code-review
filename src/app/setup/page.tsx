@@ -68,6 +68,11 @@ export default async function SetupPage() {
                 </span>
               </li>
             </ul>
+            {process.env.GITHUB_APP_SLUG?.includes("/") && (
+              <p className="m-0 text-sm text-ink-3">
+                Tip: GITHUB_APP_SLUG is set to a full link. That works, but the slug alone is <code className="font-mono">{config.slug}</code>.
+              </p>
+            )}
             {!allOk && <p className="m-0 text-sm text-ink-3">After changing a variable in Vercel, redeploy, then reload this page.</p>}
           </section>
         ) : (
