@@ -60,12 +60,12 @@ export async function ensureFresh(config: GitHubAppConfig, session: Session, dep
   return { session: { ...session, ...tokens }, refreshed: true };
 }
 
-async function gh<T>(token: string, path: string, init: RequestInit & { raw?: boolean } = {}, deps: GitHubDeps = {}): Promise<T> {
+async function gh<T>(token: string | undefined, path: string, init: RequestInit & { raw?: boolean } = {}, deps: GitHubDeps = {}): Promise<T> {
   const f = deps.fetch ?? fetch;
   const res = await f(`${API}${path}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${token}`,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       Accept: init.raw ? "application/vnd.github.raw+json" : "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",
       "User-Agent": "cursed-code-review",
@@ -78,7 +78,11 @@ async function gh<T>(token: string, path: string, init: RequestInit & { raw?: bo
   const body = (await res.json().catch(() => ({}))) as { message?: string; errors?: unknown[] };
   if (res.status === 401) throw new ApiError(401, "auth_required", "Your GitHub session is no longer valid. Sign in again.");
   if ((res.status === 403 || res.status === 429) && res.headers.get("x-ratelimit-remaining") === "0")
-    throw new ApiError(429, "rate_limited", "GitHub is rate limiting requests. Wait a minute and try again.");
+    throw new ApiError(
+      429,
+      "rate_limited",
+      token ? "GitHub is rate limiting requests. Wait a minute and try again." : "GitHub's limit for anonymous requests was reached. Try again later.",
+    );
   if (res.status === 403) throw new ApiError(403, "forbidden", body.message ?? "GitHub refused this request.");
   if (res.status === 404) throw new ApiError(404, "not_found", body.message ?? "Not found.");
   if (res.status === 422) {
@@ -119,7 +123,7 @@ const enc = encodeURIComponent;
 const repoPath = (ref: PrRef) => `/repos/${enc(ref.owner)}/${enc(ref.repo)}`;
 const filePath = (p: string) => p.split("/").map(enc).join("/");
 
-async function listFiles(token: string, ref: PrRef, deps: GitHubDeps): Promise<GhFile[]> {
+async function listFiles(token: string | undefined, ref: PrRef, deps: GitHubDeps): Promise<GhFile[]> {
   const out: GhFile[] = [];
   for (let page = 1; page <= 3; page++) {
     const batch = await gh<GhFile[]>(token, `${repoPath(ref)}/pulls/${ref.number}/files?per_page=100&page=${page}`, {}, deps);
@@ -129,21 +133,47 @@ async function listFiles(token: string, ref: PrRef, deps: GitHubDeps): Promise<G
   return out;
 }
 
+async function rawFile(repoFullName: string, sha: string, path: string, deps: GitHubDeps): Promise<string> {
+  const f = deps.fetch ?? fetch;
+  const res = await f(`https://raw.githubusercontent.com/${repoFullName.split("/").map(enc).join("/")}/${enc(sha)}/${filePath(path)}`, { cache: "no-store" });
+  if (!res.ok) throw new ApiError(res.status, "network", `Couldn't download ${path}.`);
+  return res.text();
+}
+
 const supported = (path: string) => SUPPORTED_EXTENSIONS.includes(path.split(".").pop()?.toLowerCase() ?? "");
 
-export async function getPullRequest(config: GitHubAppConfig, token: string, ref: PrRef, deps: GitHubDeps = {}): Promise<PullRequest> {
+export interface PrAccess {
+  /** A GitHub token: the signed-in user's, or an optional server token for public repos. */
+  token?: string;
+  /** True when `token` belongs to the signed-in user (private repos the app is installed on). */
+  asUser: boolean;
+  /** True when this deployment has a GitHub App, so users could sign in. */
+  signInAvailable: boolean;
+}
+
+/**
+ * Loads a pull request and the files the crypt can scan.
+ * Public repositories work without signing in; contents then come from raw.githubusercontent.com,
+ * which does not count against GitHub's API rate limit.
+ */
+export async function getPullRequest(ref: PrRef, access: PrAccess, deps: GitHubDeps = {}): Promise<PullRequest> {
+  const { token, asUser, signInAvailable } = access;
+  const label = `${ref.owner}/${ref.repo}#${ref.number}`;
   let pull: GhPull;
   try {
     pull = await gh<GhPull>(token, `${repoPath(ref)}/pulls/${ref.number}`, {}, deps);
   } catch (e) {
-    if (e instanceof ApiError && (e.status === 404 || e.status === 403))
+    if (!(e instanceof ApiError) || (e.status !== 404 && e.status !== 403)) throw e;
+    if (asUser)
       throw new ApiError(
         404,
         "not_installed",
-        `Couldn't open ${ref.owner}/${ref.repo}#${ref.number}. Either it doesn't exist, or Cursed Code Review isn't installed on that repository yet.`,
+        `Couldn't open ${label}. Either it doesn't exist, or Cursed Code Review isn't installed on that repository yet.`,
         "/api/auth/github/login?install=1",
       );
-    throw e;
+    if (signInAvailable)
+      throw new ApiError(401, "auth_required", `Couldn't find ${label} as a public pull request. If the repository is private, sign in with GitHub.`);
+    throw new ApiError(404, "not_found", `Couldn't find ${label}. Check the link. Only public repositories can be opened on this site right now.`);
   }
   const files = await listFiles(token, ref, deps);
   const candidates = files.filter((f) => f.status !== "removed" && f.patch && supported(f.filename));
@@ -151,11 +181,9 @@ export async function getPullRequest(config: GitHubAppConfig, token: string, ref
   const picked = candidates.slice(0, MAX_FILES);
   const loaded = await Promise.all(
     picked.map(async (f): Promise<PrFile | null> => {
-      const code = await gh<string>(
-        token,
-        `/repos/${headRepo.split("/").map(enc).join("/")}/contents/${filePath(f.filename)}?ref=${enc(pull.head.sha)}`,
-        { raw: true },
-        deps,
+      const code = await (asUser
+        ? gh<string>(token, `/repos/${headRepo.split("/").map(enc).join("/")}/contents/${filePath(f.filename)}?ref=${enc(pull.head.sha)}`, { raw: true }, deps)
+        : rawFile(headRepo, pull.head.sha, f.filename, deps)
       ).catch(() => null);
       if (code === null || code.split("\n").length > MAX_LINES) return null;
       return {

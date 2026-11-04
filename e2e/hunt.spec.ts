@@ -44,30 +44,68 @@ test("keyboard hunting and undo", async ({ page, isMobile }) => {
   await expect(page.getByRole("dialog")).toBeHidden();
 });
 
-test("PR review: private repo needs sign-in, then post the review", async ({ page }) => {
+test("PR review: open a real-shaped PR, sign in, post the review", async ({ page }) => {
+  const sha = "c".repeat(40);
+  const code = "export function last(xs) {\n  return xs[xs.length];\n}\n";
+  let signedIn = false;
+  let posted: Record<string, unknown> | null = null;
+  await page.route("**/api/auth/session", (r) => r.fulfill({ json: { mode: "live", user: signedIn ? { login: "octo", name: "Octo Cat" } : null } }));
+  await page.route("**/api/github/pr?*", (r) =>
+    r.fulfill({
+      json: {
+        owner: "acme",
+        repo: "shop",
+        number: 7,
+        url: "https://github.com/acme/shop/pull/7",
+        title: "Add last()",
+        author: "octo",
+        baseRef: "main",
+        headRef: "feat/last",
+        headSha: sha,
+        skippedFiles: 2,
+        files: [{ path: "src/a/util.js", language: "javascript", code, changedLines: [1, 2, 3], additions: 3, deletions: 0 }],
+      },
+    }),
+  );
+  await page.route("**/api/github/review", async (r) => {
+    posted = r.request().postDataJSON();
+    await r.fulfill({ json: { url: "https://github.com/acme/shop/pull/7#pullrequestreview-1", inline: 1, folded: 0 } });
+  });
+
   await page.goto("/");
-  await page.getByLabel("Pull request link").fill("https://github.com/acme/private-vault/pull/7");
-  await page.getByRole("button", { name: "Open the PR in the crypt" }).click();
-  await expect(page.getByText("This repository is private.")).toBeVisible();
-  await page.getByRole("alert").getByRole("button", { name: "Sign in with GitHub" }).click();
-  await page.getByRole("button", { name: "Authorize" }).click();
-  await expect(page.getByRole("dialog")).toBeHidden();
+  await page.getByLabel("Pull request link").fill("https://github.com/acme/shop/pull/7");
   await page.getByRole("button", { name: "Open the PR in the crypt" }).click();
   await expect(page).toHaveURL(/\/crypt$/, { timeout: 10_000 });
-  await expect(page.getByText("PULL REQUEST")).toBeVisible();
+  await expect(page.getByText("Add last()")).toBeVisible();
+  await expect(page.getByText(/2 changed files not scanned/)).toBeVisible();
+  await expect(page.getByRole("button", { name: /Face the Imp on line 2/ })).toBeVisible();
 
   await page.goto("/report");
   await page.getByRole("button", { name: /Post review to GitHub PR/ }).click();
   const dialog = page.getByRole("dialog", { name: "Post review to GitHub" });
+  await expect(dialog.getByRole("button", { name: "Sign in with GitHub" })).toBeVisible();
+  signedIn = true; // as if the user came back from GitHub
+  await page.reload();
+  await page.getByRole("button", { name: /Post review to GitHub PR/ }).click();
   await dialog.getByRole("button", { name: /^Post / }).click();
   await expect(dialog.getByText("Your review is on the pull request.")).toBeVisible({ timeout: 5000 });
+  expect(posted).toMatchObject({ owner: "acme", repo: "shop", number: 7, commitId: sha });
+});
+
+test("without a GitHub App there is no fake sign-in", async ({ page }) => {
+  await page.route("**/api/auth/session", (r) => r.fulfill({ json: { mode: "off", user: null } }));
+  await page.goto("/");
+  await expect(page.getByText("Public repositories. Fetched live from GitHub.")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Sign in/ })).toHaveCount(0);
 });
 
 test("paste flow validates input and finds monsters", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Summon the monsters" }).click();
   await expect(page.getByText("Paste some code first.")).toBeVisible();
-  await page.getByRole("textbox", { name: "Code" }).fill("const token = 'ghp_abcdefghijklmnop';\nconst el = document.querySelector('#x');\nel.classList.add('on');\n");
+  await page
+    .getByRole("textbox", { name: "Code" })
+    .fill("const token = 'ghp_abcdefghijklmnop';\nconst el = document.querySelector('#x');\nel.classList.add('on');\n");
   await page.getByRole("button", { name: "Summon the monsters" }).click();
   await expect(page).toHaveURL(/\/crypt$/);
   await expect(page.getByRole("button", { name: /Face the Gremlin on line 1/ })).toBeVisible();

@@ -4,7 +4,7 @@ import { tokenize } from "../highlight";
 import { reportFileName, toMarkdown, toReviewComments } from "../report";
 import { reviewFromPullRequest, reviewFromSamples } from "../review/factory";
 import { reviewReducer, initialState } from "../review/reducer";
-import { fetchPullRequest } from "../github";
+import { fixturePullRequest } from "@/test/fixtures";
 
 describe("diff", () => {
   it("produces a minimal line diff", () => {
@@ -44,7 +44,7 @@ describe("report", () => {
   });
 
   it("builds inline review comments with suggestions, skipping ignored monsters", async () => {
-    const pr = await fetchPullRequest({ owner: "o", repo: "r", number: 3 }, { signedIn: true, latencyMs: 0 });
+    const pr = fixturePullRequest({ owner: "o", repo: "r", number: 3 });
     let s = reviewReducer(initialState, { type: "start", review: reviewFromPullRequest(pr) });
     const all = s.review!.files.flatMap((f) => f.findings);
     expect(all.length).toBeGreaterThan(0);
@@ -52,7 +52,7 @@ describe("report", () => {
     const comments = toReviewComments(s.review!);
     expect(comments).toHaveLength(all.length - 1);
     expect(comments[0].body).toContain("```suggestion");
-    expect(s.review!.source).toMatchObject({ kind: "pr", label: "o/r#3" });
+    expect(s.review!.source).toMatchObject({ kind: "pr", label: "o/r#3", live: true, headSha: "c".repeat(40) });
   });
 });
 
@@ -82,5 +82,13 @@ describe("highlight", () => {
   it("handles Python prefixes and PHP variables", () => {
     expect(tokenize('re.match(r"\\w+", s)', "python").find((k) => k.type === "string")?.text).toBe('r"\\w+"');
     expect(tokenize("$id = 1;", "php")[0]).toEqual({ type: "variable", text: "$id" });
+  });
+});
+
+describe("file names in the crypt", async () => {
+  const { displayNames } = await import("@/components/crypt/FileNav");
+  it("adds parent folders only when names repeat", () => {
+    expect(displayNames(["src/app/api/pr/route.ts", "src/app/api/review/route.ts", "src/lib/patch.ts"])).toEqual(["pr/route.ts", "review/route.ts", "patch.ts"]);
+    expect(displayNames(["a/x.ts", "a/x.ts"])).toEqual(["a/x.ts", "a/x.ts"]);
   });
 });

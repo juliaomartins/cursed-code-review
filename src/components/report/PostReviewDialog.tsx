@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { useAuth } from "@/providers/AuthProvider";
 import { useReview } from "@/providers/ReviewProvider";
-import { postReview } from "@/lib/github";
 import { postReviewLive } from "@/lib/githubLive";
 import { toReviewComments } from "@/lib/report";
 import { reviewStats } from "@/lib/review/selectors";
@@ -17,7 +16,7 @@ import { useToast } from "../ui/Toast";
 type Event = "COMMENT" | "REQUEST_CHANGES" | "APPROVE";
 
 export function PostReviewDialog({ open, onClose, review }: { open: boolean; onClose: () => void; review: Review }) {
-  const { user, requestSignIn } = useAuth();
+  const { user, requestSignIn, mode } = useAuth();
   const { dispatch } = useReview();
   const { toast } = useToast();
   const stats = reviewStats(review);
@@ -39,14 +38,9 @@ export function PostReviewDialog({ open, onClose, review }: { open: boolean; onC
     setBusy(true);
     setError(null);
     try {
-      const input = { ref: { owner: src.owner, repo: src.repo, number: src.number }, event, body, comments };
-      let url: string;
-      let inline = comments.length;
-      if (src.live && src.headSha) {
-        const res = await postReviewLive({ ...input, commitId: src.headSha });
-        url = res.url;
-        inline = res.inline;
-      } else url = await postReview(input, { signedIn: !!user });
+      if (!src.headSha) throw new Error("This review was opened before the PR's commit was known. Open the PR again from the home page.");
+      const res = await postReviewLive({ ref: { owner: src.owner, repo: src.repo, number: src.number }, event, body, comments, commitId: src.headSha });
+      const { url, inline } = res;
       dispatch({ type: "posted", url });
       toast({ title: "Review posted", description: `${inline} inline comment${inline === 1 ? "" : "s"} on ${src.label}.`, tone: "success" });
     } catch (e) {
@@ -83,11 +77,16 @@ export function PostReviewDialog({ open, onClose, review }: { open: boolean; onC
             <Icon name="check" size={28} />
           </span>
           <p className="m-0 text-lg font-bold">Your review is on the pull request.</p>
-          {!src.live && <p className="m-0 text-sm text-ink-3">Demo mode: the link below points to where the review would live.</p>}
           <a href={posted} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 font-medium">
             View review on GitHub <Icon name="external" size={16} />
           </a>
           <Button onClick={onClose}>Done</Button>
+        </div>
+      ) : mode !== "live" ? (
+        <div className="flex flex-col items-center gap-3 py-4 text-center">
+          <p className="m-0 text-[15px] text-ink-2">Posting reviews to GitHub needs GitHub sign-in, which isn&apos;t available on this site yet.</p>
+          <p className="m-0 text-sm text-ink-3">You can still export the report as Markdown and paste it into the pull request.</p>
+          <Button onClick={onClose}>Close</Button>
         </div>
       ) : !user ? (
         <div className="flex flex-col items-center gap-4 py-4 text-center">

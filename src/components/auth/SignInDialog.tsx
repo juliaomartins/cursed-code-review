@@ -5,7 +5,6 @@ import { useAuth } from "@/providers/AuthProvider";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Icon } from "../ui/Icon";
-import { useToast } from "../ui/Toast";
 import { Monster } from "../Monster";
 
 const SCOPES = [
@@ -15,24 +14,16 @@ const SCOPES = [
 ];
 
 export function SignInDialog() {
-  const { signInOpen, closeSignIn, completeSignIn, mode } = useAuth();
-  const live = mode === "live";
-  const { toast } = useToast();
+  const { signInOpen, closeSignIn, completeSignIn } = useAuth();
   const [busy, setBusy] = useState(false);
 
-  const authorize = async () => {
+  const authorize = () => {
     setBusy(true);
-    if (live) {
-      void completeSignIn(); // navigates to GitHub
-      return;
-    }
-    const user = await completeSignIn();
-    setBusy(false);
-    toast({ title: `Signed in as @${user.login}`, description: "Private repos and review posting are unlocked.", tone: "success" });
+    completeSignIn(); // navigates to GitHub
   };
 
   return (
-    <Dialog open={signInOpen} onClose={closeSignIn} locked={busy} title="Sign in with GitHub" description={live ? "You'll continue on github.com. We never see your password." : "Demo mode. No real GitHub account is contacted."}
+    <Dialog open={signInOpen} onClose={closeSignIn} locked={busy} title="Sign in with GitHub" description="You'll continue on github.com. We never see your password."
       footer={
         <>
           <Button variant="ghost" onClick={closeSignIn} disabled={busy}>
@@ -40,7 +31,7 @@ export function SignInDialog() {
           </Button>
           <Button variant="primary" onClick={authorize} loading={busy} data-autofocus>
             <Icon name="github" />
-            {live ? (busy ? "Opening GitHub…" : "Continue to GitHub") : busy ? "Authorizing…" : "Authorize"}
+            {busy ? "Opening GitHub…" : "Continue to GitHub"}
           </Button>
         </>
       }

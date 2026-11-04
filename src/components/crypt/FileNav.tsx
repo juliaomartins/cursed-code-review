@@ -8,8 +8,21 @@ import { Monster } from "../Monster";
 import { cx } from "../ui/cx";
 import { Icon } from "../ui/Icon";
 
+/** Shortest path suffix that tells files apart: "route.ts" → "pr/route.ts" when names repeat. */
+export function displayNames(paths: string[]): string[] {
+  const parts = paths.map((p) => p.split("/"));
+  return parts.map((segs, i) => {
+    for (let n = 1; n <= segs.length; n++) {
+      const name = segs.slice(-n).join("/");
+      if (parts.every((other, j) => j === i || other.slice(-n).join("/") !== name)) return name;
+    }
+    return paths[i];
+  });
+}
+
 export function FileNav({ review, onSelect }: { review: Review; onSelect: (id: string) => void }) {
   const src = review.source;
+  const names = displayNames(review.files.map((f) => f.path));
   const [legendOpen, setLegendOpen] = useState(false);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- open the legend by default on wide screens only
@@ -31,11 +44,16 @@ export function FileNav({ review, onSelect }: { review: Review; onSelect: (id: s
           <span className="font-mono text-[11px] text-ink-4">
             {src.headRef} → {src.baseRef}
           </span>
+          {!!src.skippedFiles && (
+            <span className="text-xs text-ink-3">
+              {src.skippedFiles} changed file{src.skippedFiles === 1 ? "" : "s"} not scanned (other languages, deleted, or over the 15-file limit).
+            </span>
+          )}
         </div>
       )}
       <p className="m-0 mb-1 font-mono text-[11px] tracking-[0.16em] text-ink-3">FILES</p>
       <ul className="m-0 flex list-none gap-2.5 relative overflow-x-auto p-0 pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
-        {review.files.map((f) => {
+        {review.files.map((f, i) => {
           const s = fileStats(f);
           const active = f.id === review.activeFileId;
           return (
@@ -50,7 +68,9 @@ export function FileNav({ review, onSelect }: { review: Review; onSelect: (id: s
                   active ? "border-ember bg-ember/[0.08] text-ink" : "border-line text-ink-2 hover:border-line-strong hover:text-ink",
                 )}
               >
-                <span className="truncate">{f.path.split("/").pop()}</span>
+                <span className="truncate" dir="rtl">
+                  <bdi>{names[i]}</bdi>
+                </span>
                 <span
                   className={cx(
                     "min-w-6 rounded-full px-2 py-0.5 text-center",

@@ -92,6 +92,14 @@ describe("scan · rules", () => {
     expect(scan("const u = await getUser();\nreturn u.name;", "javascript")).toEqual([]);
   });
 
+  it("only treats a value as nullable when the risky call is the whole expression", () => {
+    expect(scan('const parsed = parsePrUrl(params.get("url") ?? "");\nif (!parsed.ok) return;', "typescript")).toEqual([]);
+    expect(scan("const n = map.get(k) ?? 0;\nn.toFixed(1);", "javascript")).toEqual([]);
+    expect(scan("const name = users.find((u) => u.id === id).name;\nname.trim();", "javascript").map((f) => f.kind)).not.toContain("wraith");
+    expect(scan("const u = users.find((u) => u.id === id);\nu.name.trim();", "javascript")[0].kind).toBe("wraith");
+    expect(scan("v = d.get('k') or {}\nprint(v.keys())", "python")).toEqual([]);
+  });
+
   it("does not use optional chaining on assignment targets", () => {
     expect(scan("const u = list.find((x) => x.id === 1);\nu.name = 'x';", "javascript")).toEqual([]);
   });

@@ -4,7 +4,7 @@
 
 Built for **Kiroween 2026 · Costume Contest**.
 
-> **Status:** the static checks are real (a rule-based scanner that runs in the browser). GitHub works for real once you connect a GitHub App (see below); without one, the app runs in **demo mode** with mocked GitHub so it can still be tried end to end.
+> **Status:** everything is real. The static checks run in the browser, and pull requests are fetched live from GitHub. **Public** PRs work with no setup at all. Signing in, **private** repositories and posting reviews back to GitHub need the GitHub App described below.
 
 ## Try it
 
@@ -22,7 +22,7 @@ Open http://localhost:3000 and pick **Try a cursed sample**, or go straight to h
 
 | Screen | Features |
 | --- | --- |
-| **Home** `/` | Three doors: cursed samples (one click), paste code (validation, language auto-detect, Ctrl+Enter), GitHub PR link (validation, loading, private-repo sign-in). Summoning progress overlay. Resume banner for an unfinished hunt. |
+| **Home** `/` | Three doors: cursed samples (one click), paste code (validation, language auto-detect, Ctrl+Enter), GitHub PR link (fetched live from GitHub; sign-in and install prompts for private repos). Summoning progress overlay. Resume banner for an unfinished hunt. |
 | **The Crypt** `/crypt` | Syntax-highlighted code with monsters on their lines, sized by severity. Cursor-following lantern, Lights on/off. Detail panel with "What is wrong" / "Explain it simply", the fix as a diff, Banish (burn-away animation, applies the fix) and Ignore. Graveyard with restore, undo everywhere, "summon them again", multi-file navigation, PR changed-line gutter. Keyboard spells (`?`). |
 | **Report** `/report` | Verdict, room light, trapped monsters, stats, worst severity, findings table, patch of every applied fix, Markdown export/copy, post to GitHub PR (Comment / Request changes / Approve). |
 | **Bestiary** `/bestiary` | The seven monsters, their bug type, behaviour and an example fix. |
@@ -79,7 +79,7 @@ In Vercel → Project → **Settings → Environment Variables** (and in `.env.l
 | `GITHUB_APP_SLUG` | the app's URL name, from `github.com/apps/<slug>` |
 | `SESSION_SECRET` | 32+ random characters: `openssl rand -base64 48` |
 
-Redeploy. `GET /api/auth/session` now answers `"mode":"live"`.
+Redeploy. `GET /api/auth/session` now answers `"mode":"live"` (it answers `"mode":"off"` without the app).
 
 ### 3. What users see
 
@@ -96,16 +96,14 @@ Redeploy. `GET /api/auth/session` now answers `"mode":"live"`.
 | `GET /api/auth/callback/github` | GitHub redirects here; checks `state`, exchanges the code, sets the session |
 | `GET /api/auth/session` | `{ mode, user }`, never tokens |
 | `POST /api/auth/logout` | Clears the session |
-| `GET /api/github/pr?url=…` | PR metadata, changed files at the head commit, added lines |
+| `GET /api/github/pr?url=…` | PR metadata, changed files at the head commit, added lines. Signed out: public repos only |
 | `POST /api/github/review` | Creates the review on the head commit |
 
 Tokens refresh automatically before they expire (GitHub App user tokens last 8 hours).
 
-### Demo switches for the mocked GitHub (demo mode only)
+### Without the GitHub App
 
-- Any `github.com/<owner>/<repo>/pull/<n>` link (or `owner/repo#n`) returns a deterministic PR.
-- Repo names containing `private` need **Sign in with GitHub** (a demo consent screen).
-- PR numbers `≥ 9000` return "not found"; a repo named `rate-limit` simulates a rate limit.
+Public pull requests still open: the server reads them anonymously from GitHub (file contents come from `raw.githubusercontent.com`, which doesn't count against GitHub's API limit). The "Sign in with GitHub" button is hidden, and posting a review explains that it isn't available yet. To raise the anonymous API limit (60 requests per hour per server IP), you can optionally set `GITHUB_TOKEN` to a fine-grained personal access token with **public repositories, read-only** access.
 
 ## Keyboard spells (in the crypt)
 
@@ -121,8 +119,8 @@ npm test
 npm run build && npm run test:e2e
 ```
 
-- **Vitest** (101 tests): every scanner rule, the fix engine (apply / relocate / stale), reducer, selectors, PR URL parsing, mock API, diff, Markdown export, highlighter, component tests for the crypt, home doors and report, and server tests for the GitHub routes (sign-in state check, encrypted session, token refresh, PR loading, review placement) against a fake GitHub API.
-- **Playwright** on desktop and Pixel 7: full hunt → report → export, keyboard + undo, private PR → sign in → post review, paste flow, and a no-horizontal-scroll check on every page.
+- **Vitest** (106 tests): every scanner rule, the fix engine (apply / relocate / stale), reducer, selectors, PR URL parsing, mock API, diff, Markdown export, highlighter, component tests for the crypt, home doors and report, and server tests for the GitHub routes (sign-in state check, encrypted session, token refresh, PR loading, review placement) against a fake GitHub API.
+- **Playwright** on desktop and Pixel 7: full hunt → report → export, keyboard + undo, PR → sign in → post review (GitHub responses mocked in the browser), no fake sign-in without the app, paste flow, and a no-horizontal-scroll check on every page.
 
 Also: `npm run lint`, `npm run typecheck`.
 

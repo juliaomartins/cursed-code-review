@@ -29,9 +29,9 @@ describe("auth routes", () => {
     vi.restoreAllMocks();
   });
 
-  it("reports demo mode when the GitHub App is not configured", async () => {
+  it("reports that sign-in is off when the GitHub App is not configured", async () => {
     vi.stubEnv("GITHUB_APP_CLIENT_ID", "");
-    expect(await (await session(req("/api/auth/session"))).json()).toEqual({ mode: "demo", user: null });
+    expect(await (await session(req("/api/auth/session"))).json()).toEqual({ mode: "off", user: null });
     expect(login(req("/api/auth/github/login")).headers.get("location")).toBe(`${BASE}/?auth=not_configured`);
   });
 
@@ -93,10 +93,27 @@ describe("GitHub data routes", () => {
     vi.restoreAllMocks();
   });
 
-  it("require sign-in", async () => {
+  it("open public PRs without signing in, and suggest sign-in for anything else", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ message: "Not Found" }), { status: 404 }));
     const res = await pr(req("/api/github/pr?url=https://github.com/o/r/pull/1"));
     expect(res.status).toBe(401);
     expect(await res.json()).toMatchObject({ code: "auth_required" });
+    expect(String(fetchMock.mock.calls[0][0])).toBe("https://api.github.com/repos/o/r/pulls/1");
+  });
+
+  it("work without any GitHub App configured", async () => {
+    vi.stubEnv("GITHUB_APP_CLIENT_ID", "");
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ message: "Not Found" }), { status: 404 }));
+    const res = await pr(req("/api/github/pr?url=https://github.com/o/r/pull/1"));
+    expect(res.status).toBe(404);
+    expect(await res.json()).toMatchObject({ code: "not_found" });
+  });
+
+  it("require sign-in to post reviews", async () => {
+    const res = await review(
+      req("/api/github/review", {}, { method: "POST", body: JSON.stringify({ owner: "o", repo: "r", number: 1, commitId: "a".repeat(40), event: "COMMENT", body: "x", comments: [] }) }),
+    );
+    expect(res.status).toBe(401);
   });
 
   it("validate input", async () => {
