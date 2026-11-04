@@ -19,7 +19,7 @@ export const REQUIRED_ENV = ["GITHUB_APP_CLIENT_ID", "GITHUB_APP_CLIENT_SECRET",
 
 /** Names (never values) of required variables that are missing. */
 export function missingEnv(): string[] {
-  return REQUIRED_ENV.filter((k) => !process.env[k]?.trim());
+  return REQUIRED_ENV.filter((k) => (k === "GITHUB_APP_SLUG" ? !normalizeSlug(process.env[k]) : !process.env[k]?.trim()));
 }
 
 /**
@@ -32,10 +32,24 @@ function sessionKey(clientSecret: string): string {
   return Buffer.from(hkdfSync("sha256", clientSecret, "cursed-code-review", "session-cookie-v1", 32)).toString("base64url");
 }
 
+/**
+ * Accepts the slug itself or any GitHub App address people tend to paste:
+ * "cursed-code-review", "https://github.com/apps/cursed-code-review",
+ * "github.com/settings/apps/cursed-code-review/installations/new",
+ * "https://github.com/organizations/acme/settings/apps/cursed-code-review".
+ */
+export function normalizeSlug(value: string | undefined): string | undefined {
+  const v = value?.trim().replace(/^["']|["']$/g, "");
+  if (!v) return undefined;
+  const fromUrl = /(?:^|\/)(?:settings\/)?apps\/([A-Za-z0-9-]+)/.exec(v);
+  const slug = (fromUrl ? fromUrl[1] : v).replace(/\/+$/, "").toLowerCase();
+  return /^[a-z0-9][a-z0-9-]{0,99}$/.test(slug) ? slug : undefined;
+}
+
 export function getConfig(): GitHubAppConfig | null {
   const clientId = process.env.GITHUB_APP_CLIENT_ID?.trim();
   const clientSecret = process.env.GITHUB_APP_CLIENT_SECRET?.trim();
-  const slug = process.env.GITHUB_APP_SLUG?.trim();
+  const slug = normalizeSlug(process.env.GITHUB_APP_SLUG);
   if (!clientId || !clientSecret || !slug) return null;
   return { clientId, clientSecret, slug, sessionSecret: sessionKey(clientSecret), appUrl: process.env.APP_URL?.trim().replace(/\/+$/, "") || undefined };
 }
