@@ -45,41 +45,41 @@ Languages: JavaScript, TypeScript, Python, PHP (not every rule applies to every 
 
 Every user signs in with their own GitHub account and picks which repositories the app may read. Tokens stay on the server in an encrypted, HTTP-only cookie; code is scanned and never stored.
 
-### 1. Create the GitHub App
+### 1. One-click setup (recommended)
+
+1. Open **`/setup`** on your deployment, e.g. `https://cursed-code-review.vercel.app/setup`.
+2. Click **Create the GitHub App**. GitHub opens with every setting filled in (callback URL, permissions, install-time sign-in); click **Create GitHub App** there.
+3. GitHub sends you back to `/setup/complete` with the three keys in one block. Click **Copy all**.
+4. In Vercel → Project → **Settings → Environment Variables**, click the first **Key** box and paste. Vercel splits the block into three variables. Click **Save**.
+5. **Deployments → ⋯ → Redeploy**. Then `/setup` says **GitHub is connected**.
+
+The keys are shown once and never stored by the site.
+
+### 2. Or set it up by hand
 
 GitHub → **Settings → Developer settings → GitHub Apps → New GitHub App**:
 
 | Field | Value |
 | --- | --- |
-| GitHub App name | `Cursed Code Review` (must be unique; its URL name becomes the **slug**) |
+| GitHub App name | `Cursed Code Review` (must be unique) |
 | Homepage URL | `https://cursed-code-review.vercel.app` |
 | Callback URL | `https://cursed-code-review.vercel.app/api/auth/callback/github` |
-| Callback URL (add a second one for local dev) | `http://localhost:3000/api/auth/callback/github` |
 | Expire user authorization tokens | ✅ checked |
 | Request user authorization (OAuth) during installation | ✅ checked |
-| Enable Device Flow | unchecked |
-| Setup URL | leave empty |
 | Webhook → Active | unchecked |
-| Repository permissions → **Contents** | Read-only |
-| Repository permissions → **Pull requests** | Read and write |
-| Repository permissions → Metadata | Read-only (automatic) |
-| Account permissions | none |
+| Repository permissions | **Contents:** Read-only · **Pull requests:** Read and write |
 | Where can this GitHub App be installed? | **Any account** |
 
-Then on the app's page: copy the **Client ID**, click **Generate a new client secret** and copy it. The App ID and private key are not needed.
+Then add these in Vercel → **Settings → Environment Variables** (and `.env.local` for local dev, see `.env.example`):
 
-### 2. Add environment variables
-
-In Vercel → Project → **Settings → Environment Variables** (and in `.env.local` for local dev, see `.env.example`):
-
-| Name | Value |
+| Name | Where to find it |
 | --- | --- |
-| `GITHUB_APP_CLIENT_ID` | the Client ID |
-| `GITHUB_APP_CLIENT_SECRET` | the client secret |
-| `GITHUB_APP_SLUG` | the app's URL name, from `github.com/apps/<slug>` |
-| `SESSION_SECRET` | 32+ random characters: `openssl rand -base64 48` |
+| `GITHUB_APP_CLIENT_ID` | App's **General** page → "Client ID" (starts with `Iv`) |
+| `GITHUB_APP_CLIENT_SECRET` | Same page → **Generate a new client secret** (shown once) |
+| `GITHUB_APP_SLUG` | The last part of the address bar on the app's settings page: `github.com/settings/apps/<slug>` |
+| `SESSION_SECRET` | Optional. 32+ random characters; derived from the client secret if omitted |
 
-Redeploy. `GET /api/auth/session` now answers `"mode":"live"` (it answers `"mode":"off"` without the app).
+Redeploy. `GET /api/auth/session` answers `"mode":"live"`; while something is missing it answers `"mode":"off"` with the names of the missing variables.
 
 ### 3. What users see
 
@@ -119,7 +119,7 @@ npm test
 npm run build && npm run test:e2e
 ```
 
-- **Vitest** (106 tests): every scanner rule, the fix engine (apply / relocate / stale), reducer, selectors, PR URL parsing, mock API, diff, Markdown export, highlighter, component tests for the crypt, home doors and report, and server tests for the GitHub routes (sign-in state check, encrypted session, token refresh, PR loading, review placement) against a fake GitHub API.
+- **Vitest** (111 tests): every scanner rule, the fix engine (apply / relocate / stale), reducer, selectors, PR URL parsing, mock API, diff, Markdown export, highlighter, component tests for the crypt, home doors and report, and server tests for the GitHub routes (sign-in state check, encrypted session, token refresh, PR loading, review placement) against a fake GitHub API.
 - **Playwright** on desktop and Pixel 7: full hunt → report → export, keyboard + undo, PR → sign in → post review (GitHub responses mocked in the browser), no fake sign-in without the app, paste flow, and a no-horizontal-scroll check on every page.
 
 Also: `npm run lint`, `npm run typecheck`.

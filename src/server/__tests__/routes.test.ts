@@ -31,8 +31,16 @@ describe("auth routes", () => {
 
   it("reports that sign-in is off when the GitHub App is not configured", async () => {
     vi.stubEnv("GITHUB_APP_CLIENT_ID", "");
-    expect(await (await session(req("/api/auth/session"))).json()).toEqual({ mode: "off", user: null });
+    expect(await (await session(req("/api/auth/session"))).json()).toEqual({ mode: "off", user: null, missing: ["GITHUB_APP_CLIENT_ID"] });
     expect(login(req("/api/auth/github/login")).headers.get("location")).toBe(`${BASE}/?auth=not_configured`);
+  });
+
+  it("works without SESSION_SECRET by deriving a key from the client secret", async () => {
+    vi.stubEnv("SESSION_SECRET", "");
+    const res = login(req("/api/auth/github/login"));
+    expect(res.headers.get("location")).toMatch(/^https:\/\/github\.com\/login\/oauth\/authorize/);
+    const who = await (await session(req("/api/auth/session"))).json();
+    expect(who.mode).toBe("live");
   });
 
   it("redirects to GitHub with the callback URL and a state cookie", () => {

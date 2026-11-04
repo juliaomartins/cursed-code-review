@@ -264,3 +264,32 @@ export async function createReview(token: string, input: CreateReviewInput, deps
   );
   return { url: review.html_url, inline: inline.length, folded: folded.length };
 }
+
+/** What GitHub returns when an app created from a manifest is converted. */
+export interface CreatedApp {
+  slug: string;
+  name: string;
+  clientId: string;
+  clientSecret: string;
+  htmlUrl: string;
+  owner: string;
+}
+
+/**
+ * Finishes GitHub's "create app from manifest" flow: trades the one-time code (valid for an hour)
+ * for the new app's credentials. No authentication needed; the code itself is the proof.
+ */
+export async function convertManifest(code: string, deps: GitHubDeps = {}): Promise<CreatedApp> {
+  if (!/^[A-Za-z0-9_-]{1,100}$/.test(code)) throw new ApiError(400, "bad_request", "That setup link is not valid.");
+  const f = deps.fetch ?? fetch;
+  const res = await f(`${API}/app-manifests/${code}/conversions`, {
+    method: "POST",
+    headers: { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "cursed-code-review" },
+    cache: "no-store",
+  });
+  if (res.status === 404 || res.status === 422)
+    throw new ApiError(410, "expired", "This setup link was already used or has expired. Start the setup again to create a fresh app.");
+  if (!res.ok) throw new ApiError(502, "network", `GitHub returned ${res.status} while finishing the setup.`);
+  const d = (await res.json()) as { slug: string; name: string; client_id: string; client_secret: string; html_url: string; owner?: { login?: string } };
+  return { slug: d.slug, name: d.name, clientId: d.client_id, clientSecret: d.client_secret, htmlUrl: d.html_url, owner: d.owner?.login ?? "" };
+}
