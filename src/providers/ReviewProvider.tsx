@@ -2,15 +2,19 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from "react";
 import { initialState, reviewReducer, type ReviewAction, type ReviewState } from "@/lib/review/reducer";
+import { setSoundEnabled } from "@/lib/sound";
 import { KEYS, readJson, writeJson } from "@/lib/storage";
+import { useReducedMotion } from "@/lib/useReducedMotion";
 import type { Review } from "@/lib/types";
 
 export interface Prefs {
   lights: boolean;
   explainSimple: boolean;
+  /** Crypt sounds. Off until the visitor turns them on. */
+  sound: boolean;
 }
 
-const DEFAULT_PREFS: Prefs = { lights: false, explainSimple: false };
+const DEFAULT_PREFS: Prefs = { lights: false, explainSimple: false, sound: false };
 
 interface ReviewValue {
   state: ReviewState;
@@ -62,6 +66,12 @@ export function ReviewProvider({ children, banishMs = BANISH_MS }: { children: R
       return next;
     });
   }, []);
+
+  // Sound follows the saved choice, and stays silent while the system asks for reduced motion.
+  const reduced = useReducedMotion();
+  useEffect(() => {
+    setSoundEnabled(hydrated && prefs.sound && !reduced);
+  }, [hydrated, prefs.sound, reduced]);
 
   const banishingRef = useRef<string | null>(null);
   useEffect(() => {

@@ -7,6 +7,7 @@ export const SHORTCUTS: [string, string][] = [
   ["I", "Ignore the selected monster"],
   ["E", "Toggle “Explain it simply”"],
   ["L", "Lights on / off"],
+  ["M", "Sound on / off"],
   ["U  /  Ctrl+Z", "Undo"],
   ["[  /  ]", "Previous / next file"],
   ["?", "Show this list"],

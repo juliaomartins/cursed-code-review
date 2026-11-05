@@ -24,6 +24,8 @@ const PATHS = {
   logout: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
   sun: "M12 4V2M12 22v-2M4.9 4.9L3.5 3.5M20.5 20.5l-1.4-1.4M4 12H2M22 12h-2M4.9 19.1l-1.4 1.4M20.5 3.5l-1.4 1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",
   restore: "M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5",
+  volume: "M11 5L6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14",
+  volumeOff: "M11 5L6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6",
 } as const;
 
 export type IconName = keyof typeof PATHS;

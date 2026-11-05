@@ -9,8 +9,10 @@ import { reviewFromSamples } from "@/lib/review/factory";
 import { primaryLine } from "@/lib/review/apply";
 import { activeFile, fileStats, lurkingOf, reviewStats, selectedFinding } from "@/lib/review/selectors";
 import { getSample } from "@/lib/samples";
+import { playBanish, playCreak, setDrone } from "@/lib/sound";
 import { Logo } from "../layout/Logo";
 import { Monster } from "../Monster";
+import { SoundToggle, useSound } from "../SoundToggle";
 import { Button, ButtonLink } from "../ui/Button";
 import { Icon } from "../ui/Icon";
 import { Switch } from "../ui/Switch";
@@ -31,6 +33,7 @@ export function CryptWorkspace() {
   const [shortcuts, setShortcuts] = useState(false);
   const [bulk, setBulk] = useState(false);
   const asideRef = useRef<HTMLElement>(null);
+  const sound = useSound();
   const scrollToSelection = useRef(false);
 
   // Deep link: /crypt?sample=leaky-cache opens the samples with that file active.
@@ -78,6 +81,7 @@ export function CryptWorkspace() {
     const name = MONSTERS[finding.kind].name;
     const left = lurkingOf(file).length - 1;
     banish(finding.id);
+    playBanish();
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     setTimeout(
       () =>
@@ -150,6 +154,7 @@ export function CryptWorkspace() {
         i: doIgnore,
         e: () => setPrefs({ explainSimple: !prefs.explainSimple }),
         l: () => setPrefs({ lights: !prefs.lights }),
+        m: sound.toggle,
         u: doUndo,
         "]": () => stepFile(1),
         "[": () => stepFile(-1),
@@ -163,7 +168,24 @@ export function CryptWorkspace() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dispatch, doBanish, doIgnore, doUndo, prefs, setPrefs, stepFile]);
+  }, [dispatch, doBanish, doIgnore, doUndo, prefs, setPrefs, stepFile, sound.toggle]);
+
+  // The door creaks once as you walk in.
+  const creaked = useRef(false);
+  const hasReview = !!review;
+  useEffect(() => {
+    if (!hasReview || creaked.current) return;
+    creaked.current = true;
+    playCreak();
+  }, [hasReview]);
+
+  // A low drone that fades as monsters are banished, and stops when none are left.
+  const all = review ? reviewStats(review) : null;
+  const droneLevel = all && all.lurking > 0 ? 0.35 + (0.65 * all.lurking) / all.total : 0;
+  useEffect(() => {
+    setDrone(sound.on ? droneLevel : 0);
+  }, [droneLevel, sound.on]);
+  useEffect(() => () => setDrone(0), []);
 
   if (!hydrated || (sampleParam && getSample(sampleParam) && handledSample !== sampleParam)) return <CryptSkeleton />;
   if (!review || !file) return <NoCrypt />;
@@ -196,6 +218,7 @@ export function CryptWorkspace() {
           >
             <Icon name="keyboard" />
           </Button>
+          <SoundToggle shortcut />
           <Switch checked={prefs.lights} onChange={(v) => setPrefs({ lights: v })} label={prefs.lights ? "Lights on" : "Lights off"} />
           <ButtonLink href="/report" variant="ember-outline">
             Finish review
@@ -263,6 +286,7 @@ export function CryptWorkspace() {
           review={review}
           onConfirm={(fileIds, includeTwins) => {
             dispatch({ type: "banishAll", fileIds, skipKinds: includeTwins ? [] : REVIEW_FIRST });
+            playBanish({ big: true });
             toast({
               title: "Monsters banished",
               description: "Every selected fix was applied. Undo reverts them all at once.",
