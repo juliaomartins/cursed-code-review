@@ -1,6 +1,7 @@
 import { ButtonLink } from "../ui/Button";
 import { Icon } from "../ui/Icon";
 import { Monster } from "../Monster";
+import { WatchingWraith } from "../WatchingWraith";
 import type { MonsterKind } from "@/lib/types";
 
 const HERO_LINES: { t: string; k: MonsterKind | null; c: string | null }[] = [
@@ -40,7 +41,7 @@ export function Hero() {
 
       <div className="relative min-w-0 flex-[1_1_480px] px-2 pt-9 pb-2" aria-hidden="true">
         <div className="absolute -top-1.5 right-1 z-10 animate-[ccr-float_3.4s_ease-in-out_infinite]">
-          <Monster kind="wraith" size={120} />
+          <WatchingWraith size={120} />
         </div>
         <div className="-rotate-2 overflow-hidden rounded-2xl border border-line bg-[radial-gradient(circle_220px_at_40%_55%,rgba(255,138,61,0.16),rgba(255,138,61,0)_72%),#110D18] font-mono text-sm text-[#ECE4F6] shadow-[0_40px_80px_rgba(0,0,0,0.6)]">
           <div className="flex items-center gap-2 border-b border-line px-4 py-3 text-xs text-ink-4">
