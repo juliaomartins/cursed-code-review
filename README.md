@@ -24,8 +24,8 @@ Open http://localhost:3000 and pick **Try a cursed sample**, or go straight to h
 | --- | --- |
 | **Home** `/` | Three doors: cursed samples (one click), paste code (validation, language auto-detect, Ctrl+Enter), and **Bring a GitHub link**: a pull request, file, folder, whole repository, commit or branch comparison, fetched live from GitHub. Summoning progress overlay. Resume banner for an unfinished hunt. |
 | **Haunted Map** `/map` | Overview of a multi-file scan: monsters by type and severity, files ordered most-haunted-first or by folder, "Enter the crypt" on the worst file, and folder suggestions when a repository is bigger than one scan. |
-| **The Crypt** `/crypt` | Syntax-highlighted code with monsters on their lines, sized by severity. Cursor-following lantern, Lights on/off. Detail panel with "What is wrong" / "Explain it simply", the fix as a diff, Banish (burn-away animation, applies the fix) and Ignore. Graveyard with restore, undo everywhere, "summon them again", multi-file navigation, PR changed-line gutter. Keyboard spells (`?`). |
-| **Report** `/report` | Verdict, room light, trapped monsters, stats, worst severity, findings table, patch of every applied fix, Markdown export/copy, post to GitHub PR (Comment / Request changes / Approve; Comment only on your own PR), or **Create GitHub issue** for file, folder and repository scans. |
+| **The Crypt** `/crypt` | **Banish all** applies every remaining fix in a file or the whole scan after a preview (Twin Ghosts left for review unless you include them), undone in one step. Syntax-highlighted code with monsters on their lines, sized by severity. Cursor-following lantern, Lights on/off. Detail panel with "What is wrong" / "Explain it simply", the fix as a diff, Banish (burn-away animation, applies the fix) and Ignore. Graveyard with restore, undo everywhere, "summon them again", multi-file navigation, PR changed-line gutter. Keyboard spells (`?`). |
+| **Report** `/report` | Verdict, room light, trapped monsters, stats, worst severity, findings table, patch of every applied fix, Markdown export/copy. Send it back to GitHub: **Open a fix PR** (new branch, one commit per fixed file, a PR listing every fix) for file, folder, repository and comparison scans; **Push fixes to this PR** for pull requests; post a review (Comment / Request changes / Approve; Comment only on your own PR); or **Create GitHub issue**. |
 | **Bestiary** `/bestiary` | The seven monsters, their bug type, behaviour and an example fix. |
 
 ### The bestiary
@@ -68,7 +68,7 @@ GitHub → **Settings → Developer settings → GitHub Apps → New GitHub App*
 | Expire user authorization tokens | ✅ checked |
 | Request user authorization (OAuth) during installation | ✅ checked |
 | Webhook → Active | unchecked |
-| Repository permissions | **Contents:** Read-only · **Pull requests:** Read and write · **Issues:** Read and write |
+| Repository permissions | **Contents:** Read and write · **Pull requests:** Read and write · **Issues:** Read and write |
 | Where can this GitHub App be installed? | **Any account** |
 
 Then add these in Vercel → **Settings → Environment Variables** (and `.env.local` for local dev, see `.env.example`):
@@ -101,6 +101,7 @@ Redeploy. `GET /api/auth/session` answers `"mode":"live"`; while something is mi
 | `POST /api/github/review` | Creates the review on the head commit |
 | `GET /api/github/scan?url=…` | Any GitHub link: PR, file, folder, repository, commit or comparison |
 | `POST /api/github/issue` | Creates an issue listing the monsters (needs Issues: write) |
+| `POST /api/github/fixes` | Commits the banished fixes, one commit per file, to a new branch + PR or to an open PR's branch (needs Contents: write). Files that changed on GitHub since the scan are skipped, never overwritten; Windows line endings are kept |
 
 Tokens refresh automatically before they expire (GitHub App user tokens last 8 hours).
 
@@ -136,7 +137,7 @@ npm test
 npm run build && npm run test:e2e
 ```
 
-- **Vitest** (171 tests): every scanner rule, the fix engine (apply / relocate / stale), reducer, selectors, PR URL parsing, mock API, diff, Markdown export, highlighter, component tests for the crypt, home doors and report, and server tests for the GitHub routes (sign-in state check, encrypted session, token refresh, PR loading, review placement) against a fake GitHub API.
+- **Vitest** (185 tests): every scanner rule, the fix engine (apply / relocate / stale), reducer, selectors, PR URL parsing, mock API, diff, Markdown export, highlighter, component tests for the crypt, home doors and report, and server tests for the GitHub routes (sign-in state check, encrypted session, token refresh, PR loading, review placement) against a fake GitHub API.
 - **Playwright** on desktop and Pixel 7: full hunt → report → export, keyboard + undo, PR → sign in → post review (GitHub responses mocked in the browser), no fake sign-in without the app, paste flow, and a no-horizontal-scroll check on every page.
 
 Also: `npm run lint`, `npm run typecheck`.

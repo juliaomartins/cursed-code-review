@@ -17,6 +17,8 @@ import { Icon } from "../ui/Icon";
 import { SeverityBadge } from "../ui/SeverityBadge";
 import { useToast } from "../ui/Toast";
 import { PatchView } from "./PatchView";
+import { fixDestination } from "@/lib/fixes";
+import { ApplyFixesDialog } from "./ApplyFixesDialog";
 import { CreateIssueDialog } from "./CreateIssueDialog";
 import { PostReviewDialog } from "./PostReviewDialog";
 
@@ -31,6 +33,7 @@ export function ReportView() {
   const { toast } = useToast();
   const [posting, setPosting] = useState(false);
   const [issuing, setIssuing] = useState(false);
+  const [applying, setApplying] = useState(false);
   const [today, setToday] = useState<string | null>(null);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- the date is client-only to avoid hydration mismatch
   useEffect(() => setToday(formatDate(new Date().toISOString())), []);
@@ -45,6 +48,8 @@ export function ReportView() {
   const multi = review.files.length > 1;
   const isPr = review.source.kind === "pr";
   const isGitHubScan = review.source.kind === "github";
+  const canApply = fixDestination(review).mode !== null;
+  const hasFixes = review.files.some((f) => f.code !== f.originalCode);
   const clear = s.lurking === 0;
 
   const download = () => {
@@ -237,19 +242,31 @@ export function ReportView() {
         </section>
 
         <section className="flex flex-wrap items-center gap-3">
+          {canApply && (
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => setApplying(true)}
+              disabled={!hasFixes}
+              aria-describedby={!hasFixes ? "apply-hint" : undefined}
+              className="shadow-[0_0_28px_rgba(255,138,61,0.4)]"
+            >
+              <Icon name="flame" strokeWidth={2.2} />
+              {review.fixesUrl ? "Fixes on GitHub" : isPr ? "Push fixes to this PR" : "Open a fix PR"}
+            </Button>
+          )}
           {isGitHubScan ? (
-            <Button variant="primary" size="lg" onClick={() => setIssuing(true)} className="shadow-[0_0_28px_rgba(255,138,61,0.4)]">
+            <Button variant={canApply ? "outline" : "primary"} size="lg" onClick={() => setIssuing(true)}>
               <Icon name="github" strokeWidth={2.2} />
               {review.postedReviewUrl ? "Issue created" : "Create GitHub issue"}
             </Button>
           ) : (
             <Button
-              variant="primary"
+              variant={canApply ? "outline" : "primary"}
               size="lg"
               onClick={() => setPosting(true)}
               disabled={!isPr}
               aria-describedby={!isPr ? "post-hint" : undefined}
-              className="shadow-[0_0_28px_rgba(255,138,61,0.4)]"
             >
               <Icon name="pr" strokeWidth={2.2} />
               {review.postedReviewUrl ? "Review posted" : "Post review to GitHub PR"}
@@ -272,6 +289,11 @@ export function ReportView() {
           <ButtonLink href="/#start" variant="outline" size="lg">
             Scan something else
           </ButtonLink>
+          {canApply && !hasFixes && (
+            <p id="apply-hint" className="m-0 w-full text-[13px] text-ink-3">
+              Banish monsters in the crypt first, then send the fixed code to GitHub as {isPr ? "commits on this pull request" : "a new pull request"}.
+            </p>
+          )}
           {!isPr && !isGitHubScan && (
             <p id="post-hint" className="m-0 w-full text-[13px] text-ink-3">
               Posting to GitHub is available when you open a GitHub link in the crypt.
@@ -281,6 +303,7 @@ export function ReportView() {
       </main>
       <PostReviewDialog open={posting} onClose={() => setPosting(false)} review={review} />
       <CreateIssueDialog open={issuing} onClose={() => setIssuing(false)} review={review} />
+      {applying && <ApplyFixesDialog open onClose={() => setApplying(false)} review={review} />}
     </div>
   );
 }

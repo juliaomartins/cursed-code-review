@@ -99,7 +99,10 @@ function FindingDetail({ finding, banishing, simple, onSimple, onBanish, onIgnor
             type="button"
             aria-pressed={simple === o.v}
             onClick={() => onSimple(o.v)}
-            className={cx("min-h-11 flex-1 rounded-[9px] text-sm font-medium text-ink transition-colors", simple === o.v ? "bg-line-strong" : "hover:bg-white/[0.04]")}
+            className={cx(
+              "min-h-11 flex-1 rounded-[9px] text-sm font-medium text-ink transition-colors",
+              simple === o.v ? "bg-line-strong" : "hover:bg-white/[0.04]",
+            )}
           >
             {o.label}
           </button>
@@ -110,7 +113,11 @@ function FindingDetail({ finding, banishing, simple, onSimple, onBanish, onIgnor
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <span className="font-mono text-[11px] tracking-[0.16em] text-ink-3">THE SPELL (FIX)</span>
-          <button type="button" onClick={onCopyFix} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-xs text-ink-3 hover:bg-white/5 hover:text-ink">
+          <button
+            type="button"
+            onClick={onCopyFix}
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-xs text-ink-3 hover:bg-white/5 hover:text-ink"
+          >
             <Icon name="copy" size={14} />
             Copy fix
           </button>
@@ -138,11 +145,15 @@ function FindingDetail({ finding, banishing, simple, onSimple, onBanish, onIgnor
         <Button variant="primary" onClick={onBanish} disabled={banishing || finding.stale} className="min-h-[52px] flex-[2_1_160px] rounded-xl text-base">
           <Icon name="flame" strokeWidth={2.2} />
           {banishing ? "Banishing…" : "Banish"}
-          <kbd aria-hidden="true" className="ml-1 hidden rounded border border-ember-ink/30 px-1.5 font-mono text-[11px] lg:inline">B</kbd>
+          <kbd aria-hidden="true" className="ml-1 hidden rounded border border-ember-ink/30 px-1.5 font-mono text-[11px] lg:inline">
+            B
+          </kbd>
         </Button>
         <Button variant="outline" onClick={onIgnore} disabled={banishing} className="min-h-[52px] flex-[1_1_100px] rounded-xl text-[15px] text-ink-body">
           Ignore
-          <kbd aria-hidden="true" className="ml-1 hidden rounded border border-line-strong px-1.5 font-mono text-[11px] text-ink-3 lg:inline">I</kbd>
+          <kbd aria-hidden="true" className="ml-1 hidden rounded border border-line-strong px-1.5 font-mono text-[11px] text-ink-3 lg:inline">
+            I
+          </kbd>
         </Button>
       </div>
       <p className="m-0 text-xs text-ink-3">{m.behavior}</p>

@@ -143,6 +143,50 @@ test("whole repository: Haunted Map → crypt → create issue", async ({ page }
   expect(issue!.body).toContain(`https://github.com/acme/shop/blob/${sha}/src/util/last.js#L1`);
 });
 
+test("Banish all, then open a fix pull request", async ({ page }) => {
+  const sha = "e".repeat(40);
+  const buggy = "const SECRET_TOKEN = 'abcdef123456';\nexport function last(xs) {\n  return xs[xs.length];\n}\n";
+  let sent: { files: { path: string; content: string }[]; target: { kind: string; baseBranch: string } } | null = null;
+  await page.route("**/api/auth/session", (r) => r.fulfill({ json: { mode: "live", user: { login: "octo", name: "Octo Cat" } } }));
+  await page.route("**/api/github/scan?*", (r) =>
+    r.fulfill({
+      json: {
+        target: "file",
+        owner: "acme",
+        repo: "shop",
+        ref: "main",
+        sha,
+        path: "src/last.js",
+        title: "src/last.js",
+        url: "https://github.com/acme/shop/blob/main/src/last.js",
+        skippedFiles: 0,
+        files: [{ path: "src/last.js", language: "javascript", code: buggy }],
+      },
+    }),
+  );
+  await page.route("**/api/github/fixes", async (r) => {
+    sent = r.request().postDataJSON();
+    await r.fulfill({ json: { url: "https://github.com/acme/shop/pull/8", branch: "cursed-fixes/today", commits: 1, skipped: [] } });
+  });
+
+  await page.goto("/");
+  await page.getByLabel("GitHub link").fill("https://github.com/acme/shop/blob/main/src/last.js");
+  await page.getByRole("button", { name: "Open in the crypt" }).click();
+  await expect(page).toHaveURL(/\/crypt$/, { timeout: 10_000 });
+  await page.getByRole("button", { name: "Banish all" }).click();
+  await page.getByRole("dialog", { name: "Banish all" }).getByRole("button", { name: "Banish 2 monsters" }).click();
+  await expect(page.getByText("The crypt is clear.")).toBeVisible();
+
+  await page.goto("/report");
+  await page.getByRole("button", { name: "Open a fix PR" }).click();
+  const dialog = page.getByRole("dialog", { name: "Open a fix pull request" });
+  await dialog.getByRole("button", { name: "Open fix pull request" }).click();
+  await expect(dialog.getByText("Your fix pull request is open.")).toBeVisible();
+  expect(sent!.target).toMatchObject({ kind: "newBranch", baseBranch: "main" });
+  expect(sent!.files[0].content).toContain("process.env.SECRET_TOKEN");
+  expect(sent!.files[0].content).toContain("xs[xs.length - 1]");
+});
+
 test("without a GitHub App there is no fake sign-in", async ({ page }) => {
   await page.route("**/api/auth/session", (r) => r.fulfill({ json: { mode: "off", user: null } }));
   await page.goto("/");

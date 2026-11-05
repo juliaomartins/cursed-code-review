@@ -71,7 +71,12 @@ export function CodeView({ file, selectedId, banishingId, lights, onPick }: Code
         lights ? "lights-on border-parchment-line bg-parchment text-parchment-ink" : "border-line text-[#ECE4F6]",
       )}
     >
-      <div className={cx("flex flex-wrap items-center gap-2 border-b px-4 py-2.5 text-xs", lights ? "border-parchment-line text-parchment-dim" : "border-line text-ink-4")}>
+      <div
+        className={cx(
+          "flex flex-wrap items-center gap-2 border-b px-4 py-2.5 text-xs",
+          lights ? "border-parchment-line text-parchment-dim" : "border-line text-ink-4",
+        )}
+      >
         <span className="h-2.5 w-2.5 rounded-full bg-[#FF6B5B]" />
         <span className="h-2.5 w-2.5 rounded-full bg-[#FFB547]" />
         <span className="h-2.5 w-2.5 rounded-full bg-[#6FF2B0]" />
@@ -98,8 +103,7 @@ export function CodeView({ file, selectedId, banishingId, lights, onPick }: Code
           lights
             ? undefined
             : {
-                background:
-                  "radial-gradient(circle 260px at var(--lx, 320px) var(--ly, 220px), rgba(255,138,61,0.17), rgba(255,138,61,0) 72%), #110D18",
+                background: "radial-gradient(circle 260px at var(--lx, 320px) var(--ly, 220px), rgba(255,138,61,0.17), rgba(255,138,61,0) 72%), #110D18",
                 boxShadow: "inset 0 0 80px rgba(0,0,0,0.55)",
               }
         }
@@ -129,17 +133,33 @@ export function CodeView({ file, selectedId, banishingId, lights, onPick }: Code
                   <span aria-hidden="true" className={cx("absolute top-0 bottom-0 left-0 w-[3px]", isChanged ? "bg-[#6FF2B0]/70" : "bg-transparent")} />
                 )}
                 {focused && <span aria-hidden="true" className="absolute top-0 bottom-0 left-0 w-[3px] bg-[#7F8CFF]" />}
-                <span className={cx("flex-none text-right select-none", lights ? "text-parchment-dim" : "text-ink-4")} style={{ width: `${Math.max(2, gutter)}ch` }}>
+                <span
+                  className={cx("flex-none text-right select-none", lights ? "text-parchment-dim" : "text-ink-4")}
+                  style={{ width: `${Math.max(2, gutter)}ch` }}
+                >
                   {n}
                 </span>
                 <code
                   className={cx("flex-auto whitespace-pre", dim.has(n) && "line-through decoration-[#8FAE78]/60 opacity-45")}
                   style={deco && !dim.has(n) ? { textDecoration: `underline wavy ${deco}`, textUnderlineOffset: 7, textDecorationThickness: 1.5 } : undefined}
                 >
-                  {text === "" ? " " : tokenize(text, file.language).map((t, k) => (t.type === "plain" ? <span key={k}>{t.text}</span> : <span key={k} className={`tok-${t.type}`}>{t.text}</span>))}
+                  {text === ""
+                    ? " "
+                    : tokenize(text, file.language).map((t, k) =>
+                        t.type === "plain" ? (
+                          <span key={k}>{t.text}</span>
+                        ) : (
+                          <span key={k} className={`tok-${t.type}`}>
+                            {t.text}
+                          </span>
+                        ),
+                      )}
                 </code>
                 {monsters && (
-                  <span className="sticky left-4 flex flex-none basis-full flex-wrap gap-2 sm:right-4 sm:left-auto sm:basis-auto pl-[var(--gutter-pad)] sm:pl-0" style={{ "--gutter-pad": `calc(${Math.max(2, gutter)}ch + 1rem)` } as CSSProperties}>
+                  <span
+                    className="sticky left-4 flex flex-none basis-full flex-wrap gap-2 sm:right-4 sm:left-auto sm:basis-auto pl-[var(--gutter-pad)] sm:pl-0"
+                    style={{ "--gutter-pad": `calc(${Math.max(2, gutter)}ch + 1rem)` } as CSSProperties}
+                  >
                     {monsters.map((f) => (
                       <MonsterChip
                         key={f.id}

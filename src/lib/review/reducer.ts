@@ -1,9 +1,12 @@
-import type { Review, ReviewFile } from "../types";
+import type { MonsterKind, Review, ReviewFile } from "../types";
 import { applyFix, relocate } from "./apply";
+import { banishAllInFile, banishAllPlan } from "./bulk";
 import { lurkingOf, nextLurking } from "./selectors";
 
 export interface Snapshot {
   file: ReviewFile;
+  /** Set when one action changed several files ("Banish all"); undo restores all of them. */
+  files?: ReviewFile[];
   selectedFindingId: string | null;
   label: string;
 }
@@ -28,6 +31,8 @@ export type ReviewAction =
   | { type: "undo" }
   | { type: "resetFile"; fileId: string }
   | { type: "posted"; url: string }
+  | { type: "banishAll"; fileIds: string[]; skipKinds: MonsterKind[] }
+  | { type: "fixesPushed"; url: string }
   | { type: "close" };
 
 export const initialState: ReviewState = { review: null, undo: [], banishing: null };
@@ -148,16 +153,41 @@ export function reviewReducer(state: ReviewState, action: ReviewAction): ReviewS
     case "undo": {
       const snap = state.undo[state.undo.length - 1];
       if (!snap) return state;
+      const restored = (snap.files ?? [snap.file]).reduce((r, f) => updateFile(r, f.id, () => f), review);
       return {
         ...state,
         undo: state.undo.slice(0, -1),
-        review: {
-          ...updateFile(review, snap.file.id, () => snap.file),
-          activeFileId: snap.file.id,
-          selectedFindingId: snap.selectedFindingId,
-        },
+        review: { ...restored, activeFileId: snap.file.id, selectedFindingId: snap.selectedFindingId },
       };
     }
+
+    case "banishAll": {
+      const plan = banishAllPlan(review, action.fileIds, action.skipKinds).filter((p) => p.apply.length);
+      if (!plan.length) return state;
+      let next = review;
+      let total = 0;
+      for (const p of plan) {
+        const res = banishAllInFile(p.file, p.apply.map((f) => f.id));
+        total += res.banished;
+        next = updateFile(next, p.file.id, () => res.file);
+      }
+      const active = next.files.find((f) => f.id === next.activeFileId);
+      const snap: Snapshot = {
+        file: review.files.find((f) => f.id === review.activeFileId) ?? plan[0].file,
+        files: plan.map((p) => p.file),
+        selectedFindingId: review.selectedFindingId,
+        label: `Banished ${total} monster${total === 1 ? "" : "s"} at once`,
+      };
+      return {
+        ...state,
+        banishing: null,
+        undo: [...state.undo, snap].slice(-UNDO_LIMIT),
+        review: { ...next, selectedFindingId: active ? (lurkingOf(active)[0]?.id ?? null) : null },
+      };
+    }
+
+    case "fixesPushed":
+      return { ...state, review: { ...review, fixesUrl: action.url } };
 
     case "resetFile": {
       const file = review.files.find((f) => f.id === action.fileId);

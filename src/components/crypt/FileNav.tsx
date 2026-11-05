@@ -67,7 +67,8 @@ export function FileNav({ review, onSelect }: { review: Review; onSelect: (id: s
           </span>
           {!!src.skippedFiles && (
             <span className="text-xs text-ink-3">
-              {src.skippedFiles} file{src.skippedFiles === 1 ? "" : "s"} not scanned (other languages, generated, too big{src.truncated ? ", or over the limit" : ""}).
+              {src.skippedFiles} file{src.skippedFiles === 1 ? "" : "s"} not scanned (other languages, generated, too big
+              {src.truncated ? ", or over the limit" : ""}).
             </span>
           )}
         </div>

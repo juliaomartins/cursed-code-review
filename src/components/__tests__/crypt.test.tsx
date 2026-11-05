@@ -1,4 +1,4 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 import { CryptWorkspace } from "../crypt/CryptWorkspace";
@@ -35,7 +35,7 @@ describe("The Crypt", () => {
     expect(screen.getByRole("heading", { name: "Gremlin" })).toBeInTheDocument();
     expect(screen.getByText(/holds a secret written directly/)).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /Banish/ }));
+    await user.click(screen.getByRole("button", { name: "Banish" }));
     await waitFor(() => expect(line(7)).toHaveTextContent("const API_KEY = process.env.API_KEY;"));
     expect(screen.queryByRole("button", { name: /Face the Gremlin/ })).not.toBeInTheDocument();
     expect(screen.getByText("1 banished")).toBeInTheDocument();
@@ -94,5 +94,25 @@ describe("The Crypt", () => {
     await user.click(await screen.findByRole("button", { name: "Ignore" }));
     await user.click(screen.getByRole("button", { name: "Bring back the ignored Possessor" }));
     expect(screen.getByRole("heading", { name: "Possessor" })).toBeInTheDocument();
+  });
+});
+
+describe("Banish all", () => {
+  it("previews, applies every fix, and undoes them in one step", async () => {
+    const user = userEvent.setup();
+    seedReview(reviewFromSamples("leaky-cache"));
+    renderApp(<CryptWorkspace />);
+    await user.click(await screen.findByRole("button", { name: "Banish all" }));
+    const dialog = screen.getByRole("dialog", { name: "Banish all" });
+    expect(within(dialog).getByRole("radio", { name: "All 3 files" })).toHaveAttribute("aria-checked", "true");
+    await user.click(within(dialog).getByRole("radio", { name: "This file" }));
+    expect(within(dialog).getByText("3 fixes")).toBeInTheDocument();
+    expect(within(dialog).getByText("1 left for you to review")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Banish 3 monsters" }));
+    expect(await screen.findByText("Monsters banished")).toBeInTheDocument();
+    expect(screen.getByText("3 banished")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Twin Ghosts" })).toBeInTheDocument();
+    await user.keyboard("u");
+    expect(screen.getByText("0 banished")).toBeInTheDocument();
   });
 });
