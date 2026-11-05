@@ -208,15 +208,15 @@
 .lm-poked .lm-zombie-head { transform-origin: 60px 108px; animation: lm-wobble 950ms ease-in-out; }
 @keyframes lm-jaw { 0%, 100% { transform: translateY(0); } 30%, 60% { transform: translateY(5px); } }
 .lm-poked .lm-zombie-jaw { animation: lm-jaw 950ms ease-in-out; }
-/* …and its brain pops up a little out of the skull, wiggles, then drops back in */
+/* …and its brain rises a little out of the open skull, then sinks back in */
 @keyframes lm-brain {
   0%, 100% { transform: translateY(0) rotate(0); }
-  25% { transform: translateY(-7px) rotate(-6deg); }
-  45% { transform: translateY(-7px) rotate(5deg); }
-  70% { transform: translateY(1px) rotate(0); }
-  85% { transform: translateY(-1.5px); }
+  25% { transform: translateY(-5px) rotate(-3deg); }
+  45% { transform: translateY(-5px) rotate(3deg); }
+  70% { transform: translateY(0.8px) rotate(0); }
+  85% { transform: translateY(-1px); }
 }
-.lm-poked .lm-zombie-brain { transform-origin: 60px 30px; animation: lm-brain 950ms ease-in-out; }
+.lm-poked .lm-zombie-brain { transform-origin: 60px 32px; animation: lm-brain 950ms ease-in-out; }
 
 /* Gremlin: darts away from your cursor and jiggles its stolen key */
 .lm-gremlin .lm-gremlin-body,

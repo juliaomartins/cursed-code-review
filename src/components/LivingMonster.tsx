@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { MONSTERS } from "@/lib/monsters";
 import type { MonsterKind } from "@/lib/types";
 import { LIVING_ART } from "./living-art";
@@ -90,6 +90,7 @@ export interface LivingMonsterProps {
 export function LivingMonster({ kind, size = 120, glow = true, label, className, reach }: LivingMonsterProps) {
   const ref = useRef<SVGSVGElement>(null);
   const pokeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const uid = `lm${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
 
   useEffect(() => {
     const svg = ref.current;
@@ -139,7 +140,7 @@ export function LivingMonster({ kind, size = 120, glow = true, label, className,
       style={{ display: "block", flex: "none", overflow: "visible", filter: glow ? `drop-shadow(0 0 ${blur}px ${MONSTERS[kind].glow}80)` : undefined }}
       {...(label ? { role: "img", "aria-label": label } : { "aria-hidden": true })}
     >
-      {LIVING_ART[kind]}
+      {LIVING_ART[kind](uid)}
     </svg>
   );
 }
