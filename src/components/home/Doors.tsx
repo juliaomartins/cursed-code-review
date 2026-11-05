@@ -13,6 +13,7 @@ import { Monster } from "../Monster";
 import { Button } from "../ui/Button";
 import { cx } from "../ui/cx";
 import { Icon } from "../ui/Icon";
+import { RepoDoor } from "./RepoDoor";
 import { useSummon } from "./useSummon";
 
 const card = "box-border flex flex-col gap-3 rounded-2xl border p-6";
@@ -27,6 +28,9 @@ const SAMPLE_MONSTERS = SAMPLES.map((s) => ({
 
 export function Doors() {
   const { summon, overlay, busy } = useSummon();
+  const { mode } = useAuth();
+  const onGitHub = (build: () => Review, steps: string[], multi: boolean) =>
+    summon(multi ? "Mapping the crypt" : "Hunting the code", build, steps, (r) => (multi && r.files.length > 1 ? "/map" : "/crypt"));
   return (
     <section aria-labelledby="start" className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-[22px] px-4 pb-[88px] sm:px-7">
       <h2 id="start" className="m-0 font-display text-[44px] font-bold">
@@ -35,12 +39,7 @@ export function Doors() {
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-5">
         <SampleDoor onPick={(id) => summon("Opening the crypt", () => reviewFromSamples(id))} disabled={busy} />
         <PasteDoor onSubmit={(code, lang) => summon("Smelling your code", () => reviewFromPaste(code, lang))} disabled={busy} />
-        <LinkDoor
-          onLoaded={(build, steps, multi) =>
-            summon(multi ? "Mapping the crypt" : "Hunting the code", build, steps, (r) => (multi && r.files.length > 1 ? "/map" : "/crypt"))
-          }
-          disabled={busy}
-        />
+        {mode === "live" ? <RepoDoor onLoaded={onGitHub} disabled={busy} /> : <LinkDoor onLoaded={onGitHub} disabled={busy} />}
       </div>
       {overlay}
     </section>

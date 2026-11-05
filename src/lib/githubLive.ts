@@ -1,4 +1,4 @@
-import { GitHubError, type PostReviewInput, type PrRef, type PullRequest, type ScanResponse } from "./github";
+import { GitHubError, type InstallationSummary, type PostReviewInput, type PrRef, type PullRequest, type PullSummary, type RepoSummary, type ScanResponse } from "./github";
 
 /** Browser-side client for the app's own /api/github routes (real GitHub mode). */
 async function call<T>(input: string, init?: RequestInit): Promise<T> {
@@ -76,4 +76,12 @@ export type FixTargetPayload =
 
 export function pushFixesLive(input: { owner: string; repo: string; files: FixFilePayload[]; target: FixTargetPayload }): Promise<PushedFixes> {
   return call<PushedFixes>("/api/github/fixes", { method: "POST", body: JSON.stringify(input) });
+}
+
+export function listReposLive(signal?: AbortSignal): Promise<{ repos: RepoSummary[]; installations: InstallationSummary[] }> {
+  return call("/api/github/repos", { signal });
+}
+
+export function listPullsLive(owner: string, repo: string, signal?: AbortSignal): Promise<PullSummary[]> {
+  return call(`/api/github/pulls?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`, { signal });
 }

@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Doors } from "../home/Doors";
@@ -122,36 +122,92 @@ describe("Home doors", () => {
     expect(screen.queryByRole("button", { name: /Sign in with GitHub/ })).not.toBeInTheDocument();
   });
 
-  it("offers GitHub sign-in for private repos when the GitHub App is connected", async () => {
+  it("asks visitors to sign in before using GitHub, while samples still work", async () => {
     const user = userEvent.setup();
     const assign = vi.fn();
     vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, assign, pathname: "/", search: "", hash: "" } as Location);
-    mockApi({
-      "GET /api/auth/session": () => ({ json: { mode: "live", user: null } }),
-      "GET /api/github/scan": () => ({ status: 401, json: { code: "auth_required", message: "If the repository is private, sign in with GitHub." } }),
-    });
+    mockApi({ "GET /api/auth/session": () => ({ json: { mode: "live", user: null } }) });
     renderApp(<Doors />);
-    expect(await screen.findByText("Public repos work right away. Sign in with GitHub for private ones.")).toBeInTheDocument();
-    await user.type(screen.getByLabelText("GitHub link"), "acme/vault#7");
-    await user.click(screen.getByRole("button", { name: "Open in the crypt" }));
-    await user.click(await screen.findByRole("button", { name: "Sign in with GitHub" }));
-    expect(window.sessionStorage.getItem("ccr:pr-draft")).toBe("acme/vault#7");
+    expect(await screen.findByText("Sign in to see your repositories, open pull requests, and send fixes back.")).toBeInTheDocument();
+    expect(screen.queryByLabelText("GitHub link")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /leaky-cache\.py/ })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Sign in with GitHub" }));
     await user.click(await screen.findByRole("button", { name: "Continue to GitHub" }));
     expect(assign).toHaveBeenCalledWith("/api/auth/github/login?returnTo=%2F");
   });
 
-  it("offers to install the app when it can't see the repository", async () => {
+  const repos = [
+    { owner: "juliaomartins", name: "playground-cursed", fullName: "juliaomartins/playground-cursed", private: true, language: "JavaScript", pushedAt: new Date().toISOString(), defaultBranch: "main", url: "https://github.com/juliaomartins/playground-cursed", description: "Buggy on purpose", archived: false },
+    { owner: "juliaomartins", name: "aprende-ho-cursed", fullName: "juliaomartins/aprende-ho-cursed", private: false, language: "JavaScript", pushedAt: "2026-11-01T00:00:00Z", defaultBranch: "main", url: "https://github.com/juliaomartins/aprende-ho-cursed", description: null, archived: false },
+  ];
+  const live = (extra: Record<string, () => { status?: number; json?: unknown }> = {}) =>
+    mockApi({
+      "GET /api/auth/session": () => ({ json: { mode: "live", user: { login: "juliaomartins", name: "Julião" } } }),
+      "GET /api/github/repos": () => ({ json: { repos, installations: [{ account: "juliaomartins", selection: "selected", manageUrl: "https://github.com/settings/installations/1" }] } }),
+      ...extra,
+    });
+
+  it("lists your repositories, searches them, and offers to import a missing one", async () => {
     const user = userEvent.setup();
     const assign = vi.fn();
     vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, assign, pathname: "/", search: "", hash: "" } as Location);
-    mockApi({
-      "GET /api/auth/session": () => ({ json: { mode: "live", user: { login: "octo", name: "Octo" } } }),
-      "GET /api/github/scan": () => ({ status: 404, json: { code: "not_installed", message: "Cursed Code Review isn't installed on that repository yet." } }),
+    live();
+    renderApp(<Doors />);
+    const list = await screen.findByRole("list", { name: "Your repositories" });
+    expect(within(list).getAllByRole("button").map((b) => b.textContent)).toEqual([expect.stringContaining("playground-cursed"), expect.stringContaining("aprende-ho-cursed")]);
+    expect(within(list).getByText("Private repository")).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Search your repositories"), "aprende");
+    expect(within(list).getAllByRole("button")).toHaveLength(1);
+    await user.clear(screen.getByLabelText("Search your repositories"));
+    await user.type(screen.getByLabelText("Search your repositories"), "secret-project");
+    expect(screen.getByText("No repository matches “secret-project”.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Import a repository" }));
+    expect(assign).toHaveBeenCalledWith("/api/auth/github/login?returnTo=%2F&install=1");
+  });
+
+  it("opens one of a repository's open pull requests in the crypt", async () => {
+    const user = userEvent.setup();
+    const api = live({
+      "GET /api/github/pulls": () => ({
+        json: [
+          { number: 4, title: "Add orders module", author: "juliaomartins", draft: false, headRef: "feat/orders", baseRef: "main", updatedAt: new Date().toISOString(), url: "https://github.com/juliaomartins/playground-cursed/pull/4" },
+          { number: 3, title: "Profile page", author: "mara", draft: true, headRef: "feat/profile", baseRef: "main", updatedAt: "2026-11-01T00:00:00Z", url: "https://github.com/juliaomartins/playground-cursed/pull/3" },
+        ],
+      }),
+      "GET /api/github/scan": () => ({ json: { target: "pr", pr: fixturePullRequest({ owner: "juliaomartins", repo: "playground-cursed", number: 4 }) } }),
     });
     renderApp(<Doors />);
-    await user.type(await screen.findByLabelText("GitHub link"), "acme/vault");
-    await user.click(screen.getByRole("button", { name: "Open in the crypt" }));
-    await user.click(await screen.findByRole("button", { name: "Install on this repository" }));
+    await user.click(await screen.findByRole("button", { name: /playground-cursed/ }));
+    const prs = await screen.findByRole("list", { name: "Open pull requests" });
+    expect(within(prs).getByText("draft")).toBeInTheDocument();
+    expect(screen.getByText("OPEN PULL REQUESTS · 2")).toBeInTheDocument();
+    await user.click(within(prs).getByRole("button", { name: /Add orders module/ }));
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith("/crypt"), { timeout: 3000 });
+    const scanned = api.mock.calls.map(([u]) => decodeURIComponent(String(u))).find((u) => u.includes("/api/github/scan"));
+    expect(scanned).toContain("url=https://github.com/juliaomartins/playground-cursed/pull/4");
+  });
+
+  it("scans a whole repository onto the Haunted Map", async () => {
+    const user = userEvent.setup();
+    live({
+      "GET /api/github/pulls": () => ({ json: [] }),
+      "GET /api/github/scan": () => ({ json: fixtureScan({ owner: "juliaomartins", repo: "aprende-ho-cursed" }) }),
+    });
+    renderApp(<Doors />);
+    await user.click(await screen.findByRole("button", { name: /aprende-ho-cursed/ }));
+    expect(await screen.findByText("No open pull requests.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Whole repository/ }));
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith("/map"), { timeout: 3000 });
+  });
+
+  it("offers to import a repository the app can no longer see", async () => {
+    const user = userEvent.setup();
+    const assign = vi.fn();
+    vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, assign, pathname: "/", search: "", hash: "" } as Location);
+    live({ "GET /api/github/pulls": () => ({ status: 404, json: { code: "not_installed", message: "Cursed Code Review can't see juliaomartins/playground-cursed. Import it to give the app access." } }) });
+    renderApp(<Doors />);
+    await user.click(await screen.findByRole("button", { name: /playground-cursed/ }));
+    await user.click(await screen.findByRole("button", { name: "Import this repository" }));
     expect(assign).toHaveBeenCalledWith("/api/auth/github/login?returnTo=%2F&install=1");
   });
 });

@@ -42,10 +42,13 @@ export function useSummon() {
         timers.current.push(setTimeout(() => setState((s) => (s ? { ...s, done: i + 1 } : s)), ms * (i + 1)));
       });
       timers.current.push(
-        setTimeout(() => {
-          start(review);
-          router.push(destination?.(review) ?? "/crypt");
-        }, ms * (steps.length + 1)),
+        setTimeout(
+          () => {
+            start(review);
+            router.push(destination?.(review) ?? "/crypt");
+          },
+          ms * (steps.length + 1),
+        ),
       );
     },
     [router, start],
@@ -57,7 +60,13 @@ export function useSummon() {
 
 function SummonOverlay({ title, steps, done }: SummonState) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#05030a]/85 p-6 backdrop-blur-sm" role="alertdialog" aria-modal="true" aria-labelledby="summon-title" aria-describedby="summon-steps">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#05030a]/85 p-6 backdrop-blur-sm"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="summon-title"
+      aria-describedby="summon-steps"
+    >
       <div className="flex w-full max-w-md animate-rise flex-col items-center gap-6 rounded-2xl border border-line bg-card p-8 text-center shadow-[0_40px_120px_rgba(0,0,0,0.7)]">
         <div className="relative flex h-32 w-32 items-center justify-center">
           <span className="absolute inset-0 animate-spin-slow rounded-full border border-dashed border-ember/50" />
@@ -73,7 +82,17 @@ function SummonOverlay({ title, steps, done }: SummonState) {
           {steps.map((s, i) => (
             <li key={s} className={`flex items-center gap-3 text-[15px] ${i < done ? "text-ink" : i === done ? "text-ink-2" : "text-ink-4"}`}>
               <span className="flex h-6 w-6 flex-none items-center justify-center">
-                {i < done ? <span className="text-banished"><Icon name="check" size={18} /></span> : i === done ? <span className="text-ember"><Spinner size={16} /></span> : <span className="h-1.5 w-1.5 rounded-full bg-current" />}
+                {i < done ? (
+                  <span className="text-banished">
+                    <Icon name="check" size={18} />
+                  </span>
+                ) : i === done ? (
+                  <span className="text-ember">
+                    <Spinner size={16} />
+                  </span>
+                ) : (
+                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                )}
               </span>
               {s}
             </li>

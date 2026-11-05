@@ -4,7 +4,12 @@ import { Monster } from "../Monster";
 
 const STEPS = [
   { n: "01", title: "Scan", body: "Static checks find real bugs. AI explains each one and writes the fix.", icon: <Icon name="search" size={24} /> },
-  { n: "02", title: "Monsters spawn", body: "Every bug becomes a monster on its line, sized by how dangerous it is.", icon: <Monster kind="imp" size={38} glow={false} /> },
+  {
+    n: "02",
+    title: "Monsters spawn",
+    body: "Every bug becomes a monster on its line, sized by how dangerous it is.",
+    icon: <Monster kind="imp" size={38} glow={false} />,
+  },
   { n: "03", title: "Banish", body: "Apply the fix. The monster burns away and the crypt gets brighter.", icon: <Icon name="flame" size={24} /> },
 ];
 
