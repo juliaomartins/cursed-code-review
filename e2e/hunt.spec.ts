@@ -4,6 +4,32 @@ test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
 });
 
+/** Mocks the signed-in repo picker: one repository, with the given open pull requests. */
+async function mockPicker(page: import("@playwright/test").Page, pulls: unknown[] = []) {
+  await page.route("**/api/github/repos", (r) =>
+    r.fulfill({
+      json: {
+        repos: [
+          {
+            owner: "acme",
+            name: "shop",
+            fullName: "acme/shop",
+            private: false,
+            language: "JavaScript",
+            pushedAt: new Date().toISOString(),
+            defaultBranch: "main",
+            url: "https://github.com/acme/shop",
+            description: null,
+            archived: false,
+          },
+        ],
+        installations: [{ account: "acme", selection: "selected", manageUrl: "https://github.com/settings/installations/1" }],
+      },
+    }),
+  );
+  await page.route("**/api/github/pulls?*", (r) => r.fulfill({ json: pulls }));
+}
+
 test("home → sample → banish everything → report", async ({ page, isMobile }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /Every bug is a/ })).toBeVisible();
@@ -44,10 +70,22 @@ test("keyboard hunting and undo", async ({ page, isMobile }) => {
   await expect(page.getByRole("dialog")).toBeHidden();
 });
 
-test("PR review: open a real-shaped PR, sign in, post the review", async ({ page }) => {
+test("PR review: sign in, pick a repo and its PR, post the review", async ({ page }) => {
   const sha = "c".repeat(40);
   const code = "export function last(xs) {\n  return xs[xs.length];\n}\n";
   let signedIn = false;
+  await mockPicker(page, [
+    {
+      number: 7,
+      title: "Add last()",
+      author: "octo",
+      draft: false,
+      headRef: "feat/last",
+      baseRef: "main",
+      updatedAt: new Date().toISOString(),
+      url: "https://github.com/acme/shop/pull/7",
+    },
+  ]);
   let posted: Record<string, unknown> | null = null;
   await page.route("**/api/auth/session", (r) => r.fulfill({ json: { mode: "live", user: signedIn ? { login: "octo", name: "Octo Cat" } : null } }));
   await page.route("**/api/github/scan?*", (r) =>
@@ -76,8 +114,14 @@ test("PR review: open a real-shaped PR, sign in, post the review", async ({ page
   });
 
   await page.goto("/");
-  await page.getByLabel("GitHub link").fill("https://github.com/acme/shop/pull/7");
-  await page.getByRole("button", { name: "Open in the crypt" }).click();
+  await expect(page.getByText("Sign in to see your repositories, open pull requests, and send fixes back.")).toBeVisible();
+  signedIn = true; // as if the user came back from GitHub
+  await page.reload();
+  await page.getByRole("button", { name: /^shop/ }).click();
+  await page
+    .getByRole("list", { name: "Open pull requests" })
+    .getByRole("button", { name: /Add last\(\)/ })
+    .click();
   await expect(page).toHaveURL(/\/crypt$/, { timeout: 10_000 });
   await expect(page.getByText("Add last()")).toBeVisible();
   await expect(page.getByText(/2 changed files not scanned/)).toBeVisible();
@@ -86,10 +130,6 @@ test("PR review: open a real-shaped PR, sign in, post the review", async ({ page
   await page.goto("/report");
   await page.getByRole("button", { name: /Post review to GitHub PR/ }).click();
   const dialog = page.getByRole("dialog", { name: "Post review to GitHub" });
-  await expect(dialog.getByRole("button", { name: "Sign in with GitHub" })).toBeVisible();
-  signedIn = true; // as if the user came back from GitHub
-  await page.reload();
-  await page.getByRole("button", { name: /Post review to GitHub PR/ }).click();
   await dialog.getByRole("button", { name: /^Post / }).click();
   await expect(dialog.getByText("Your review is on the pull request.")).toBeVisible({ timeout: 5000 });
   expect(posted).toMatchObject({ owner: "acme", repo: "shop", number: 7, commitId: sha });
@@ -124,10 +164,11 @@ test("whole repository: Haunted Map → crypt → create issue", async ({ page }
     await r.fulfill({ json: { url: "https://github.com/acme/shop/issues/3", number: 3 } });
   });
 
+  await mockPicker(page);
   await page.goto("/");
-  await page.getByLabel("GitHub link").fill("https://github.com/acme/shop");
-  await expect(page.getByText("Whole repository · acme/shop")).toBeVisible();
-  await page.getByRole("button", { name: "Open in the crypt" }).click();
+  await page.getByRole("button", { name: /^shop/ }).click();
+  await expect(page.getByText("No open pull requests.")).toBeVisible();
+  await page.getByRole("button", { name: /Whole repository/ }).click();
   await expect(page).toHaveURL(/\/map$/, { timeout: 10_000 });
   await expect(page.getByRole("heading", { name: "2 monsters roam here." })).toBeVisible();
   await page.getByRole("button", { name: /Enter the crypt: start with last\.js/ }).click();
@@ -169,9 +210,10 @@ test("Banish all, then open a fix pull request", async ({ page }) => {
     await r.fulfill({ json: { url: "https://github.com/acme/shop/pull/8", branch: "cursed-fixes/today", commits: 1, skipped: [] } });
   });
 
+  await mockPicker(page);
   await page.goto("/");
-  await page.getByLabel("GitHub link").fill("https://github.com/acme/shop/blob/main/src/last.js");
-  await page.getByRole("button", { name: "Open in the crypt" }).click();
+  await page.getByRole("button", { name: /^shop/ }).click();
+  await page.getByRole("button", { name: /Whole repository/ }).click();
   await expect(page).toHaveURL(/\/crypt$/, { timeout: 10_000 });
   await page.getByRole("button", { name: "Banish all" }).click();
   await page.getByRole("dialog", { name: "Banish all" }).getByRole("button", { name: "Banish 2 monsters" }).click();

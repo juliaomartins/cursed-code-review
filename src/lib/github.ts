@@ -78,6 +78,38 @@ export interface ScanResult {
 
 export type ScanResponse = { target: "pr"; pr: PullRequest } | ScanResult;
 
+/** A repository the signed-in user gave the app access to. */
+export interface RepoSummary {
+  owner: string;
+  name: string;
+  fullName: string;
+  private: boolean;
+  language: string | null;
+  pushedAt: string | null;
+  defaultBranch: string;
+  url: string;
+  description: string | null;
+  archived: boolean;
+}
+
+export interface InstallationSummary {
+  account: string;
+  selection: "all" | "selected";
+  manageUrl: string;
+}
+
+/** An open pull request, as listed in the repo picker. */
+export interface PullSummary {
+  number: number;
+  title: string;
+  author: string;
+  draft: boolean;
+  headRef: string;
+  baseRef: string;
+  updatedAt: string;
+  url: string;
+}
+
 export const SUPPORTED_EXTENSIONS = ["js", "jsx", "mjs", "cjs", "ts", "tsx", "py", "php"];
 
 export interface PullRequest extends PrRef {

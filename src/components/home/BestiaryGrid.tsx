@@ -4,7 +4,11 @@ import { LivingMonster } from "../LivingMonster";
 
 export function BestiaryGrid() {
   return (
-    <section id="bestiary" aria-labelledby="bestiary-title" className="mx-auto box-border flex w-full max-w-[1280px] scroll-mt-6 flex-col gap-[22px] px-4 pb-[88px] sm:px-7">
+    <section
+      id="bestiary"
+      aria-labelledby="bestiary-title"
+      className="mx-auto box-border flex w-full max-w-[1280px] scroll-mt-6 flex-col gap-[22px] px-4 pb-[88px] sm:px-7"
+    >
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h2 id="bestiary-title" className="m-0 font-display text-[44px] font-bold">
           Meet the bestiary
