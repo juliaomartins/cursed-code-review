@@ -55,3 +55,25 @@ export interface CreatedIssue {
 export function createIssueLive(input: { owner: string; repo: string; title: string; body: string }): Promise<CreatedIssue> {
   return call<CreatedIssue>("/api/github/issue", { method: "POST", body: JSON.stringify(input) });
 }
+
+export interface PushedFixes {
+  url: string;
+  branch: string;
+  commits: number;
+  skipped: { path: string; reason: string }[];
+}
+
+export interface FixFilePayload {
+  path: string;
+  content: string;
+  originalHash: string;
+  message: string;
+}
+
+export type FixTargetPayload =
+  | { kind: "newBranch"; baseSha: string; baseBranch: string; branch: string; title: string; body: string }
+  | { kind: "prBranch"; number: number; headSha: string };
+
+export function pushFixesLive(input: { owner: string; repo: string; files: FixFilePayload[]; target: FixTargetPayload }): Promise<PushedFixes> {
+  return call<PushedFixes>("/api/github/fixes", { method: "POST", body: JSON.stringify(input) });
+}

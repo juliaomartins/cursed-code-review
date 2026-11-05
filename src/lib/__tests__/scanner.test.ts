@@ -65,6 +65,13 @@ describe("scan · rules", () => {
     expect(f.fix.after[0]).toBe("el.textContent = userInput;");
   });
 
+  it("leaves already-escaped HTML alone and only wraps what isn't", () => {
+    expect(scan("card.innerHTML = `<h2>${escapeHtml(user.name)}</h2><p>${escapeHtml(user.bio)}</p>`;", "javascript")).toEqual([]);
+    expect(scan("el.innerHTML = DOMPurify.sanitize(html);", "javascript")).toEqual([]);
+    const [f] = scan("card.innerHTML = `<h2>${escapeHtml(user.name)}</h2><p>${user.bio}</p>`;", "javascript");
+    expect(f.fix.after[0]).toBe("card.innerHTML = `<h2>${escapeHtml(user.name)}</h2><p>${escapeHtml(user.bio)}</p>`;");
+  });
+
   it("ignores innerHTML of static strings", () => {
     expect(scan("el.innerHTML = '<b>hi</b>';", "javascript")).toEqual([]);
   });

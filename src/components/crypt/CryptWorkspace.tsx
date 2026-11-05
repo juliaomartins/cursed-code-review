@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useReview, BANISH_MS } from "@/providers/ReviewProvider";
 import { MONSTERS } from "@/lib/monsters";
+import { REVIEW_FIRST } from "@/lib/review/bulk";
 import { reviewFromSamples } from "@/lib/review/factory";
 import { primaryLine } from "@/lib/review/apply";
 import { activeFile, fileStats, lurkingOf, reviewStats, selectedFinding } from "@/lib/review/selectors";
@@ -18,6 +19,7 @@ import { CodeView } from "./CodeView";
 import { DetailPanel } from "./DetailPanel";
 import { FileNav } from "./FileNav";
 import { RoomLight } from "./RoomLight";
+import { BanishAllDialog } from "./BanishAllDialog";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 
 export function CryptWorkspace() {
@@ -27,6 +29,7 @@ export function CryptWorkspace() {
   const params = useSearchParams();
   const sampleParam = params.get("sample");
   const [shortcuts, setShortcuts] = useState(false);
+  const [bulk, setBulk] = useState(false);
   const asideRef = useRef<HTMLElement>(null);
   const scrollToSelection = useRef(false);
 
@@ -91,7 +94,11 @@ export function CryptWorkspace() {
   const doIgnore = useCallback(() => {
     if (!finding || finding.status !== "lurking" || banishingId) return;
     dispatch({ type: "ignore", findingId: finding.id });
-    toast({ title: `${MONSTERS[finding.kind].name} ignored`, description: "It stays in the code and in the report.", action: { label: "Undo", onClick: () => dispatch({ type: "undo" }) } });
+    toast({
+      title: `${MONSTERS[finding.kind].name} ignored`,
+      description: "It stays in the code and in the report.",
+      action: { label: "Undo", onClick: () => dispatch({ type: "undo" }) },
+    });
   }, [finding, banishingId, dispatch, toast]);
 
   const doUndo = useCallback(() => {
@@ -180,7 +187,13 @@ export function CryptWorkspace() {
           <Button variant="ghost" onClick={doUndo} disabled={!state.undo.length} aria-label="Undo last action" title="Undo (U)" className="px-3">
             <Icon name="undo" />
           </Button>
-          <Button variant="ghost" onClick={() => setShortcuts(true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)" className="hidden px-3 sm:inline-flex">
+          <Button
+            variant="ghost"
+            onClick={() => setShortcuts(true)}
+            aria-label="Keyboard shortcuts"
+            title="Keyboard shortcuts (?)"
+            className="hidden px-3 sm:inline-flex"
+          >
             <Icon name="keyboard" />
           </Button>
           <Switch checked={prefs.lights} onChange={(v) => setPrefs({ lights: v })} label={prefs.lights ? "Lights on" : "Lights off"} />
@@ -201,7 +214,13 @@ export function CryptWorkspace() {
               <h1 className="m-0 font-display text-[34px] leading-none font-bold">The Crypt</h1>
               <span className="text-sm text-ink-3">Swing the lantern over the code. Click a monster to face it.</span>
             </div>
-            <div className="flex gap-2 font-mono text-[13px]" aria-live="polite">
+            <div className="flex flex-wrap items-center gap-2 font-mono text-[13px]" aria-live="polite">
+              {total.lurking > 1 && (
+                <Button size="sm" variant="ember-outline" onClick={() => setBulk(true)} className="font-sans">
+                  <Icon name="flame" size={16} />
+                  Banish all
+                </Button>
+              )}
               <span className="rounded-full bg-track px-3 py-1.5">{fs.lurking} lurking</span>
               <span className="rounded-full bg-[rgba(111,242,176,0.12)] px-3 py-1.5 text-banished">{fs.banished} banished</span>
               {review.files.length > 1 && <span className="hidden rounded-full bg-track px-3 py-1.5 text-ink-3 sm:inline">{total.lurking} across files</span>}
@@ -237,6 +256,22 @@ export function CryptWorkspace() {
         </aside>
       </div>
       <ShortcutsDialog open={shortcuts} onClose={() => setShortcuts(false)} />
+      {bulk && (
+        <BanishAllDialog
+          open
+          onClose={() => setBulk(false)}
+          review={review}
+          onConfirm={(fileIds, includeTwins) => {
+            dispatch({ type: "banishAll", fileIds, skipKinds: includeTwins ? [] : REVIEW_FIRST });
+            toast({
+              title: "Monsters banished",
+              description: "Every selected fix was applied. Undo reverts them all at once.",
+              tone: "success",
+              action: { label: "Undo", onClick: () => dispatch({ type: "undo" }) },
+            });
+          }}
+        />
+      )}
     </div>
   );
 }

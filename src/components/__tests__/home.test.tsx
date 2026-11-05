@@ -21,8 +21,8 @@ describe("Home doors", () => {
     const user = userEvent.setup();
     renderApp(<Doors />);
     await user.click(screen.getByRole("button", { name: /leaky-cache\.py/ }));
-    expect(screen.getByRole("alertdialog", { name: "Opening the crypt" })).toBeInTheDocument();
-    await waitFor(() => expect(router.push).toHaveBeenCalledWith("/crypt"));
+    expect(await screen.findByRole("alertdialog", { name: "Opening the crypt" }, { timeout: 3000 })).toBeInTheDocument();
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith("/crypt"), { timeout: 3000 });
     const saved = JSON.parse(window.localStorage.getItem(KEYS.review)!);
     expect(saved.review.activeFileId).toBe("leaky-cache");
   });

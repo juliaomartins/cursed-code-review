@@ -3,6 +3,9 @@ import { isCommentLine, isJsLike, pickQuote } from "./util";
 
 const SQL = /\b(SELECT|INSERT\s+INTO|UPDATE|DELETE\s+FROM)\b/i;
 
+/** Calls that already make a value safe to put into HTML. */
+const SAFE_HTML = /^(escapeHtml|escapeHTML|escape|htmlEscape|encodeHTML|sanitize|sanitizeHtml|purify|xss|encodeURIComponent|String\(Number)\s*\(|^(DOMPurify|he|_|validator|lodash)\.(sanitize|encode|escape)\s*\(|^\d+$|^['"][^'"]*['"]$/;
+
 const ELI5_SQL =
   "A stranger whispers orders into your notebook, and the notebook obeys. We put their words in a locked box so they stay just words.";
 const ELI5_XSS =
@@ -94,10 +97,14 @@ function jsRules(lines: string[]): RawFinding[] {
       let fixed: string;
       let note: string | undefined;
       if (/^`.*`$/.test(rhs)) {
-        const escaped = rhs.replace(/\$\{([^}]+)\}/g, (_m, e: string) => `\${escapeHtml(${e.trim()})}`);
+        // Only wrap the interpolations that aren't escaped already; if all are, the line is safe.
+        const unsafe = [...rhs.matchAll(/\$\{([^}]+)\}/g)].filter((m) => !SAFE_HTML.test(m[1].trim()));
+        if (!unsafe.length) return;
+        const escaped = rhs.replace(/\$\{([^}]+)\}/g, (m, e: string) => (SAFE_HTML.test(e.trim()) ? m : `\${escapeHtml(${e.trim()})}`));
         fixed = `${html[1]}${html[2]}.${html[3]} = ${escaped};`;
         note = "Uses an escapeHtml() helper, e.g. the `escape-html` package.";
       } else {
+        if (SAFE_HTML.test(rhs.trim())) return;
         fixed = `${html[1]}${html[2]}.textContent = ${rhs};`;
       }
       out.push({

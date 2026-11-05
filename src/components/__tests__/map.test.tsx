@@ -73,3 +73,36 @@ describe("Create GitHub issue", () => {
     expect(sent.body).toContain("Possessor · SQL injection");
   });
 });
+
+describe("Open a fix PR", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("sends one commit per fixed file, with the scanned file's hash, to a new branch", async () => {
+    const { ApplyFixesDialog } = await import("../report/ApplyFixesDialog");
+    const { reviewReducer, initialState } = await import("@/lib/review/reducer");
+    const user = userEvent.setup();
+    let sent: { owner: string; files: { path: string; originalHash: string; message: string }[]; target: Record<string, unknown> } | null = null;
+    mockApi({
+      "GET /api/auth/session": () => ({ json: { mode: "live", user: { login: "octo", name: "Octo" } } }),
+      "POST /api/github/fixes": (init) => {
+        sent = JSON.parse(String(init?.body));
+        return { json: { url: "https://github.com/acme/shop/pull/12", branch: "cursed-fixes/x", commits: 1, skipped: [] } };
+      },
+    });
+    let s = reviewReducer(initialState, { type: "start", review: reviewFromScan(fixtureScan()) });
+    const login = s.review!.files.find((f) => f.path.endsWith("cursed-login.js"))!;
+    s = reviewReducer(s, { type: "banish", findingId: `${login.id}:gremlin:7` });
+    seedReview(s.review!);
+    renderApp(<ApplyFixesDialog open onClose={() => {}} review={s.review!} />);
+    const dialog = await screen.findByRole("dialog", { name: "Open a fix pull request" });
+    expect(within(dialog).getByText(/One commit per file \(1 commit, 1 fix\)/)).toBeInTheDocument();
+    expect((within(dialog).getByLabelText("New branch") as HTMLInputElement).value).toMatch(/^cursed-fixes\/\d{4}-\d{2}-\d{2}-ddddddd$/);
+    await user.click(within(dialog).getByRole("button", { name: "Open fix pull request" }));
+    expect(await within(dialog).findByText("Your fix pull request is open.")).toBeInTheDocument();
+    expect(sent!.owner).toBe("acme");
+    expect(sent!.files).toHaveLength(1);
+    expect(sent!.files[0].path).toBe("src/auth/cursed-login.js");
+    expect(sent!.files[0].originalHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(sent!.target).toMatchObject({ kind: "newBranch", baseBranch: "main", baseSha: "d".repeat(40), title: "🔥 Banish 1 monster" });
+  });
+});

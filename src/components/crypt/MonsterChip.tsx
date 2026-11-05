@@ -37,7 +37,10 @@ export function MonsterChip({
         lights ? "shadow-[-14px_0_14px_#FBF7F0]" : "shadow-[-14px_0_14px_#110D18]",
       )}
     >
-      <span className={cx("block", banishing ? "animate-banish" : `behave-${finding.kind}`, finding.kind === "gremlin" && !banishing && "gremlin-dart")} style={banishing ? undefined : { animationDelay: `${delay}s` }}>
+      <span
+        className={cx("block", banishing ? "animate-banish" : `behave-${finding.kind}`, finding.kind === "gremlin" && !banishing && "gremlin-dart")}
+        style={banishing ? undefined : { animationDelay: `${delay}s` }}
+      >
         <Monster kind={finding.kind} size={sev.size} glow={!lights} />
       </span>
       <span className="hidden sm:inline">{m.name}</span>

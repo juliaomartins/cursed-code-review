@@ -15,7 +15,7 @@ describe("one-click GitHub App setup", () => {
       callback_urls: ["https://cursed-code-review.vercel.app/api/auth/callback/github"],
       public: true,
       request_oauth_on_install: true,
-      default_permissions: { contents: "read", pull_requests: "write", issues: "write", metadata: "read" },
+      default_permissions: { contents: "write", pull_requests: "write", issues: "write", metadata: "read" },
     });
     expect(m).not.toHaveProperty("hook_attributes");
     expect(createAppUrl("")).toBe("https://github.com/settings/apps/new");

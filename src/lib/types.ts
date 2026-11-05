@@ -99,4 +99,6 @@ export interface Review {
   activeFileId: string;
   selectedFindingId: string | null;
   postedReviewUrl?: string;
+  /** The fix pull request (or the PR that received the fix commits). */
+  fixesUrl?: string;
 }
