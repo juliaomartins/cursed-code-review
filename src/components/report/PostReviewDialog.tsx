@@ -79,7 +79,15 @@ export function PostReviewDialog({ open, onClose, review }: { open: boolean; onC
     ) : undefined;
 
   return (
-    <Dialog open={open} onClose={onClose} locked={busy} title="Post review to GitHub" description={`${src.label} · ${src.title}`} className="max-w-xl" footer={footer}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      locked={busy}
+      title="Post review to GitHub"
+      description={`${src.label} · ${src.title}`}
+      className="max-w-xl"
+      footer={footer}
+    >
       {posted ? (
         <div className="flex flex-col items-center gap-4 py-4 text-center">
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-banished/15 text-banished">
@@ -123,7 +131,15 @@ export function PostReviewDialog({ open, onClose, review }: { open: boolean; onC
                   o.disabled && "cursor-not-allowed opacity-50",
                 )}
               >
-                <input type="radio" name="event" value={o.v} checked={event === o.v} disabled={o.disabled} onChange={() => setEvent(o.v)} className="mt-1 accent-[#FF8A3D]" />
+                <input
+                  type="radio"
+                  name="event"
+                  value={o.v}
+                  checked={event === o.v}
+                  disabled={o.disabled}
+                  onChange={() => setEvent(o.v)}
+                  className="mt-1 accent-[#FF8A3D]"
+                />
                 <span className="flex flex-col">
                   <span className="text-sm font-bold">{o.label}</span>
                   <span className="text-[13px] text-ink-3">{o.hint}</span>

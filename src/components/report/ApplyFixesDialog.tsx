@@ -22,7 +22,7 @@ export function ApplyFixesDialog({ open, onClose, review }: { open: boolean; onC
   const [branch, setBranch] = useState(() => defaultBranchName(review));
   const [title, setTitle] = useState(() => fixPrTitle(review));
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<{ message: string; code?: string } | null>(null);
+  const [error, setError] = useState<{ message: string; code?: string; url?: string } | null>(null);
   const [result, setResult] = useState<PushedFixes | null>(null);
   const fixes = changed.reduce((n, c) => n + c.fixes.length, 0);
   const isPr = dest.mode === "prBranch";
@@ -52,7 +52,11 @@ export function ApplyFixesDialog({ open, onClose, review }: { open: boolean; onC
         tone: "success",
       });
     } catch (e) {
-      setError({ message: (e as Error).message, code: e instanceof GitHubError ? e.code : undefined });
+      setError({
+        message: (e as Error).message,
+        code: e instanceof GitHubError ? e.code : undefined,
+        url: e instanceof GitHubError ? e.installUrl : undefined,
+      });
     } finally {
       setBusy(false);
     }
@@ -186,6 +190,22 @@ export function ApplyFixesDialog({ open, onClose, review }: { open: boolean; onC
                 <Button size="sm" variant="outline" onClick={installApp} className="self-start">
                   <Icon name="github" size={16} /> Install on this repository
                 </Button>
+              )}
+              {error.code !== "not_installed" && error.url?.startsWith("https://github.com/") && (
+                <a
+                  href={error.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-h-9 items-center gap-2 self-start rounded-[10px] border border-line-strong px-3 text-sm font-medium text-ink no-underline hover:border-ink-4 hover:text-ink"
+                >
+                  <Icon name="github" size={16} />
+                  {error.code === "permission_not_accepted"
+                    ? "Review the permission request"
+                    : error.code === "repo_not_selected"
+                      ? "Choose repositories"
+                      : "Open the GitHub settings"}
+                  <Icon name="external" size={14} />
+                </a>
               )}
             </div>
           )}

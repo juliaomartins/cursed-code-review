@@ -131,15 +131,22 @@ export function ReportView() {
             </h1>
             <div className="flex flex-wrap items-center gap-3.5">
               <Lantern />
-              <div role="progressbar" aria-label="Room light" aria-valuemin={0} aria-valuemax={100} aria-valuenow={s.light} className="h-2 w-[200px] overflow-hidden rounded-full bg-track sm:w-[260px]">
+              <div
+                role="progressbar"
+                aria-label="Room light"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={s.light}
+                className="h-2 w-[200px] overflow-hidden rounded-full bg-track sm:w-[260px]"
+              >
                 <div className="h-full bg-gradient-to-r from-ember to-ember-gold shadow-[0_0_12px_#FF8A3D]" style={{ width: `${s.light}%` }} />
               </div>
               <span className="font-mono text-[13px] text-ember-gold">ROOM LIGHT {s.light}%</span>
             </div>
             {!clear && (
               <p className="m-0 text-[15px] text-ink-2">
-                {s.lurking} monster{s.lurking === 1 ? " is" : "s are"} still in the code.{" "}
-                <Link href="/crypt">Return to the crypt</Link> to finish the hunt, or export the report as it stands.
+                {s.lurking} monster{s.lurking === 1 ? " is" : "s are"} still in the code. <Link href="/crypt">Return to the crypt</Link> to finish the hunt, or
+                export the report as it stands.
               </p>
             )}
           </div>
@@ -160,7 +167,9 @@ export function ReportView() {
                 <Monster key={k} kind={k} size={56} glow={false} />
               ))}
             </div>
-            <span className="absolute bottom-[26px] left-1/2 -translate-x-1/2 font-display text-[22px] text-ember-gold">{trapped.length ? "Trapped" : "Empty jar"}</span>
+            <span className="absolute bottom-[26px] left-1/2 -translate-x-1/2 font-display text-[22px] text-ember-gold">
+              {trapped.length ? "Trapped" : "Empty jar"}
+            </span>
           </div>
         </section>
 
@@ -179,7 +188,11 @@ export function ReportView() {
           <div className="flex items-center gap-4 rounded-2xl border border-line bg-card-2 p-[22px]">
             <div className="flex flex-col gap-2">
               <span className="text-sm text-ink-3">Worst severity</span>
-              {worst ? <SeverityBadge severity={worst} className="self-start px-3 py-1 text-sm" /> : <span className="font-display text-[44px] leading-none">—</span>}
+              {worst ? (
+                <SeverityBadge severity={worst} className="self-start px-3 py-1 text-sm" />
+              ) : (
+                <span className="font-display text-[44px] leading-none">—</span>
+              )}
             </div>
           </div>
         </section>
@@ -195,12 +208,26 @@ export function ReportView() {
               <table aria-labelledby="found" className="w-full min-w-[720px] border-collapse text-[15px]">
                 <thead>
                   <tr className="text-left font-mono text-xs tracking-[0.12em] text-ink-3">
-                    <th scope="col" className="px-[18px] py-3.5 font-medium">MONSTER</th>
-                    {multi && <th scope="col" className="px-[18px] py-3.5 font-medium">FILE</th>}
-                    <th scope="col" className="px-[18px] py-3.5 font-medium">LINE</th>
-                    <th scope="col" className="px-[18px] py-3.5 font-medium">BUG</th>
-                    <th scope="col" className="px-[18px] py-3.5 font-medium">SEVERITY</th>
-                    <th scope="col" className="px-[18px] py-3.5 font-medium">STATUS</th>
+                    <th scope="col" className="px-[18px] py-3.5 font-medium">
+                      MONSTER
+                    </th>
+                    {multi && (
+                      <th scope="col" className="px-[18px] py-3.5 font-medium">
+                        FILE
+                      </th>
+                    )}
+                    <th scope="col" className="px-[18px] py-3.5 font-medium">
+                      LINE
+                    </th>
+                    <th scope="col" className="px-[18px] py-3.5 font-medium">
+                      BUG
+                    </th>
+                    <th scope="col" className="px-[18px] py-3.5 font-medium">
+                      SEVERITY
+                    </th>
+                    <th scope="col" className="px-[18px] py-3.5 font-medium">
+                      STATUS
+                    </th>
                   </tr>
                 </thead>
                 <tbody>

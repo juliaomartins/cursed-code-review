@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createIssue } from "@/server/github";
+import { explainMissingAccess } from "@/server/diagnose";
+import { ApiError, createIssue } from "@/server/github";
 import { withGitHub } from "@/server/handler";
 
 const NAME = /^[A-Za-z0-9_.-]{1,100}$/;
@@ -17,5 +18,13 @@ export async function POST(req: NextRequest) {
     typeof b.body === "string" &&
     b.body.length <= 65_000;
   if (!ok || !b) return NextResponse.json({ code: "bad_request", message: "The issue needs a title and a body." }, { status: 400 });
-  return withGitHub(req, ({ session }) => createIssue(session.accessToken, { owner: b.owner!, repo: b.repo!, title: b.title!.trim(), body: b.body! }));
+  return withGitHub(req, async ({ session, config }) => {
+    try {
+      return await createIssue(session.accessToken, { owner: b.owner!, repo: b.repo!, title: b.title!.trim(), body: b.body! });
+    } catch (e) {
+      if (e instanceof ApiError && e.code === "missing_permission")
+        throw await explainMissingAccess(session.accessToken, config.slug, b.owner!, b.repo!, { permission: "issues", label: "create issues" });
+      throw e;
+    }
+  });
 }
