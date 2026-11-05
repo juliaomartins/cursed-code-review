@@ -11,6 +11,7 @@ import { fileStats, lurkingOf, reviewStats, worstSeverity } from "@/lib/review/s
 import type { MonsterKind, ReviewFile, Severity } from "@/lib/types";
 import { useSummon } from "../home/useSummon";
 import { Logo } from "../layout/Logo";
+import { LivingMonster } from "../LivingMonster";
 import { Monster } from "../Monster";
 import { Lantern } from "../crypt/RoomLight";
 import { Button, ButtonLink } from "../ui/Button";
@@ -149,7 +150,7 @@ export function MapView() {
             const n = data.byKind.get(k) ?? 0;
             return (
               <div key={k} className={cx("flex items-center gap-3 rounded-2xl border border-line bg-card p-3.5", !n && "opacity-40")}>
-                <Monster kind={k} size={44} glow={n > 0} />
+                <LivingMonster kind={k} size={44} glow={n > 0} reach={140} />
                 <span className="flex flex-col leading-tight">
                   <span className="font-display text-3xl font-bold">{n}</span>
                   <span className="text-xs text-ink-3">{MONSTERS[k].name}</span>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { MONSTER_ORDER, MONSTERS } from "@/lib/monsters";
-import { Monster } from "../Monster";
+import { LivingMonster } from "../LivingMonster";
 
 export function BestiaryGrid() {
   return (
@@ -21,7 +21,7 @@ export function BestiaryGrid() {
                 className="group box-border flex h-full flex-col items-center gap-2.5 rounded-2xl border border-line bg-card px-3.5 pt-5 pb-[18px] text-center text-ink no-underline transition-[border-color,transform] hover:-translate-y-0.5 hover:border-line-strong hover:text-ink"
               >
                 <span style={{ animation: `ccr-float 3.2s ease-in-out ${(i * 0.4).toFixed(2)}s infinite` }}>
-                  <Monster kind={k} size={96} />
+                  <LivingMonster kind={k} size={96} label={m.name} />
                 </span>
                 <span className="font-display text-2xl leading-none font-bold">{m.name}</span>
                 <span className="font-mono text-xs text-ink-3">{m.bug}</span>

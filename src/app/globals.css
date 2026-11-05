@@ -151,10 +151,72 @@
   font-feature-settings: "liga" 0, "calt" 0;
 }
 
-/* The watching Void Wraith: eyes squeeze shut and open again on hover. */
-@keyframes ccr-blink {
-  0%, 100% { transform: scaleY(1); }
-  40%, 55% { transform: scaleY(0.08); }
+/* ───────── Living monsters (LivingMonster.tsx) ─────────
+   The engine sets --lx/--ly (where to look, -1…1), --ux/--uy (direction to the cursor) and
+   --near (0…1) on the <svg>, and the classes .lm-hovered / .lm-poked. Everything else is here. */
+.lm * { transform-box: view-box; }
+.lm .lm-look {
+  transform: translate(calc(var(--lx, 0) * var(--px, 3px)), calc(var(--ly, 0) * var(--py, 2.5px)));
+  transition: transform 140ms ease-out;
 }
-.wraith-eye { transform-box: fill-box; transform-origin: center; }
-.wraith-blinking .wraith-eye { animation: ccr-blink 320ms ease-in-out; }
+.lm .lm-look.lm-slow { transition-duration: 750ms; transition-timing-function: cubic-bezier(.3, .1, .2, 1); }
+
+/* Void Wraith: blinks */
+@keyframes lm-blink { 0%, 100% { transform: scaleY(1); } 40%, 55% { transform: scaleY(0.08); } }
+.lm .lm-blink { transform-box: fill-box; transform-origin: center; }
+.lm-poked .lm-blink { animation: lm-blink 320ms ease-in-out; }
+
+/* Leech: stalks lean toward you, it gulps and swells, its mouth spins */
+.lm-leech .lm-leech-stalks { transform-origin: 52px 46px; transform: rotate(calc(var(--lx, 0) * 12deg)); transition: transform 220ms ease-out; }
+@keyframes lm-gulp { 0%, 100% { transform: scale(1); } 30% { transform: scale(1.13, 1.08); } 60% { transform: scale(0.95, 1.02); } }
+.lm-poked .lm-leech-body { transform-origin: 60px 104px; animation: lm-gulp 700ms ease-in-out; }
+@keyframes lm-spin { to { transform: rotate(360deg); } }
+.lm-hovered .lm-leech-mouth { transform-origin: 26px 76px; animation: lm-spin 1.6s linear infinite; }
+@keyframes lm-mb { 0%, 100% { transform: translateY(0); opacity: 1; } 50% { transform: translateY(-6px); opacity: .6; } }
+.lm-poked .lm-leech-mb { animation: lm-mb 700ms ease-in-out; }
+
+/* Possessor: shakes with a red flash; its injection flickers while you hover */
+@keyframes lm-shake {
+  0%, 100% { transform: translateX(0); filter: none; }
+  15% { transform: translateX(-3px) rotate(-2deg); filter: brightness(1.5) saturate(1.4); }
+  35% { transform: translateX(3px) rotate(2deg); }
+  55% { transform: translateX(-2px) rotate(-1deg); filter: brightness(1.3) saturate(1.3); }
+  75% { transform: translateX(2px); }
+}
+.lm-poked .lm-possessor-head { transform-origin: 60px 108px; animation: lm-shake 600ms ease-in-out; }
+@keyframes lm-flicker { 0%, 100% { opacity: 1; } 20% { opacity: .2; } 40% { opacity: .9; } 60% { opacity: .1; } 80% { opacity: .8; } }
+.lm-hovered .lm-possessor-text { animation: lm-flicker 900ms steps(1) infinite; fill: #fff4b8; }
+
+/* Imp: hops and waves its +1 sign */
+@keyframes lm-hop { 0%, 100% { transform: translateY(0); } 35% { transform: translateY(-12px); } 60% { transform: translateY(0); } 78% { transform: translateY(-4px); } }
+.lm-poked .lm-imp-body { animation: lm-hop 650ms cubic-bezier(.3, .7, .4, 1); }
+@keyframes lm-wave { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-14deg); } 55% { transform: rotate(10deg); } 80% { transform: rotate(-5deg); } }
+.lm-poked .lm-imp-sign { transform-origin: 20px 108px; animation: lm-wave 650ms ease-in-out; }
+
+/* Twin Ghosts: they race and swap places; their clocks spin */
+@keyframes lm-race-l { 0%, 100% { transform: translate(0, 0); } 45%, 55% { transform: translate(56px, -12px); } }
+@keyframes lm-race-r { 0%, 100% { transform: translate(0, 0); } 45%, 55% { transform: translate(-56px, 12px); } }
+.lm-poked .lm-twin-left { animation: lm-race-l 1000ms ease-in-out; }
+.lm-poked .lm-twin-right { animation: lm-race-r 1000ms ease-in-out; }
+.lm-poked .lm-twins-thread { opacity: 0; transition: opacity 120ms; }
+.lm .lm-clock-left { transform-origin: 32px 22px; }
+.lm .lm-clock-right { transform-origin: 88px 11px; }
+.lm-poked .lm-clock-hand { animation: lm-spin 500ms linear 2; }
+
+/* Zombie: its good eye follows you, slowly; its head wobbles and its jaw drops */
+@keyframes lm-wobble { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-9deg); } 45% { transform: rotate(7deg); } 70% { transform: rotate(-4deg); } }
+.lm-poked .lm-zombie-head { transform-origin: 60px 108px; animation: lm-wobble 950ms ease-in-out; }
+@keyframes lm-jaw { 0%, 100% { transform: translateY(0); } 30%, 60% { transform: translateY(5px); } }
+.lm-poked .lm-zombie-jaw { animation: lm-jaw 950ms ease-in-out; }
+
+/* Gremlin: darts away from your cursor and jiggles its stolen key */
+.lm-gremlin .lm-gremlin-body,
+.lm-gremlin .lm-gremlin-shadow {
+  transform: translate(calc(var(--ux, 0) * var(--near, 0) * -14px), calc(var(--uy, 0) * var(--near, 0) * -6px));
+  transition: transform 180ms cubic-bezier(.2, .8, .3, 1);
+}
+.lm-gremlin .lm-gremlin-shadow { transform: translateX(calc(var(--ux, 0) * var(--near, 0) * -14px)); }
+@keyframes lm-jiggle { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-16deg); } 45% { transform: rotate(12deg); } 70% { transform: rotate(-6deg); } }
+.lm-poked .lm-gremlin-key { transform-origin: 84px 93px; animation: lm-jiggle 700ms ease-in-out; }
+@keyframes lm-twinkle { 0%, 100% { transform: scale(1) rotate(0); opacity: 1; } 50% { transform: scale(1.6) rotate(45deg); opacity: .7; } }
+.lm-hovered .lm-gremlin-sparkle { transform-box: fill-box; transform-origin: center; animation: lm-twinkle 900ms ease-in-out infinite; }
