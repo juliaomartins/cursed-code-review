@@ -24,7 +24,7 @@ Open http://localhost:3000 and pick **Try a cursed sample**, or go straight to h
 | --- | --- |
 | **Home** `/` | Three doors: cursed samples (one click), paste code (validation, language auto-detect, Ctrl+Enter), and **Bring your code from GitHub**: sign in, pick one of your repositories (searchable; **Import a repository** grants access to more), then scan the whole repo or one of its open pull requests. Without the GitHub App, a link box takes any public GitHub link instead. Summoning progress overlay. Resume banner for an unfinished hunt. |
 | **Haunted Map** `/map` | Overview of a multi-file scan: monsters by type and severity, files ordered most-haunted-first or by folder, "Enter the crypt" on the worst file, and folder suggestions when a repository is bigger than one scan. |
-| **The Crypt** `/crypt` | **Banish all** applies every remaining fix in a file or the whole scan after a preview (Twin Ghosts left for review unless you include them), undone in one step. Syntax-highlighted code with monsters on their lines, sized by severity. Cursor-following lantern, Lights on/off. Detail panel with "What is wrong" / "Explain it simply", the fix as a diff, Banish (burn-away animation, applies the fix) and Ignore. Graveyard with restore, undo everywhere, "summon them again", multi-file navigation, PR changed-line gutter. Keyboard spells (`?`). |
+| **The Crypt** `/crypt` | **Banish all** applies every remaining fix in a file or the whole scan after a preview (Twin Ghosts left for review unless you include them), undone in one step. Syntax-highlighted code with monsters on their lines, sized by severity. Cursor-following lantern, Lights on/off. Optional sound (see below). Detail panel with "What is wrong" / "Explain it simply", the fix as a diff, Banish (burn-away animation, applies the fix) and Ignore. Graveyard with restore, undo everywhere, "summon them again", multi-file navigation, PR changed-line gutter. Keyboard spells (`?`). |
 | **Report** `/report` | Verdict, room light, trapped monsters, stats, worst severity, findings table, patch of every applied fix, Markdown export/copy. Send it back to GitHub: **Open a fix PR** (new branch, one commit per fixed file, a PR listing every fix) for file, folder, repository and comparison scans; **Push fixes to this PR** for pull requests; post a review (Comment / Request changes / Approve; Comment only on your own PR); or **Create GitHub issue**. |
 | **Bestiary** `/bestiary` | The seven monsters, their bug type, behaviour and an example fix. |
 
@@ -125,9 +125,19 @@ Public pull requests still open: the server reads them anonymously from GitHub (
 
 Folder and repository scans read up to **40 files**, real source before tests and config, skipping `node_modules`, `dist`, `build`, `vendor`, minified and generated files and anything over 1,500 lines. Branch names with slashes (`feature/login`) work. A repository scan costs 2–3 GitHub API calls; file contents come from `raw.githubusercontent.com`, which doesn't count against the API limit.
 
+## Sound
+
+Off by default. Turn it on with the speaker button in the header (or `M` in the crypt); the choice is remembered.
+
+- **Banish:** a hiss with ember crackles and a falling sigh (bigger for **Banish all**).
+- **Entering the crypt:** a door creak.
+- **In the crypt:** a very quiet low drone that fades as monsters are banished and stops when none are left.
+
+Everything is made in the browser with Web Audio, so there are no audio files to download. Nothing plays until the visitor clicks or presses a key, it pauses when the tab is hidden, and it stays silent when the system asks for reduced motion.
+
 ## Keyboard spells (in the crypt)
 
-`J`/`N` next · `K`/`P` previous · `B` banish · `I` ignore · `E` explain simply · `L` lights · `U` or `Ctrl+Z` undo · `[` `]` switch file · `?` help
+`J`/`N` next · `K`/`P` previous · `B` banish · `I` ignore · `E` explain simply · `L` lights · `M` sound · `U` or `Ctrl+Z` undo · `[` `]` switch file · `?` help
 
 ## Tests
 
@@ -139,7 +149,7 @@ npm test
 npm run build && npm run test:e2e
 ```
 
-- **Vitest** (210 tests): every scanner rule, the fix engine (apply / relocate / stale), reducer, selectors, PR URL parsing, mock API, diff, Markdown export, highlighter, component tests for the crypt, home doors and report, and server tests for the GitHub routes (sign-in state check, encrypted session, token refresh, PR loading, review placement) against a fake GitHub API.
+- **Vitest** (219 tests): every scanner rule, the fix engine (apply / relocate / stale), reducer, selectors, PR URL parsing, mock API, diff, Markdown export, highlighter, component tests for the crypt, home doors, report and sound, and server tests for the GitHub routes (sign-in state check, encrypted session, token refresh, PR loading, review placement) against a fake GitHub API.
 - **Playwright** on desktop and Pixel 7: full hunt → report → export, keyboard + undo, PR → sign in → post review (GitHub responses mocked in the browser), no fake sign-in without the app, paste flow, and a no-horizontal-scroll check on every page.
 
 Also: `npm run lint`, `npm run typecheck`.

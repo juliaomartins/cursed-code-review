@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SoundToggle } from "../SoundToggle";
 import { Logo } from "./Logo";
 import { UserMenu } from "./UserMenu";
 
@@ -13,6 +14,7 @@ export function SiteHeader() {
         <Link href="/bestiary" className="text-ink-2 no-underline hover:text-ink">
           Bestiary
         </Link>
+        <SoundToggle className="-mx-2" />
         <UserMenu compact />
       </nav>
     </header>
