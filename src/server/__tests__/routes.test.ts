@@ -98,6 +98,16 @@ describe("auth routes", () => {
     expect(res.headers.get("location")).toBe(`${BASE}/?auth=error&reason=incorrect_client_credentials`);
   });
 
+  it("treats a reloaded callback as success when the first attempt already signed you in", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response(JSON.stringify({ error: "bad_verification_code", error_description: "The code passed is incorrect or expired." })));
+    const state = seal({ state: "abc", returnTo: "/" }, SECRET);
+    const signedIn = seal({ user: { login: "elyzio", name: "Elyzio", avatarUrl: "" }, accessToken: "ghu_x" }, SECRET);
+    const url = "/api/auth/callback/github?code=used&installation_id=1&setup_action=install&state=abc";
+    expect((await callback(req(url, { [STATE_COOKIE]: state, [SESSION_COOKIE]: signedIn }))).headers.get("location")).toBe(`${BASE}/?auth=installed`);
+    expect((await callback(req(url, { [STATE_COOKIE]: state }))).headers.get("location")).toBe(`${BASE}/?auth=error&reason=bad_verification_code`);
+  });
+
   it("explains a missing state cookie", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const res = await callback(req("/api/auth/callback/github?code=c0de&state=abc"));

@@ -62,7 +62,7 @@ export function ApplyFixesDialog({ open, onClose, review }: { open: boolean; onC
     }
   };
 
-  const ready = dest.mode && mode === "live" && user && !result;
+  const ready = dest.mode && mode === "live" && user && !result && !review.fixesUrl;
   const footer = ready ? (
     <>
       <Button variant="ghost" onClick={onClose} disabled={busy}>
@@ -92,7 +92,17 @@ export function ApplyFixesDialog({ open, onClose, review }: { open: boolean; onC
       className="max-w-xl"
       footer={footer}
     >
-      {result ? (
+      {!result && review.fixesUrl ? (
+        <div className="flex flex-col items-center gap-4 py-4 text-center">
+          <p className="m-0 text-[15px] text-ink-2">
+            {isPr ? "Your fixes are already on this pull request." : "You already opened a fix pull request for this scan."}
+          </p>
+          <a href={review.fixesUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 font-medium">
+            View on GitHub <Icon name="external" size={16} />
+          </a>
+          <Button onClick={onClose}>Close</Button>
+        </div>
+      ) : result ? (
         <div className="flex flex-col items-center gap-4 py-4 text-center">
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-banished/15 text-banished">
             <Icon name="check" size={28} />

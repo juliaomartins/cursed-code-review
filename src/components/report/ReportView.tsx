@@ -269,23 +269,34 @@ export function ReportView() {
         </section>
 
         <section className="flex flex-wrap items-center gap-3">
-          {canApply && (
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={() => setApplying(true)}
-              disabled={!hasFixes}
-              aria-describedby={!hasFixes ? "apply-hint" : undefined}
-              className="shadow-[0_0_28px_rgba(255,138,61,0.4)]"
-            >
-              <Icon name="flame" strokeWidth={2.2} />
-              {review.fixesUrl ? "Fixes on GitHub" : isPr ? "Push fixes to this PR" : "Open a fix PR"}
-            </Button>
-          )}
-          {isGitHubScan ? (
+          {canApply &&
+            (review.fixesUrl ? (
+              <GitHubLink href={review.fixesUrl} primary>
+                <Icon name="flame" strokeWidth={2.2} />
+                {isPr ? "View the PR with your fixes" : "View fix PR on GitHub"}
+              </GitHubLink>
+            ) : (
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={() => setApplying(true)}
+                disabled={!hasFixes}
+                aria-describedby={!hasFixes ? "apply-hint" : undefined}
+                className="shadow-[0_0_28px_rgba(255,138,61,0.4)]"
+              >
+                <Icon name="flame" strokeWidth={2.2} />
+                {isPr ? "Push fixes to this PR" : "Open a fix PR"}
+              </Button>
+            ))}
+          {review.postedReviewUrl && (isGitHubScan || isPr) ? (
+            <GitHubLink href={review.postedReviewUrl} primary={!canApply}>
+              <Icon name="github" strokeWidth={2.2} />
+              {isGitHubScan ? "View issue on GitHub" : "View review on GitHub"}
+            </GitHubLink>
+          ) : isGitHubScan ? (
             <Button variant={canApply ? "outline" : "primary"} size="lg" onClick={() => setIssuing(true)}>
               <Icon name="github" strokeWidth={2.2} />
-              {review.postedReviewUrl ? "Issue created" : "Create GitHub issue"}
+              Create GitHub issue
             </Button>
           ) : (
             <Button
@@ -296,7 +307,7 @@ export function ReportView() {
               aria-describedby={!isPr ? "post-hint" : undefined}
             >
               <Icon name="pr" strokeWidth={2.2} />
-              {review.postedReviewUrl ? "Review posted" : "Post review to GitHub PR"}
+              Post review to GitHub PR
             </Button>
           )}
           {review.files.length > 1 && (
@@ -316,7 +327,7 @@ export function ReportView() {
           <ButtonLink href="/#start" variant="outline" size="lg">
             Scan something else
           </ButtonLink>
-          {canApply && !hasFixes && (
+          {canApply && !hasFixes && !review.fixesUrl && (
             <p id="apply-hint" className="m-0 w-full text-[13px] text-ink-3">
               Banish monsters in the crypt first, then send the fixed code to GitHub as {isPr ? "commits on this pull request" : "a new pull request"}.
             </p>
@@ -345,5 +356,25 @@ function NoReport() {
         Enter the crypt
       </ButtonLink>
     </div>
+  );
+}
+
+/** A link to something already on GitHub, styled like the report's buttons. Opens in a new tab. */
+function GitHubLink({ href, primary = false, children }: { href: string; primary?: boolean; children: React.ReactNode }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className={cx(
+        "inline-flex min-h-14 items-center justify-center gap-2.5 rounded-xl px-6 text-base whitespace-nowrap no-underline transition-colors",
+        primary
+          ? "bg-ember font-bold text-ember-ink shadow-[0_0_28px_rgba(255,138,61,0.4)] hover:bg-[#ff9a55] hover:text-ember-ink"
+          : "border border-line-strong font-medium text-ink hover:border-ink-4 hover:text-ink",
+      )}
+    >
+      {children}
+      <Icon name="external" size={16} />
+    </a>
   );
 }

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { CALLBACK_PATH, getConfig, originOf } from "@/server/config";
 import { ApiError, exchangeCode, getUser } from "@/server/github";
-import { clearState, readState, writeSession } from "@/server/session";
+import { clearState, readSession, readState, writeSession } from "@/server/session";
 
 /** GitHub sends the user back here after they authorize (or install) the app. */
 export async function GET(req: NextRequest) {
@@ -38,6 +38,10 @@ export async function GET(req: NextRequest) {
     return res;
   } catch (e) {
     const reason = e instanceof ApiError ? (e.detail ?? e.code) : "network";
+    // Reloading this page (e.g. after a dropped connection) resends a code GitHub already used.
+    // If that first attempt signed the user in, this is a success, not an error.
+    if (reason === "bad_verification_code" && readSession(req, config.sessionSecret))
+      return back(params.get("setup_action") === "install" ? "installed" : "success");
     console.error("GitHub sign-in failed:", reason, e instanceof Error ? e.message : e);
     return back("error", { reason: reason.replace(/[^a-z0-9_]/gi, "").slice(0, 40) });
   }
