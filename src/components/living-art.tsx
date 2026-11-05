@@ -6,8 +6,9 @@ import type { MonsterKind } from "@/lib/types";
 /** How far a group of pupils may travel, in the 120×120 grid. */
 const look = (px: number, py: number) => ({ "--px": `${px}px`, "--py": `${py}px` }) as CSSProperties;
 
-export const LIVING_ART: Record<MonsterKind, ReactNode> = {
-  wraith: (
+/** Each drawing; `uid` keeps ids (clip paths) unique when the same monster appears twice on a page. */
+export const LIVING_ART: Record<MonsterKind, (uid: string) => ReactNode> = {
+  wraith: () => (
     <>
       <ellipse cx="60" cy="114" rx="28" ry="4" fill="#000000" opacity="0.35" />
       <path d="M60 8C33 8 20 32 20 58V106L30 97L40 108L50 98L60 110L70 98L80 108L90 97L100 106V58C100 32 87 8 60 8Z" fill="#5865E6" stroke="#140F1C" strokeWidth="3" strokeLinejoin="round" />
@@ -29,7 +30,7 @@ export const LIVING_ART: Record<MonsterKind, ReactNode> = {
       <path d="M30 44C33 28 44 17 58 15" stroke="#AEB6FF" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.8" />
     </>
   ),
-  leech: (
+  leech: () => (
     <>
       <ellipse cx="60" cy="113" rx="40" ry="4" fill="#000000" opacity="0.35" />
       <g className="lm-leech-body">
@@ -57,7 +58,7 @@ export const LIVING_ART: Record<MonsterKind, ReactNode> = {
       </g>
     </>
   ),
-  possessor: (
+  possessor: () => (
     <>
       <ellipse cx="60" cy="114" rx="26" ry="4" fill="#000000" opacity="0.35" />
       <g className="lm-possessor-head">
@@ -79,7 +80,7 @@ export const LIVING_ART: Record<MonsterKind, ReactNode> = {
       </g>
     </>
   ),
-  imp: (
+  imp: () => (
     <>
       <ellipse cx="60" cy="114" rx="24" ry="4" fill="#000000" opacity="0.35" />
       <g className="lm-imp-body">
@@ -113,7 +114,7 @@ export const LIVING_ART: Record<MonsterKind, ReactNode> = {
       </g>
     </>
   ),
-  twins: (
+  twins: () => (
     <>
       <ellipse cx="60" cy="114" rx="42" ry="4" fill="#000000" opacity="0.35" />
       <path className="lm-twins-thread" d="M54 86C66 102 82 100 88 90" stroke="#8BF6FF" strokeWidth="2.5" fill="none" strokeDasharray="4 4" strokeLinecap="round" />
@@ -140,15 +141,22 @@ export const LIVING_ART: Record<MonsterKind, ReactNode> = {
       </g>
     </>
   ),
-  zombie: (
+  zombie: (uid) => (
     <>
       <ellipse cx="60" cy="114" rx="28" ry="4" fill="#000000" opacity="0.35" />
       <g className="lm-zombie-head">
         <path d="M28 46C28 26 42 16 60 16C78 16 92 26 92 46L90 84C88 100 76 108 60 108C44 108 32 100 30 84Z" fill="#8FAE78" stroke="#140F1C" strokeWidth="3" strokeLinejoin="round" />
-        <g className="lm-zombie-brain">
-          <path d="M38 30C40 18 54 14 62 20C70 14 84 20 82 32C72 28 50 34 38 30Z" fill="#EE9DB5" stroke="#140F1C" strokeWidth="2.5" strokeLinejoin="round" />
-          <path d="M50 24Q54 28 58 24M66 22Q68 27 74 24" stroke="#C26A86" strokeWidth="2" fill="none" strokeLinecap="round" />
+        {/* A whole brain sitting in the open skull: only what's above the rim shows. */}
+        <clipPath id={`${uid}-skull`}>
+          <path d="M-10 -30H130V32L82 32C72 28 50 34 38 30L-10 30Z" />
+        </clipPath>
+        <g clipPath={`url(#${uid}-skull)`}>
+          <g className="lm-zombie-brain">
+            <path d="M38 30C40 18 54 14 62 20C70 14 84 20 82 32C84 40 74 46 60 45C46 46 36 40 38 30Z" fill="#EE9DB5" stroke="#140F1C" strokeWidth="2.5" strokeLinejoin="round" />
+            <path d="M50 24Q54 28 58 24M66 22Q68 27 74 24M44 35Q50 39 56 35M64 37Q70 40 76 35M60 21V44" stroke="#C26A86" strokeWidth="2" fill="none" strokeLinecap="round" />
+          </g>
         </g>
+        <path d="M38 30C50 34 72 28 82 32" stroke="#140F1C" strokeWidth="2.5" fill="none" strokeLinecap="round" />
         <g transform="rotate(-10 74 41)">
           <rect x="62" y="35" width="24" height="11" rx="3" fill="#F2E3C9" stroke="#140F1C" strokeWidth="2" />
           <text x="74" y="44" textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="9" fontWeight="700" fill="#140F1C">
@@ -169,7 +177,7 @@ export const LIVING_ART: Record<MonsterKind, ReactNode> = {
       </g>
     </>
   ),
-  gremlin: (
+  gremlin: () => (
     <>
       <ellipse className="lm-gremlin-shadow" cx="58" cy="114" rx="28" ry="4" fill="#000000" opacity="0.35" />
       <g className="lm-gremlin-body">
