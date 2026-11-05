@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { LivingMonster } from "@/components/LivingMonster";
 import { Monster } from "@/components/Monster";
 import { ButtonLink } from "@/components/ui/Button";
 import { SeverityBadge } from "@/components/ui/SeverityBadge";
@@ -21,6 +22,7 @@ export default function BestiaryPage() {
           </div>
           <p className="m-0 max-w-[460px] text-[15px] leading-normal text-ink-3">
             Seven monsters, one per bug type. All share a 120×120 grid, a 3px ink outline and a glow in their own colour. The worse the bug, the bigger the monster.
+            Bring your cursor close, then hover one: each has its own move.
           </p>
         </div>
 
@@ -34,7 +36,7 @@ export default function BestiaryPage() {
                   style={{ background: `radial-gradient(circle 90px at 50% 55%, ${m.glow}47, rgba(0,0,0,0) 72%), #110D18` }}
                 >
                   <span className={`behave-${k}`}>
-                    <Monster kind={k} size={124} label={m.name} />
+                    <LivingMonster kind={k} size={124} label={m.name} />
                   </span>
                 </div>
                 <div className="flex items-baseline justify-between gap-2">

@@ -5,6 +5,7 @@ import { MONSTERS, SEVERITY } from "@/lib/monsters";
 import { findingLines } from "@/lib/review/apply";
 import { fileStats, lurkingOf } from "@/lib/review/selectors";
 import type { Finding, ReviewFile } from "@/lib/types";
+import { LivingMonster } from "../LivingMonster";
 import { Monster } from "../Monster";
 import { Button, ButtonLink } from "../ui/Button";
 import { cx } from "../ui/cx";
@@ -65,7 +66,7 @@ function FindingDetail({ finding, banishing, simple, onSimple, onBanish, onIgnor
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
           <div key={finding.id} className={banishing ? "animate-banish" : "animate-float"}>
-            <Monster kind={finding.kind} size={150} label={m.name} />
+            <LivingMonster kind={finding.kind} size={150} label={m.name} />
           </div>
         </div>
       </div>
