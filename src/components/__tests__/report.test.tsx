@@ -92,6 +92,19 @@ describe("Report", () => {
     expect(posted.event).toBe("COMMENT");
   });
 
+  it("links to the fix PR and the issue once they exist, instead of creating them again", async () => {
+    mockApi({ "GET /api/auth/session": () => ({ json: { mode: "live", user: { login: "octo", name: "Octo" } } }) });
+    const { reviewFromScan } = await import("@/lib/review/factory");
+    const { fixtureScan } = await import("@/test/fixtures");
+    const review = { ...reviewFromScan(fixtureScan()), fixesUrl: "https://github.com/acme/shop/pull/12", postedReviewUrl: "https://github.com/acme/shop/issues/3" };
+    seedReview(review);
+    renderApp(<ReportView />);
+    expect(await screen.findByRole("link", { name: /View fix PR on GitHub/ })).toHaveAttribute("href", "https://github.com/acme/shop/pull/12");
+    expect(screen.getByRole("link", { name: /View issue on GitHub/ })).toHaveAttribute("href", "https://github.com/acme/shop/issues/3");
+    expect(screen.queryByRole("button", { name: /Open a fix PR/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Create GitHub issue/ })).not.toBeInTheDocument();
+  });
+
   it("explains that posting is unavailable until GitHub sign-in is connected", async () => {
     const user = userEvent.setup();
     mockApi({ "GET /api/auth/session": () => ({ json: { mode: "off", user: null } }) });
