@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { pushFixes, type FixFile, type FixTarget } from "@/server/fixes";
+import { explainMissingAccess } from "@/server/diagnose";
+import { ApiError } from "@/server/github";
 import { withGitHub } from "@/server/handler";
 
 export const maxDuration = 60;
@@ -40,5 +42,13 @@ export async function POST(req: NextRequest) {
   const b = (await req.json().catch(() => null)) as { owner?: string; repo?: string; files?: FixFile[]; target?: FixTarget } | null;
   const ok = b && NAME.test(b.owner ?? "") && NAME.test(b.repo ?? "") && Array.isArray(b.files) && b.files.length <= 60 && b.files.every(validFile) && validTarget(b.target);
   if (!ok || !b) return NextResponse.json({ code: "bad_request", message: "The fixes request is incomplete." }, { status: 400 });
-  return withGitHub(req, ({ session }) => pushFixes(session.accessToken, { owner: b.owner!, repo: b.repo!, files: b.files!, target: b.target! }));
+  return withGitHub(req, async ({ session, config }) => {
+    try {
+      return await pushFixes(session.accessToken, { owner: b.owner!, repo: b.repo!, files: b.files!, target: b.target! });
+    } catch (e) {
+      if (e instanceof ApiError && e.code === "missing_permission")
+        throw await explainMissingAccess(session.accessToken, config.slug, b.owner!, b.repo!, { permission: "contents", label: "commit code" });
+      throw e;
+    }
+  });
 }

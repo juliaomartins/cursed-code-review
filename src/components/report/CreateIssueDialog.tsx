@@ -19,7 +19,7 @@ export function CreateIssueDialog({ open, onClose, review }: { open: boolean; on
   const draft = useMemo(() => toIssue(review), [review]);
   const [title, setTitle] = useState(draft.title);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<{ message: string; code?: string } | null>(null);
+  const [error, setError] = useState<{ message: string; code?: string; url?: string } | null>(null);
   if (review.source.kind !== "github") return null;
   const src = review.source;
   const created = review.postedReviewUrl;
@@ -33,7 +33,11 @@ export function CreateIssueDialog({ open, onClose, review }: { open: boolean; on
       dispatch({ type: "posted", url: issue.url });
       toast({ title: `Issue #${issue.number} created`, description: `${monsters} monsters listed on ${src.owner}/${src.repo}.`, tone: "success" });
     } catch (e) {
-      setError({ message: (e as Error).message, code: e instanceof GitHubError ? e.code : undefined });
+      setError({
+        message: (e as Error).message,
+        code: e instanceof GitHubError ? e.code : undefined,
+        url: e instanceof GitHubError ? e.installUrl : undefined,
+      });
     } finally {
       setBusy(false);
     }
@@ -53,7 +57,15 @@ export function CreateIssueDialog({ open, onClose, review }: { open: boolean; on
     ) : undefined;
 
   return (
-    <Dialog open={open} onClose={onClose} locked={busy} title="Create a GitHub issue" description={`On ${src.owner}/${src.repo}`} className="max-w-xl" footer={footer}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      locked={busy}
+      title="Create a GitHub issue"
+      description={`On ${src.owner}/${src.repo}`}
+      className="max-w-xl"
+      footer={footer}
+    >
       {created ? (
         <div className="flex flex-col items-center gap-4 py-4 text-center">
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-banished/15 text-banished">
@@ -100,7 +112,9 @@ export function CreateIssueDialog({ open, onClose, review }: { open: boolean; on
             </summary>
             <pre className="m-0 max-h-72 overflow-auto border-t border-line p-3 font-mono text-xs whitespace-pre-wrap text-ink-2">{draft.body}</pre>
           </details>
-          <p className="m-0 text-[13px] text-ink-3">Ignored monsters are left out. Banished ones are marked &ldquo;fix ready&rdquo;, since the fix was only applied here, not in the repository.</p>
+          <p className="m-0 text-[13px] text-ink-3">
+            Ignored monsters are left out. Banished ones are marked &ldquo;fix ready&rdquo;, since the fix was only applied here, not in the repository.
+          </p>
           {error && (
             <div role="alert" className="flex flex-col gap-2 rounded-[10px] border border-sev-high/40 bg-sev-high/[0.07] p-3 text-[13px] text-[#ffc9c2]">
               <span className="flex gap-2">
@@ -110,6 +124,22 @@ export function CreateIssueDialog({ open, onClose, review }: { open: boolean; on
                 <Button size="sm" variant="outline" onClick={installApp} className="self-start">
                   <Icon name="github" size={16} /> Install on this repository
                 </Button>
+              )}
+              {error.code !== "not_installed" && error.url?.startsWith("https://github.com/") && (
+                <a
+                  href={error.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-h-9 items-center gap-2 self-start rounded-[10px] border border-line-strong px-3 text-sm font-medium text-ink no-underline hover:border-ink-4 hover:text-ink"
+                >
+                  <Icon name="github" size={16} />
+                  {error.code === "permission_not_accepted"
+                    ? "Review the permission request"
+                    : error.code === "repo_not_selected"
+                      ? "Choose repositories"
+                      : "Open the GitHub settings"}
+                  <Icon name="external" size={14} />
+                </a>
               )}
             </div>
           )}
