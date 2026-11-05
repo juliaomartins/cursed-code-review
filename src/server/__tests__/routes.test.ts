@@ -105,7 +105,24 @@ describe("auth routes", () => {
     const signedIn = seal({ user: { login: "elyzio", name: "Elyzio", avatarUrl: "" }, accessToken: "ghu_x" }, SECRET);
     const url = "/api/auth/callback/github?code=used&installation_id=1&setup_action=install&state=abc";
     expect((await callback(req(url, { [STATE_COOKIE]: state, [SESSION_COOKIE]: signedIn }))).headers.get("location")).toBe(`${BASE}/?auth=installed`);
-    expect((await callback(req(url, { [STATE_COOKIE]: state }))).headers.get("location")).toBe(`${BASE}/?auth=error&reason=bad_verification_code`);
+  });
+
+  it("quietly retries a first sign-in whose answer was lost, but only once", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response(JSON.stringify({ error: "bad_verification_code" })));
+    const url = "/api/auth/callback/github?code=used&installation_id=1&setup_action=install&state=abc";
+    // First failure, no session yet: start sign-in again, flagged as a retry.
+    const first = await callback(req(url, { [STATE_COOKIE]: seal({ state: "abc", returnTo: "/report" }, SECRET) }));
+    expect(first.headers.get("location")).toBe(`${BASE}/api/auth/github/login?returnTo=%2Freport&retry=1`);
+    // The retry's own failure is reported, not retried again.
+    const second = await callback(req(url, { [STATE_COOKIE]: seal({ state: "abc", returnTo: "/report", retry: true }, SECRET) }));
+    expect(second.headers.get("location")).toBe(`${BASE}/report?auth=error&reason=bad_verification_code`);
+  });
+
+  it("remembers that a sign-in is the automatic retry", async () => {
+    const res = login(req("/api/auth/github/login?returnTo=/report&retry=1"));
+    const { unseal } = await import("../session");
+    expect(unseal(cookieValue(res, STATE_COOKIE), SECRET)).toMatchObject({ returnTo: "/report", retry: true });
   });
 
   it("explains a missing state cookie", async () => {
