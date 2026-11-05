@@ -42,6 +42,13 @@ export async function GET(req: NextRequest) {
     // If that first attempt signed the user in, this is a success, not an error.
     if (reason === "bad_verification_code" && readSession(req, config.sessionSecret))
       return back(params.get("setup_action") === "install" ? "installed" : "success");
+    // First sign-in whose answer was lost (dropped connection), then reloaded: the code is spent and
+    // there's no session yet. Start over once; GitHub remembers the approval and returns a fresh code.
+    if (reason === "bad_verification_code" && !saved?.retry) {
+      const retry = NextResponse.redirect(new URL(`/api/auth/github/login?${new URLSearchParams({ returnTo, retry: "1" })}`, originOf(req, config)));
+      clearState(req, retry);
+      return retry;
+    }
     console.error("GitHub sign-in failed:", reason, e instanceof Error ? e.message : e);
     return back("error", { reason: reason.replace(/[^a-z0-9_]/gi, "").slice(0, 40) });
   }

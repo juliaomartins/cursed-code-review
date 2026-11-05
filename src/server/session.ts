@@ -67,6 +67,8 @@ export function clearSession(req: NextRequest, res: NextResponse) {
 export interface OAuthState {
   state: string;
   returnTo: string;
+  /** Set on the automatic second attempt, so a failing sign-in never loops. */
+  retry?: boolean;
 }
 
 export function writeState(req: NextRequest, res: NextResponse, value: OAuthState, secret: string) {

@@ -8,6 +8,7 @@ import { writeState } from "@/server/session";
  * - default: GitHub's authorize screen
  * - ?install=1: GitHub's install screen (choose repositories); GitHub then signs the user in too,
  *   because the app has "Request user authorization (OAuth) during installation" enabled.
+ * - ?retry=1: the callback's automatic second attempt (see the callback route).
  */
 export function GET(req: NextRequest) {
   const config = getConfig();
@@ -23,6 +24,6 @@ export function GET(req: NextRequest) {
         state,
       })}`;
   const res = NextResponse.redirect(target);
-  writeState(req, res, { state, returnTo }, config.sessionSecret);
+  writeState(req, res, { state, returnTo, ...(params.get("retry") ? { retry: true } : {}) }, config.sessionSecret);
   return res;
 }

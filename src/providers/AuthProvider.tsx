@@ -43,7 +43,7 @@ export const SIGN_IN_REASONS: Record<string, string> = {
   incorrect_client_credentials:
     "GitHub rejected this site's Client ID + client secret pair. Generate a new client secret on the GitHub App, put it in Vercel as GITHUB_APP_CLIENT_SECRET, and redeploy. /setup checks it for you.",
   redirect_uri_mismatch: "The GitHub App's Callback URL doesn't match this site. It must be exactly <this site>/api/auth/callback/github.",
-  bad_verification_code: "The one-time sign-in code expired or was already used. Please sign in again.",
+  bad_verification_code: "The connection to GitHub dropped twice in a row. Check your connection (or turn off a VPN or web shield), then try again.",
   state_missing: "The sign-in started on a different address, or took longer than 10 minutes. Start again from this page.",
   state_mismatch: "Another sign-in was started in a different tab. Start again from this page.",
   unverified_user_email: "GitHub needs you to verify your email address before signing in to apps.",
@@ -89,6 +89,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description,
           title: status === "success" && live?.user ? `Signed in as @${live.user.login}` : m.title,
           durationMs: status === "error" ? 20000 : undefined,
+          // One click to start over, for anything that isn't a configuration problem.
+          action:
+            status === "error" && live?.mode === "live" && reason !== "incorrect_client_credentials" && reason !== "redirect_uri_mismatch"
+              ? { label: "Try again", onClick: () => window.location.assign(signInUrl(currentPath())) }
+              : undefined,
         });
         params.delete("auth");
         params.delete("reason");
