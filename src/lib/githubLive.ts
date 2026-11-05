@@ -1,4 +1,4 @@
-import { GitHubError, type PostReviewInput, type PrRef, type PullRequest } from "./github";
+import { GitHubError, type PostReviewInput, type PrRef, type PullRequest, type ScanResponse } from "./github";
 
 /** Browser-side client for the app's own /api/github routes (real GitHub mode). */
 async function call<T>(input: string, init?: RequestInit): Promise<T> {
@@ -40,4 +40,18 @@ export function signInUrl(returnTo: string, install = false): string {
   const p = new URLSearchParams({ returnTo });
   if (install) p.set("install", "1");
   return `/api/auth/github/login?${p}`;
+}
+
+/** Loads anything a GitHub link points at: PR, file, folder, repository, commit or comparison. */
+export function scanLinkLive(url: string, signal?: AbortSignal): Promise<ScanResponse> {
+  return call<ScanResponse>(`/api/github/scan?url=${encodeURIComponent(url)}`, { signal });
+}
+
+export interface CreatedIssue {
+  url: string;
+  number: number;
+}
+
+export function createIssueLive(input: { owner: string; repo: string; title: string; body: string }): Promise<CreatedIssue> {
+  return call<CreatedIssue>("/api/github/issue", { method: "POST", body: JSON.stringify(input) });
 }

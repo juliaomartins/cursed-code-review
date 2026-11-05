@@ -2,12 +2,13 @@
 
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "@/providers/AuthProvider";
-import { GitHubError, parsePrUrl } from "@/lib/github";
-import { fetchPullRequestLive } from "@/lib/githubLive";
-import { reviewFromPaste, reviewFromPullRequest, reviewFromSamples } from "@/lib/review/factory";
+import { GitHubError } from "@/lib/github";
+import { scanLinkLive } from "@/lib/githubLive";
+import { reviewFromPaste, reviewFromPullRequest, reviewFromSamples, reviewFromScan } from "@/lib/review/factory";
+import { describeLink, parseGitHubLink } from "@/lib/githubLinks";
 import { SAMPLES } from "@/lib/samples";
 import { detectLanguage, LANGUAGE_LABEL, MAX_LINES, scan } from "@/lib/scanner";
-import type { Language } from "@/lib/types";
+import type { Language, Review } from "@/lib/types";
 import { Monster } from "../Monster";
 import { Button } from "../ui/Button";
 import { cx } from "../ui/cx";
@@ -34,9 +35,9 @@ export function Doors() {
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-5">
         <SampleDoor onPick={(id) => summon("Opening the crypt", () => reviewFromSamples(id))} disabled={busy} />
         <PasteDoor onSubmit={(code, lang) => summon("Smelling your code", () => reviewFromPaste(code, lang))} disabled={busy} />
-        <PrDoor
-          onLoaded={(build, label) =>
-            summon("Hunting the diff", build, [`Fetched ${label}`, "Scanning changed lines only", "Writing explanations and fixes", "Summoning monsters"])
+        <LinkDoor
+          onLoaded={(build, steps, multi) =>
+            summon(multi ? "Mapping the crypt" : "Hunting the code", build, steps, (r) => (multi && r.files.length > 1 ? "/map" : "/crypt"))
           }
           disabled={busy}
         />
@@ -163,21 +164,28 @@ function PasteDoor({ onSubmit, disabled }: { onSubmit: (code: string, lang: Lang
   );
 }
 
-/** A real, public pull request anyone can open to see the PR flow. */
-const EXAMPLE_PR = "juliaomartins/cursed-code-review/pull/1";
+/** Real, public links anyone can open. */
+const EXAMPLES = [
+  { label: "a whole repo", url: "https://github.com/juliaomartins/cursed-code-review" },
+  { label: "a pull request", url: "https://github.com/juliaomartins/cursed-code-review/pull/1" },
+  { label: "a file", url: "https://github.com/juliaomartins/cursed-code-review/blob/main/src/lib/patch.ts" },
+];
 const DRAFT_KEY = "ccr:pr-draft";
 
-function PrDoor({ onLoaded, disabled }: { onLoaded: (build: () => ReturnType<typeof reviewFromPullRequest>, label: string) => void; disabled: boolean }) {
+type Build = () => Review;
+
+function LinkDoor({ onLoaded, disabled }: { onLoaded: (build: Build, steps: string[], multi: boolean) => void; disabled: boolean }) {
   const id = useId();
   const { user, requestSignIn, mode, installApp } = useAuth();
   const live = mode === "live";
   const [url, setUrl] = useState("");
   const [error, setError] = useState<{ message: string; code?: GitHubError["code"] } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const abort = useRef<AbortController | null>(null);
   // Decided at render time, so the right button shows even if sign-in status loads late.
   const offerSignIn = live && error?.code === "auth_required";
   const offerInstall = live && error?.code === "not_installed";
-  const [loading, setLoading] = useState(false);
-  const abort = useRef<AbortController | null>(null);
+  const parsed = url.trim() ? parseGitHubLink(url) : null;
 
   // Keep the link across the round-trip to GitHub for sign-in or install.
   useEffect(() => {
@@ -201,19 +209,39 @@ function PrDoor({ onLoaded, disabled }: { onLoaded: (build: () => ReturnType<typ
 
   const submit = async (e?: FormEvent) => {
     e?.preventDefault();
-    const parsed = parsePrUrl(url);
-    if (!parsed.ok) return setError({ message: parsed.error });
+    const p = parseGitHubLink(url);
+    if (!p.ok) return setError({ message: p.error });
     setError(null);
     setLoading(true);
     abort.current = new AbortController();
     try {
-      const pr = await fetchPullRequestLive(parsed.ref, abort.current.signal);
+      const res = await scanLinkLive(url.trim(), abort.current.signal);
       try {
         window.sessionStorage.removeItem(DRAFT_KEY);
       } catch {
         /* storage unavailable */
       }
-      onLoaded(() => reviewFromPullRequest(pr), `${pr.owner}/${pr.repo}#${pr.number}`);
+      if (res.target === "pr") {
+        const pr = res.pr;
+        onLoaded(
+          () => reviewFromPullRequest(pr),
+          [`Fetched ${pr.owner}/${pr.repo}#${pr.number}`, "Scanning changed lines only", "Writing explanations and fixes", "Summoning monsters"],
+          false,
+        );
+      } else {
+        const n = res.files.length;
+        const multi = res.target === "repo" || res.target === "folder";
+        onLoaded(
+          () => reviewFromScan(res),
+          [
+            `Fetched ${n} file${n === 1 ? "" : "s"} from ${res.owner}/${res.repo}`,
+            res.changedLinesOnly ? "Scanning changed lines only" : "Running 7 static checks on every line",
+            "Writing explanations and fixes",
+            multi ? "Drawing the Haunted Map" : "Summoning monsters",
+          ],
+          multi,
+        );
+      }
     } catch (err) {
       if ((err as Error).name === "AbortError") return;
       const gh = err instanceof GitHubError ? err : null;
@@ -225,10 +253,10 @@ function PrDoor({ onLoaded, disabled }: { onLoaded: (build: () => ReturnType<typ
 
   return (
     <form className={cx(card, "border-line bg-card")} onSubmit={submit} noValidate>
-      <h3 className="m-0 text-[21px]">Review a GitHub PR</h3>
-      <p className="m-0 text-[15px] text-ink-3">Only the changed lines are hunted.</p>
+      <h3 className="m-0 text-[21px]">Bring a GitHub link</h3>
+      <p className="m-0 text-[15px] text-ink-3">A pull request, a file, a folder or a whole repository.</p>
       <label htmlFor={`${id}-url`} className={label}>
-        Pull request link
+        GitHub link
       </label>
       <input
         id={`${id}-url`}
@@ -240,23 +268,36 @@ function PrDoor({ onLoaded, disabled }: { onLoaded: (build: () => ReturnType<typ
           setUrl(e.target.value);
           if (error) setError(null);
         }}
-        placeholder="https://github.com/owner/repo/pull/12"
+        placeholder="https://github.com/owner/repo"
         aria-invalid={!!error}
-        aria-describedby={error ? `${id}-err` : undefined}
+        aria-describedby={`${id}-detected${error ? ` ${id}-err` : ""}`}
         className={cx(field, "min-h-[46px] px-3 text-sm")}
       />
+      <p id={`${id}-detected`} className="m-0 min-h-5 text-[13px]" aria-live="polite">
+        {parsed?.ok ? (
+          <span className="flex items-center gap-1.5 text-banished">
+            <Icon name="check" size={14} strokeWidth={3} />
+            {describeLink(parsed.target)}
+          </span>
+        ) : (
+          <span className="text-ink-4">PR · file · folder · repo · commit · compare</span>
+        )}
+      </p>
       <div className="flex flex-wrap items-center gap-2 text-xs text-ink-3">
-        <span>Try a real one:</span>
-        <button
-          type="button"
-          onClick={() => {
-            setUrl(`https://github.com/${EXAMPLE_PR}`);
-            setError(null);
-          }}
-          className="min-h-8 rounded-full border border-line px-2.5 font-mono text-[11px] text-ink-2 hover:border-ember/60 hover:text-ink"
-        >
-          {EXAMPLE_PR.replace("/pull/", "#")}
-        </button>
+        <span>Try:</span>
+        {EXAMPLES.map((ex) => (
+          <button
+            key={ex.url}
+            type="button"
+            onClick={() => {
+              setUrl(ex.url);
+              setError(null);
+            }}
+            className="min-h-8 rounded-full border border-line px-2.5 text-[12px] text-ink-2 hover:border-ember/60 hover:text-ink"
+          >
+            {ex.label}
+          </button>
+        ))}
       </div>
       {error && (
         <div
@@ -299,7 +340,7 @@ function PrDoor({ onLoaded, disabled }: { onLoaded: (build: () => ReturnType<typ
         </div>
       )}
       <Button type="submit" variant="ember-outline" loading={loading} disabled={disabled} className="min-h-12">
-        {loading ? "Fetching the PR…" : "Open the PR in the crypt"}
+        {loading ? "Fetching from GitHub…" : "Open in the crypt"}
       </Button>
       <p className="m-0 text-[13px] text-ink-3">
         {!live

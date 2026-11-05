@@ -116,6 +116,8 @@ describe("scan · rules", () => {
     expect(scan("last = xs[len(xs)]", "python")[0].fix.after[0]).toBe("last = xs[len(xs) - 1]");
     expect(scan("const last = xs[xs.length];", "javascript")[0].fix.after[0]).toBe("const last = xs[xs.length - 1];");
     expect(scan("for (let i = 0; i < xs.length; i++) {", "javascript")).toEqual([]);
+    expect(scan("for (let n = 1; n <= segs.length; n++) {", "javascript")).toEqual([]);
+    expect(scan("for (let i = start * 2; i <= xs.length; i++) {", "javascript")[0].kind).toBe("imp");
   });
 
   it("caps module-level caches that only grow", () => {

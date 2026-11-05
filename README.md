@@ -22,9 +22,10 @@ Open http://localhost:3000 and pick **Try a cursed sample**, or go straight to h
 
 | Screen | Features |
 | --- | --- |
-| **Home** `/` | Three doors: cursed samples (one click), paste code (validation, language auto-detect, Ctrl+Enter), GitHub PR link (fetched live from GitHub; sign-in and install prompts for private repos). Summoning progress overlay. Resume banner for an unfinished hunt. |
+| **Home** `/` | Three doors: cursed samples (one click), paste code (validation, language auto-detect, Ctrl+Enter), and **Bring a GitHub link**: a pull request, file, folder, whole repository, commit or branch comparison, fetched live from GitHub. Summoning progress overlay. Resume banner for an unfinished hunt. |
+| **Haunted Map** `/map` | Overview of a multi-file scan: monsters by type and severity, files ordered most-haunted-first or by folder, "Enter the crypt" on the worst file, and folder suggestions when a repository is bigger than one scan. |
 | **The Crypt** `/crypt` | Syntax-highlighted code with monsters on their lines, sized by severity. Cursor-following lantern, Lights on/off. Detail panel with "What is wrong" / "Explain it simply", the fix as a diff, Banish (burn-away animation, applies the fix) and Ignore. Graveyard with restore, undo everywhere, "summon them again", multi-file navigation, PR changed-line gutter. Keyboard spells (`?`). |
-| **Report** `/report` | Verdict, room light, trapped monsters, stats, worst severity, findings table, patch of every applied fix, Markdown export/copy, post to GitHub PR (Comment / Request changes / Approve). |
+| **Report** `/report` | Verdict, room light, trapped monsters, stats, worst severity, findings table, patch of every applied fix, Markdown export/copy, post to GitHub PR (Comment / Request changes / Approve; Comment only on your own PR), or **Create GitHub issue** for file, folder and repository scans. |
 | **Bestiary** `/bestiary` | The seven monsters, their bug type, behaviour and an example fix. |
 
 ### The bestiary
@@ -67,7 +68,7 @@ GitHub → **Settings → Developer settings → GitHub Apps → New GitHub App*
 | Expire user authorization tokens | ✅ checked |
 | Request user authorization (OAuth) during installation | ✅ checked |
 | Webhook → Active | unchecked |
-| Repository permissions | **Contents:** Read-only · **Pull requests:** Read and write |
+| Repository permissions | **Contents:** Read-only · **Pull requests:** Read and write · **Issues:** Read and write |
 | Where can this GitHub App be installed? | **Any account** |
 
 Then add these in Vercel → **Settings → Environment Variables** (and `.env.local` for local dev, see `.env.example`):
@@ -98,12 +99,28 @@ Redeploy. `GET /api/auth/session` answers `"mode":"live"`; while something is mi
 | `POST /api/auth/logout` | Clears the session |
 | `GET /api/github/pr?url=…` | PR metadata, changed files at the head commit, added lines. Signed out: public repos only |
 | `POST /api/github/review` | Creates the review on the head commit |
+| `GET /api/github/scan?url=…` | Any GitHub link: PR, file, folder, repository, commit or comparison |
+| `POST /api/github/issue` | Creates an issue listing the monsters (needs Issues: write) |
 
 Tokens refresh automatically before they expire (GitHub App user tokens last 8 hours).
 
 ### Without the GitHub App
 
 Public pull requests still open: the server reads them anonymously from GitHub (file contents come from `raw.githubusercontent.com`, which doesn't count against GitHub's API limit). The "Sign in with GitHub" button is hidden, and posting a review explains that it isn't available yet. To raise the anonymous API limit (60 requests per hour per server IP), you can optionally set `GITHUB_TOKEN` to a fine-grained personal access token with **public repositories, read-only** access.
+
+## GitHub links you can bring
+
+| Link | What's scanned |
+| --- | --- |
+| `github.com/owner/repo/pull/12` (or `owner/repo#12`) | The lines the PR changed |
+| `github.com/owner/repo/blob/<branch>/path/file.js#L10-L20` | That whole file; lines 10–20 are highlighted |
+| `raw.githubusercontent.com/owner/repo/<branch>/path/file.js` | That file |
+| `github.com/owner/repo/tree/<branch>/src/api` | Every supported file in the folder |
+| `github.com/owner/repo` (or `owner/repo`) | The repository's default branch |
+| `github.com/owner/repo/commit/<sha>` | The lines the commit changed |
+| `github.com/owner/repo/compare/main...feature` | The lines the branch changes |
+
+Folder and repository scans read up to **40 files**, real source before tests and config, skipping `node_modules`, `dist`, `build`, `vendor`, minified and generated files and anything over 1,500 lines. Branch names with slashes (`feature/login`) work. A repository scan costs 2–3 GitHub API calls; file contents come from `raw.githubusercontent.com`, which doesn't count against the API limit.
 
 ## Keyboard spells (in the crypt)
 
@@ -119,7 +136,7 @@ npm test
 npm run build && npm run test:e2e
 ```
 
-- **Vitest** (111 tests): every scanner rule, the fix engine (apply / relocate / stale), reducer, selectors, PR URL parsing, mock API, diff, Markdown export, highlighter, component tests for the crypt, home doors and report, and server tests for the GitHub routes (sign-in state check, encrypted session, token refresh, PR loading, review placement) against a fake GitHub API.
+- **Vitest** (171 tests): every scanner rule, the fix engine (apply / relocate / stale), reducer, selectors, PR URL parsing, mock API, diff, Markdown export, highlighter, component tests for the crypt, home doors and report, and server tests for the GitHub routes (sign-in state check, encrypted session, token refresh, PR loading, review placement) against a fake GitHub API.
 - **Playwright** on desktop and Pixel 7: full hunt → report → export, keyboard + undo, PR → sign in → post review (GitHub responses mocked in the browser), no fake sign-in without the app, paste flow, and a no-horizontal-scroll check on every page.
 
 Also: `npm run lint`, `npm run typecheck`.

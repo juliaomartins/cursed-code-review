@@ -26,7 +26,7 @@ export function useSummon() {
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   const summon = useCallback(
-    (title: string, build: () => Review, stepLabels?: string[]) => {
+    (title: string, build: () => Review, stepLabels?: string[], destination?: (review: Review) => string) => {
       const review = build();
       const total = review.files.reduce((n, f) => n + f.findings.length, 0);
       const steps = stepLabels ?? [
@@ -44,7 +44,7 @@ export function useSummon() {
       timers.current.push(
         setTimeout(() => {
           start(review);
-          router.push("/crypt");
+          router.push(destination?.(review) ?? "/crypt");
         }, ms * (steps.length + 1)),
       );
     },

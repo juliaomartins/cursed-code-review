@@ -50,20 +50,23 @@ test("PR review: open a real-shaped PR, sign in, post the review", async ({ page
   let signedIn = false;
   let posted: Record<string, unknown> | null = null;
   await page.route("**/api/auth/session", (r) => r.fulfill({ json: { mode: "live", user: signedIn ? { login: "octo", name: "Octo Cat" } : null } }));
-  await page.route("**/api/github/pr?*", (r) =>
+  await page.route("**/api/github/scan?*", (r) =>
     r.fulfill({
       json: {
-        owner: "acme",
-        repo: "shop",
-        number: 7,
-        url: "https://github.com/acme/shop/pull/7",
-        title: "Add last()",
-        author: "octo",
-        baseRef: "main",
-        headRef: "feat/last",
-        headSha: sha,
-        skippedFiles: 2,
-        files: [{ path: "src/a/util.js", language: "javascript", code, changedLines: [1, 2, 3], additions: 3, deletions: 0 }],
+        target: "pr",
+        pr: {
+          owner: "acme",
+          repo: "shop",
+          number: 7,
+          url: "https://github.com/acme/shop/pull/7",
+          title: "Add last()",
+          author: "octo",
+          baseRef: "main",
+          headRef: "feat/last",
+          headSha: sha,
+          skippedFiles: 2,
+          files: [{ path: "src/a/util.js", language: "javascript", code, changedLines: [1, 2, 3], additions: 3, deletions: 0 }],
+        },
       },
     }),
   );
@@ -73,8 +76,8 @@ test("PR review: open a real-shaped PR, sign in, post the review", async ({ page
   });
 
   await page.goto("/");
-  await page.getByLabel("Pull request link").fill("https://github.com/acme/shop/pull/7");
-  await page.getByRole("button", { name: "Open the PR in the crypt" }).click();
+  await page.getByLabel("GitHub link").fill("https://github.com/acme/shop/pull/7");
+  await page.getByRole("button", { name: "Open in the crypt" }).click();
   await expect(page).toHaveURL(/\/crypt$/, { timeout: 10_000 });
   await expect(page.getByText("Add last()")).toBeVisible();
   await expect(page.getByText(/2 changed files not scanned/)).toBeVisible();
@@ -90,6 +93,54 @@ test("PR review: open a real-shaped PR, sign in, post the review", async ({ page
   await dialog.getByRole("button", { name: /^Post / }).click();
   await expect(dialog.getByText("Your review is on the pull request.")).toBeVisible({ timeout: 5000 });
   expect(posted).toMatchObject({ owner: "acme", repo: "shop", number: 7, commitId: sha });
+});
+
+test("whole repository: Haunted Map → crypt → create issue", async ({ page }) => {
+  const sha = "d".repeat(40);
+  const buggy = "const SECRET_TOKEN = 'abcdef123456';\nexport function last(xs) {\n  return xs[xs.length];\n}\n";
+  const clean = "export const add = (a, b) => a + b;\n";
+  let issue: Record<string, string> | null = null;
+  await page.route("**/api/auth/session", (r) => r.fulfill({ json: { mode: "live", user: { login: "octo", name: "Octo Cat" } } }));
+  await page.route("**/api/github/scan?*", (r) =>
+    r.fulfill({
+      json: {
+        target: "repo",
+        owner: "acme",
+        repo: "shop",
+        ref: "main",
+        sha,
+        title: "acme/shop: a haunted shop",
+        url: "https://github.com/acme/shop",
+        skippedFiles: 1,
+        files: [
+          { path: "src/math/add.js", language: "javascript", code: clean },
+          { path: "src/util/last.js", language: "javascript", code: buggy },
+        ],
+      },
+    }),
+  );
+  await page.route("**/api/github/issue", async (r) => {
+    issue = r.request().postDataJSON();
+    await r.fulfill({ json: { url: "https://github.com/acme/shop/issues/3", number: 3 } });
+  });
+
+  await page.goto("/");
+  await page.getByLabel("GitHub link").fill("https://github.com/acme/shop");
+  await expect(page.getByText("Whole repository · acme/shop")).toBeVisible();
+  await page.getByRole("button", { name: "Open in the crypt" }).click();
+  await expect(page).toHaveURL(/\/map$/, { timeout: 10_000 });
+  await expect(page.getByRole("heading", { name: "2 monsters roam here." })).toBeVisible();
+  await page.getByRole("button", { name: /Enter the crypt: start with last\.js/ }).click();
+  await expect(page).toHaveURL(/\/crypt$/);
+  await expect(page.getByRole("button", { name: /Face the Gremlin on line 1/ })).toBeVisible();
+
+  await page.goto("/report");
+  await page.getByRole("button", { name: "Create GitHub issue" }).click();
+  const dialog = page.getByRole("dialog", { name: "Create a GitHub issue" });
+  await dialog.getByRole("button", { name: "Create issue" }).click();
+  await expect(dialog.getByText("The issue is on GitHub.")).toBeVisible();
+  expect(issue).toMatchObject({ owner: "acme", repo: "shop" });
+  expect(issue!.body).toContain(`https://github.com/acme/shop/blob/${sha}/src/util/last.js#L1`);
 });
 
 test("without a GitHub App there is no fake sign-in", async ({ page }) => {
@@ -121,7 +172,7 @@ test("bestiary and 404 render", async ({ page }) => {
 });
 
 test("no horizontal page scroll", async ({ page }) => {
-  for (const path of ["/", "/crypt?sample=haunted-api", "/report", "/bestiary"]) {
+  for (const path of ["/", "/crypt?sample=haunted-api", "/report", "/map", "/bestiary"]) {
     await page.goto(path);
     await page.waitForLoadState("networkidle");
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

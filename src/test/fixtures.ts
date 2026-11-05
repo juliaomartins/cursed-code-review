@@ -1,4 +1,4 @@
-import type { PullRequest } from "@/lib/github";
+import type { PullRequest, ScanResult } from "@/lib/github";
 import { SAMPLES } from "@/lib/samples";
 
 /** A pull request as /api/github/pr returns it, built from the cursed samples. */
@@ -20,6 +20,22 @@ export function fixturePullRequest(overrides: Partial<PullRequest> = {}): PullRe
     headSha: "c".repeat(40),
     files,
     skippedFiles: 0,
+    ...overrides,
+  };
+}
+
+/** A repository scan as /api/github/scan returns it: the three cursed samples. */
+export function fixtureScan(overrides: Partial<ScanResult> = {}): ScanResult {
+  return {
+    target: "repo",
+    owner: "acme",
+    repo: "shop",
+    ref: "main",
+    sha: "d".repeat(40),
+    title: "acme/shop: a haunted shop",
+    url: "https://github.com/acme/shop",
+    files: SAMPLES.map((s) => ({ path: s.path, language: s.language, code: s.code })),
+    skippedFiles: 4,
     ...overrides,
   };
 }
