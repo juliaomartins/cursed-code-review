@@ -145,8 +145,10 @@ export const LIVING_ART: Record<MonsterKind, ReactNode> = {
       <ellipse cx="60" cy="114" rx="28" ry="4" fill="#000000" opacity="0.35" />
       <g className="lm-zombie-head">
         <path d="M28 46C28 26 42 16 60 16C78 16 92 26 92 46L90 84C88 100 76 108 60 108C44 108 32 100 30 84Z" fill="#8FAE78" stroke="#140F1C" strokeWidth="3" strokeLinejoin="round" />
-        <path d="M38 30C40 18 54 14 62 20C70 14 84 20 82 32C72 28 50 34 38 30Z" fill="#EE9DB5" stroke="#140F1C" strokeWidth="2.5" strokeLinejoin="round" />
-        <path d="M50 24Q54 28 58 24M66 22Q68 27 74 24" stroke="#C26A86" strokeWidth="2" fill="none" strokeLinecap="round" />
+        <g className="lm-zombie-brain">
+          <path d="M38 30C40 18 54 14 62 20C70 14 84 20 82 32C72 28 50 34 38 30Z" fill="#EE9DB5" stroke="#140F1C" strokeWidth="2.5" strokeLinejoin="round" />
+          <path d="M50 24Q54 28 58 24M66 22Q68 27 74 24" stroke="#C26A86" strokeWidth="2" fill="none" strokeLinecap="round" />
+        </g>
         <g transform="rotate(-10 74 41)">
           <rect x="62" y="35" width="24" height="11" rx="3" fill="#F2E3C9" stroke="#140F1C" strokeWidth="2" />
           <text x="74" y="44" textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="9" fontWeight="700" fill="#140F1C">
