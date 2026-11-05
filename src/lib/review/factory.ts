@@ -1,4 +1,4 @@
-import type { PullRequest } from "../github";
+import type { PullRequest, ScanResult } from "../github";
 import { SAMPLES } from "../samples";
 import { LANGUAGE_EXT, scan } from "../scanner";
 import type { Language, Review, ReviewFile, ReviewSource } from "../types";
@@ -57,5 +57,41 @@ export function reviewFromPullRequest(pr: PullRequest): Review {
     },
     files,
     firstWithMonsters,
+  );
+}
+
+const SCAN_LABEL: Record<ScanResult["target"], (r: ScanResult) => string> = {
+  file: (r) => `${r.repo}/${r.path ?? ""}`,
+  folder: (r) => `${r.owner}/${r.repo}/${r.path ?? ""}`,
+  repo: (r) => `${r.owner}/${r.repo}`,
+  commit: (r) => `${r.owner}/${r.repo}@${r.sha.slice(0, 7)}`,
+  compare: (r) => `${r.owner}/${r.repo} ${r.title}`,
+};
+
+/** A review of a file, folder, repository, commit or comparison loaded from GitHub. */
+export function reviewFromScan(r: ScanResult): Review {
+  const files = r.files.map((f, i) => {
+    const file = makeFile(`gh${i}`, f.path, f.language, f.code, f.changedLines);
+    return r.lines && r.files.length === 1 ? { ...file, focusLines: r.lines } : file;
+  });
+  // Open the most haunted file first.
+  const first = [...files].sort((a, b) => b.findings.length - a.findings.length)[0];
+  return build(
+    {
+      kind: "github",
+      target: r.target,
+      label: SCAN_LABEL[r.target](r),
+      title: r.title,
+      url: r.url,
+      owner: r.owner,
+      repo: r.repo,
+      ref: r.ref,
+      sha: r.sha,
+      path: r.path,
+      skippedFiles: r.skippedFiles,
+      truncated: r.truncated,
+    },
+    files,
+    first?.findings.length ? first.id : undefined,
   );
 }

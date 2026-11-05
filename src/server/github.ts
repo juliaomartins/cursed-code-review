@@ -69,7 +69,7 @@ export async function ensureFresh(config: GitHubAppConfig, session: Session, dep
   return { session: { ...session, ...tokens }, refreshed: true };
 }
 
-async function gh<T>(token: string | undefined, path: string, init: RequestInit & { raw?: boolean } = {}, deps: GitHubDeps = {}): Promise<T> {
+export async function gh<T>(token: string | undefined, path: string, init: RequestInit & { raw?: boolean } = {}, deps: GitHubDeps = {}): Promise<T> {
   const f = deps.fetch ?? fetch;
   const res = await f(`${API}${path}`, {
     ...init,
@@ -98,6 +98,7 @@ async function gh<T>(token: string | undefined, path: string, init: RequestInit 
     const detail = Array.isArray(body.errors) ? body.errors.map((e) => (typeof e === "string" ? e : JSON.stringify(e))).join("; ") : "";
     throw new ApiError(422, "bad_request", [body.message, detail].filter(Boolean).join(": ") || "GitHub rejected the request.");
   }
+  if (res.status >= 400 && res.status < 500) throw new ApiError(res.status, "github_error", body.message ?? `GitHub returned ${res.status}.`);
   throw new ApiError(502, "network", `GitHub returned ${res.status}.`);
 }
 
@@ -128,11 +129,11 @@ interface GhFile {
   patch?: string;
 }
 
-const enc = encodeURIComponent;
-const repoPath = (ref: PrRef) => `/repos/${enc(ref.owner)}/${enc(ref.repo)}`;
-const filePath = (p: string) => p.split("/").map(enc).join("/");
+export const enc = encodeURIComponent;
+export const repoPath = (ref: Pick<PrRef, "owner" | "repo">) => `/repos/${enc(ref.owner)}/${enc(ref.repo)}`;
+export const filePath = (p: string) => p.split("/").map(enc).join("/");
 
-async function listFiles(token: string | undefined, ref: PrRef, deps: GitHubDeps): Promise<GhFile[]> {
+export async function listFiles(token: string | undefined, ref: PrRef, deps: GitHubDeps): Promise<GhFile[]> {
   const out: GhFile[] = [];
   for (let page = 1; page <= 3; page++) {
     const batch = await gh<GhFile[]>(token, `${repoPath(ref)}/pulls/${ref.number}/files?per_page=100&page=${page}`, {}, deps);
@@ -142,14 +143,14 @@ async function listFiles(token: string | undefined, ref: PrRef, deps: GitHubDeps
   return out;
 }
 
-async function rawFile(repoFullName: string, sha: string, path: string, deps: GitHubDeps): Promise<string> {
+export async function rawFile(repoFullName: string, sha: string, path: string, deps: GitHubDeps): Promise<string> {
   const f = deps.fetch ?? fetch;
   const res = await f(`https://raw.githubusercontent.com/${repoFullName.split("/").map(enc).join("/")}/${enc(sha)}/${filePath(path)}`, { cache: "no-store" });
   if (!res.ok) throw new ApiError(res.status, "network", `Couldn't download ${path}.`);
   return res.text();
 }
 
-const supported = (path: string) => SUPPORTED_EXTENSIONS.includes(path.split(".").pop()?.toLowerCase() ?? "");
+export const supported = (path: string) => SUPPORTED_EXTENSIONS.includes(path.split(".").pop()?.toLowerCase() ?? "");
 
 export interface PrAccess {
   /** A GitHub token: the signed-in user's, or an optional server token for public repos. */
@@ -388,4 +389,29 @@ export async function checkSetup(config: GitHubAppConfig, deps: GitHubDeps = {})
     checks.push({ id: "client_secret", ok: null, label: "GitHub accepts GITHUB_APP_CLIENT_SECRET", fix: "Couldn't reach GitHub to check it." });
   }
   return checks;
+}
+
+/** Creates an issue as the signed-in user. Needs the app's "Issues: write" permission. */
+export async function createIssue(token: string, input: { owner: string; repo: string; title: string; body: string }, deps: GitHubDeps = {}) {
+  try {
+    const issue = await gh<{ html_url: string; number: number }>(
+      token,
+      `${repoPath(input)}/issues`,
+      { method: "POST", body: JSON.stringify({ title: input.title, body: input.body }) },
+      deps,
+    );
+    return { url: issue.html_url, number: issue.number };
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 403 && /not accessible by integration/i.test(e.message))
+      throw new ApiError(
+        403,
+        "missing_permission",
+        "The GitHub App isn't allowed to create issues yet. In the app's settings open Permissions → Repository → Issues → Read and write, save, then accept the new permission on your installation (GitHub sends you an email).",
+      );
+    if (e instanceof ApiError && (e.status === 410 || /issues are disabled/i.test(e.message)))
+      throw new ApiError(410, "issues_disabled", "Issues are turned off for this repository. Turn them on under the repository's Settings → General → Features.");
+    if (e instanceof ApiError && e.status === 404)
+      throw new ApiError(404, "not_installed", "Cursed Code Review isn't installed on this repository, so it can't create an issue there.", "/api/auth/github/login?install=1");
+    throw e;
+  }
 }

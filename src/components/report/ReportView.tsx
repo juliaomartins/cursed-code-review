@@ -17,6 +17,7 @@ import { Icon } from "../ui/Icon";
 import { SeverityBadge } from "../ui/SeverityBadge";
 import { useToast } from "../ui/Toast";
 import { PatchView } from "./PatchView";
+import { CreateIssueDialog } from "./CreateIssueDialog";
 import { PostReviewDialog } from "./PostReviewDialog";
 
 const STATUS: Record<Finding["status"], { label: string; cls: string }> = {
@@ -29,6 +30,7 @@ export function ReportView() {
   const { review, hydrated } = useReview();
   const { toast } = useToast();
   const [posting, setPosting] = useState(false);
+  const [issuing, setIssuing] = useState(false);
   const [today, setToday] = useState<string | null>(null);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- the date is client-only to avoid hydration mismatch
   useEffect(() => setToday(formatDate(new Date().toISOString())), []);
@@ -42,6 +44,7 @@ export function ReportView() {
   const trapped = Array.from(new Set(all.filter((a) => a.f.status === "banished").map((a) => a.f.kind))).slice(0, 3);
   const multi = review.files.length > 1;
   const isPr = review.source.kind === "pr";
+  const isGitHubScan = review.source.kind === "github";
   const clear = s.lurking === 0;
 
   const download = () => {
@@ -234,17 +237,30 @@ export function ReportView() {
         </section>
 
         <section className="flex flex-wrap items-center gap-3">
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={() => setPosting(true)}
-            disabled={!isPr}
-            aria-describedby={!isPr ? "post-hint" : undefined}
-            className="shadow-[0_0_28px_rgba(255,138,61,0.4)]"
-          >
-            <Icon name="pr" strokeWidth={2.2} />
-            {review.postedReviewUrl ? "Review posted" : "Post review to GitHub PR"}
-          </Button>
+          {isGitHubScan ? (
+            <Button variant="primary" size="lg" onClick={() => setIssuing(true)} className="shadow-[0_0_28px_rgba(255,138,61,0.4)]">
+              <Icon name="github" strokeWidth={2.2} />
+              {review.postedReviewUrl ? "Issue created" : "Create GitHub issue"}
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => setPosting(true)}
+              disabled={!isPr}
+              aria-describedby={!isPr ? "post-hint" : undefined}
+              className="shadow-[0_0_28px_rgba(255,138,61,0.4)]"
+            >
+              <Icon name="pr" strokeWidth={2.2} />
+              {review.postedReviewUrl ? "Review posted" : "Post review to GitHub PR"}
+            </Button>
+          )}
+          {review.files.length > 1 && (
+            <ButtonLink href="/map" variant="outline" size="lg">
+              <Icon name="search" />
+              Haunted Map
+            </ButtonLink>
+          )}
           <Button variant="outline" size="lg" onClick={download}>
             <Icon name="download" />
             Export report (.md)
@@ -254,16 +270,17 @@ export function ReportView() {
             Copy markdown
           </Button>
           <ButtonLink href="/#start" variant="outline" size="lg">
-            Review another file
+            Scan something else
           </ButtonLink>
-          {!isPr && (
+          {!isPr && !isGitHubScan && (
             <p id="post-hint" className="m-0 w-full text-[13px] text-ink-3">
-              Posting to GitHub is available when you open a pull request in the crypt.
+              Posting to GitHub is available when you open a GitHub link in the crypt.
             </p>
           )}
         </section>
       </main>
       <PostReviewDialog open={posting} onClose={() => setPosting(false)} review={review} />
+      <CreateIssueDialog open={issuing} onClose={() => setIssuing(false)} review={review} />
     </div>
   );
 }

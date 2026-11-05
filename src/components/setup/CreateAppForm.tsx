@@ -14,7 +14,7 @@ export function buildManifest(origin: string) {
     callback_urls: [`${origin}/api/auth/callback/github`],
     public: true,
     request_oauth_on_install: true,
-    default_permissions: { contents: "read", pull_requests: "write", metadata: "read" },
+    default_permissions: { contents: "read", pull_requests: "write", issues: "write", metadata: "read" },
     default_events: [],
   };
 }

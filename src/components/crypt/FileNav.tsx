@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { MONSTER_ORDER, MONSTERS } from "@/lib/monsters";
 import { fileStats } from "@/lib/review/selectors";
@@ -7,6 +8,8 @@ import type { Review } from "@/lib/types";
 import { Monster } from "../Monster";
 import { cx } from "../ui/cx";
 import { Icon } from "../ui/Icon";
+
+const SCAN_KIND = { file: "FILE", folder: "FOLDER", repo: "REPOSITORY", commit: "COMMIT", compare: "BRANCH COMPARISON" } as const;
 
 /** Shortest path suffix that tells files apart: "route.ts" → "pr/route.ts" when names repeat. */
 export function displayNames(paths: string[]): string[] {
@@ -50,6 +53,29 @@ export function FileNav({ review, onSelect }: { review: Review; onSelect: (id: s
             </span>
           )}
         </div>
+      )}
+      {src.kind === "github" && (
+        <div className="mb-3 flex flex-col gap-1.5 rounded-xl border border-line bg-card p-3">
+          <span className="flex items-center gap-2 font-mono text-[11px] tracking-[0.12em] text-ink-3">
+            <Icon name="github" size={14} /> {SCAN_KIND[src.target]}
+          </span>
+          <a href={src.url} target="_blank" rel="noreferrer" className="text-sm font-bold break-words text-ink no-underline hover:text-ember-pale">
+            {src.title}
+          </a>
+          <span className="font-mono text-[11px] text-ink-4">
+            {src.owner}/{src.repo} @ {src.ref.length > 20 ? src.sha.slice(0, 7) : src.ref}
+          </span>
+          {!!src.skippedFiles && (
+            <span className="text-xs text-ink-3">
+              {src.skippedFiles} file{src.skippedFiles === 1 ? "" : "s"} not scanned (other languages, generated, too big{src.truncated ? ", or over the limit" : ""}).
+            </span>
+          )}
+        </div>
+      )}
+      {review.files.length > 1 && (
+        <Link href="/map" className="mb-2 inline-flex min-h-10 items-center gap-2 self-start rounded-lg px-1 text-sm font-medium no-underline">
+          <Icon name="search" size={16} /> Haunted Map
+        </Link>
       )}
       <p className="m-0 mb-1 font-mono text-[11px] tracking-[0.16em] text-ink-3">FILES</p>
       <ul className="m-0 flex list-none gap-2.5 relative overflow-x-auto p-0 pb-1 lg:flex-col lg:overflow-visible lg:pb-0">

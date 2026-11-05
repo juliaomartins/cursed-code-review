@@ -48,6 +48,25 @@ export interface ReviewFile {
   findings: Finding[];
   /** The findings as first scanned, used to "summon them again". */
   initialFindings: Finding[];
+  /** Lines a file link pointed at (#L10-L20), highlighted in the crypt. */
+  focusLines?: [number, number];
+}
+
+/** Where a non-PR GitHub scan came from. */
+export interface GitHubScanSource {
+  kind: "github";
+  target: "file" | "folder" | "repo" | "commit" | "compare";
+  label: string;
+  title: string;
+  url: string;
+  owner: string;
+  repo: string;
+  ref: string;
+  sha: string;
+  path?: string;
+  skippedFiles?: number;
+  truncated?: { total: number; scanned: number; folders: { path: string; count: number }[] };
+  issueUrl?: string;
 }
 
 export type ReviewSource =
@@ -69,7 +88,8 @@ export type ReviewSource =
       live?: boolean;
       /** Changed files the crypt could not scan (other languages, removed, or over the limit). */
       skippedFiles?: number;
-    };
+    }
+  | GitHubScanSource;
 
 export interface Review {
   id: string;

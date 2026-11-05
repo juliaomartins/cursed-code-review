@@ -12,4 +12,5 @@
 - [x] 10. Mock GitHub sign-in and PR API
 - [x] 11. Unit, component and e2e tests; mobile overflow checks _(Req 5.x)_
 - [x] 12. Real GitHub via a GitHub App: sign-in, install, PR files, posting reviews (mocks remain as demo mode)
-- [ ] 13. Webhooks for automatic reviews; LLM explanations
+- [x] 13. Any GitHub link: files, folders, repositories, commits, comparisons; Haunted Map; Create GitHub issue
+- [ ] 14. Webhooks for automatic reviews; LLM explanations

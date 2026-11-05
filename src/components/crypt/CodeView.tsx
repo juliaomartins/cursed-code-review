@@ -78,6 +78,11 @@ export function CodeView({ file, selectedId, banishingId, lights, onPick }: Code
         <span className="ml-2 min-w-0 truncate">{file.path}</span>
         <span className="ml-auto flex items-center gap-3">
           {changed && <span className="rounded-full bg-[#6FF2B0]/15 px-2 py-0.5 text-[#9DF7C9]">{changed.size} changed lines</span>}
+          {file.focusLines && (
+            <span className="rounded-full bg-[#7F8CFF]/15 px-2 py-0.5 text-[#B9C1FF]">
+              lines {file.focusLines[0]}–{file.focusLines[1]} from your link
+            </span>
+          )}
           <span>{LANGUAGE_LABEL[file.language]}</span>
           <span>{lines.length} lines</span>
         </span>
@@ -106,6 +111,7 @@ export function CodeView({ file, selectedId, banishingId, lights, onPick }: Code
             const isSel = selectedLines.has(n);
             const deco = underline.get(n);
             const isChanged = changed?.has(n);
+            const focused = !!file.focusLines && n >= file.focusLines[0] && n <= file.focusLines[1];
             return (
               <div
                 key={n}
@@ -115,12 +121,14 @@ export function CodeView({ file, selectedId, banishingId, lights, onPick }: Code
                   "code-row relative flex min-h-11 flex-wrap items-center gap-x-4 px-4 transition-[background,opacity] duration-200 sm:flex-nowrap",
                   monsters && "pb-2 sm:pb-0",
                   isSel && (lights ? "bg-[#F1E6D6]" : "bg-ember/10"),
+                  focused && !isSel && (lights ? "bg-[#f3eee6]" : "bg-[#7F8CFF]/[0.07]"),
                   changed && !isChanged && !monsters && "opacity-60",
                 )}
               >
                 {changed && (
                   <span aria-hidden="true" className={cx("absolute top-0 bottom-0 left-0 w-[3px]", isChanged ? "bg-[#6FF2B0]/70" : "bg-transparent")} />
                 )}
+                {focused && <span aria-hidden="true" className="absolute top-0 bottom-0 left-0 w-[3px] bg-[#7F8CFF]" />}
                 <span className={cx("flex-none text-right select-none", lights ? "text-parchment-dim" : "text-ink-4")} style={{ width: `${Math.max(2, gutter)}ch` }}>
                   {n}
                 </span>

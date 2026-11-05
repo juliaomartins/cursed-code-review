@@ -44,6 +44,40 @@ export interface PrFile {
   deletions: number;
 }
 
+/** A file the crypt will scan. Without `changedLines`, the whole file is hunted. */
+export interface ScanFile {
+  path: string;
+  language: Language;
+  code: string;
+  changedLines?: number[];
+}
+
+/** What /api/github/scan returns for anything that isn't a pull request. */
+export interface ScanResult {
+  target: "file" | "folder" | "repo" | "commit" | "compare";
+  owner: string;
+  repo: string;
+  /** Branch, tag or commit the files were read at. */
+  ref: string;
+  /** Exact commit, for stable links in issues. */
+  sha: string;
+  /** Folder or file path, when the link pointed inside the repo. */
+  path?: string;
+  title: string;
+  url: string;
+  files: ScanFile[];
+  /** Files seen but not scanned (other languages, generated, too big, over the limit). */
+  skippedFiles: number;
+  /** Set when a folder or repo had more files than the scan limit. */
+  truncated?: { total: number; scanned: number; folders: { path: string; count: number }[] };
+  /** For file links with #L10-L20. */
+  lines?: [number, number];
+  /** True for commits and comparisons: only changed lines are hunted. */
+  changedLinesOnly?: boolean;
+}
+
+export type ScanResponse = { target: "pr"; pr: PullRequest } | ScanResult;
+
 export const SUPPORTED_EXTENSIONS = ["js", "jsx", "mjs", "cjs", "ts", "tsx", "py", "php"];
 
 export interface PullRequest extends PrRef {

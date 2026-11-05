@@ -27,14 +27,16 @@ export const offByOneRule: Rule = ({ lines, language }) => {
       }
       return;
     }
-    const loop = /(\bfor\s*\([^;]*;\s*[\w$]+\s*)<=(\s*(?:[\w$.]+\.length|count\(\s*\$?\w+\s*\)|strlen\(\s*\$?\w+\s*\)))/.exec(text);
-    if (loop) {
-      const bound = loop[2].trim();
+    const loop = /(\bfor\s*\(([^;]*);\s*[\w$]+\s*)<=(\s*(?:[\w$.]+\.length|count\(\s*\$?\w+\s*\)|strlen\(\s*\$?\w+\s*\)))/.exec(text);
+    // A loop that starts at 1 (or any positive number) may rightly run to <= length.
+    const startsPositive = loop && /=\s*[1-9]\d*\s*$/.test(loop[2]);
+    if (loop && !startsPositive) {
+      const bound = loop[3].trim();
       out.push(
         finding(
           n,
           text,
-          text.replace(loop[0], `${loop[1]}<${loop[2]}`),
+          text.replace(loop[0], `${loop[1]}<${loop[3]}`),
           `The loop uses \`<=\` against \`${bound}\`, so it runs one step too far and reads past the end of the list.`,
         ),
       );
