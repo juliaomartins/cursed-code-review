@@ -150,3 +150,11 @@
   font-variant-ligatures: none;
   font-feature-settings: "liga" 0, "calt" 0;
 }
+
+/* The watching Void Wraith: eyes squeeze shut and open again on hover. */
+@keyframes ccr-blink {
+  0%, 100% { transform: scaleY(1); }
+  40%, 55% { transform: scaleY(0.08); }
+}
+.wraith-eye { transform-box: fill-box; transform-origin: center; }
+.wraith-blinking .wraith-eye { animation: ccr-blink 320ms ease-in-out; }
