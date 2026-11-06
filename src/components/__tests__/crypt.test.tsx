@@ -33,7 +33,7 @@ describe("The Crypt", () => {
     renderApp(<CryptWorkspace />);
     await user.click(await screen.findByRole("button", { name: /Face the Gremlin on line 7/ }));
     expect(screen.getByRole("heading", { name: "Gremlin" })).toBeInTheDocument();
-    expect(screen.getByText(/holds a secret written directly/)).toBeInTheDocument();
+    expect(screen.getByText(/holds a Stripe live key written directly in the code/)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Banish" }));
     await waitFor(() => expect(line(7)).toHaveTextContent("const API_KEY = process.env.API_KEY;"));
@@ -92,7 +92,11 @@ describe("The Crypt", () => {
     seedReview(reviewFromSamples("cursed-login"));
     renderApp(<CryptWorkspace />);
     await user.click(await screen.findByRole("button", { name: "Ignore" }));
-    await user.click(screen.getByRole("button", { name: "Bring back the ignored Possessor" }));
+    // Dismissing asks why, and the graveyard shows it.
+    await user.click(within(screen.getByRole("group", { name: "Why are you dismissing it?" })).getByRole("button", { name: /False positive/ }));
+    const back = screen.getByRole("button", { name: "Bring back the ignored Possessor" });
+    expect(back).toHaveTextContent("false positive");
+    await user.click(back);
     expect(screen.getByRole("heading", { name: "Possessor" })).toBeInTheDocument();
   });
 });

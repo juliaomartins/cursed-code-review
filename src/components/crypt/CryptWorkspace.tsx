@@ -6,8 +6,12 @@ import { useReview, BANISH_MS } from "@/providers/ReviewProvider";
 import { MONSTERS } from "@/lib/monsters";
 import { REVIEW_FIRST } from "@/lib/review/bulk";
 import { reviewFromSamples } from "@/lib/review/factory";
-import { primaryLine } from "@/lib/review/apply";
+import { applyFix, primaryLine } from "@/lib/review/apply";
+import { rescanFile, verifyFix } from "@/lib/review/verify";
+import { findingMeta } from "@/lib/scanner/rules";
+import type { IgnoreReason } from "@/lib/types";
 import { activeFile, fileStats, isDaybreak, lurkingOf, nextLurking, reviewStats, selectedFinding } from "@/lib/review/selectors";
+import type { Severity } from "@/lib/types";
 import { useDaybreak } from "@/lib/useDaybreak";
 import { getSample } from "@/lib/samples";
 import { CREATURE_FX } from "@/lib/horror";
@@ -103,8 +107,15 @@ export function CryptWorkspace() {
   const doBanish = useCallback(() => {
     if (!finding || finding.status !== "lurking" || finding.stale || banishingId || !file) return;
     const name = MONSTERS[finding.kind].name;
+    if (!findingMeta(finding).autofix) {
+      toast({ title: "No automatic fix for this one", description: "Fix it in your editor using the guidance, then dismiss it as fixed outside the app." });
+      return;
+    }
     const left = lurkingOf(file).length - 1;
     const line = primaryLine(finding);
+    // Same dry run the provider does, so the toast can say whether a re-scan of the fixed code is clean.
+    const dry = applyFix(file.code, finding);
+    const verified = dry ? verifyFix(file, dry.code, finding, dry) : null;
     // The provider dry-runs the fix first. Only a fix that applies gets a banishment.
     const ms = banish(finding.id);
     if (ms === false) {
@@ -125,7 +136,7 @@ export function CryptWorkspace() {
       () =>
         toast({
           title: `${name} banished`,
-          description: `It ${CREATURE_FX[finding.kind].death}. Fix applied on line ${line}. ${left ? `${left} monster${left === 1 ? "" : "s"} left in this file.` : "This file is clear."}`,
+          description: `It ${CREATURE_FX[finding.kind].death}. Fix applied on line ${line}; ${verified === "resolved" ? "a re-scan no longer finds it" : "a re-scan still detects this rule there, so review the change"}. ${left ? `${left} monster${left === 1 ? "" : "s"} left in this file.` : "This file is clear."}`,
           tone: "success",
           action: { label: "Undo", onClick: () => dispatch({ type: "undo" }) },
         }),
@@ -133,15 +144,26 @@ export function CryptWorkspace() {
     );
   }, [finding, banishingId, file, banish, toast, dispatch]);
 
-  const doIgnore = useCallback(() => {
-    if (!finding || finding.status !== "lurking" || banishingId) return;
-    dispatch({ type: "ignore", findingId: finding.id });
-    toast({
-      title: `${MONSTERS[finding.kind].name} ignored`,
-      description: "It stays in the code and in the report.",
-      action: { label: "Undo", onClick: () => dispatch({ type: "undo" }) },
-    });
-  }, [finding, banishingId, dispatch, toast]);
+  const doIgnore = useCallback(
+    (reason?: IgnoreReason) => {
+      if (!finding || finding.status !== "lurking" || banishingId) return;
+      dispatch({ type: "ignore", findingId: finding.id, reason });
+      const why =
+        reason === "false-positive"
+          ? " as a false positive"
+          : reason === "accepted-risk"
+            ? " as an accepted risk"
+            : reason === "fix-elsewhere"
+              ? " as fixed outside the app"
+              : "";
+      toast({
+        title: `${MONSTERS[finding.kind].name} dismissed${why}`,
+        description: "The code is unchanged. The report lists it with this reason; restore it from the graveyard.",
+        action: { label: "Undo", onClick: () => dispatch({ type: "undo" }) },
+      });
+    },
+    [finding, banishingId, dispatch, toast],
+  );
 
   const doUndo = useCallback(() => {
     const label = state.undo[state.undo.length - 1]?.label;
@@ -149,6 +171,18 @@ export function CryptWorkspace() {
     dispatch({ type: "undo" });
     toast({ title: "Undone", description: label });
   }, [state.undo, dispatch, toast]);
+
+  const doRescan = useCallback(() => {
+    if (!file) return;
+    const r = rescanFile(file);
+    dispatch({ type: "rescanFile", fileId: file.id });
+    toast({
+      title: "Re-scanned",
+      description: `${r.resolved} resolved · ${r.added} new · ${r.remaining} open in ${file.path.split("/").pop()}.`,
+      tone: r.added ? "error" : "success",
+      action: { label: "Undo", onClick: () => dispatch({ type: "undo" }) },
+    });
+  }, [file, dispatch, toast]);
 
   const copyFix = useCallback(async () => {
     if (!finding) return;
@@ -189,7 +223,7 @@ export function CryptWorkspace() {
         k: () => step(-1),
         p: () => step(-1),
         b: doBanish,
-        i: doIgnore,
+        i: () => doIgnore(),
         e: () => setPrefs({ explainSimple: !prefs.explainSimple }),
         l: () => !daybreak && setPrefs({ lights: !prefs.lights }),
         m: sound.toggle,
@@ -288,7 +322,8 @@ export function CryptWorkspace() {
           kinds: Array.from(new Set(review.files.flatMap((f) => f.findings.filter((x) => x.status === "banished").map((x) => x.kind)))),
         }
       : null;
-  const tension = all && all.total ? Math.min(1, review!.files.flatMap((f) => lurkingOf(f)).filter((x) => x.severity === "HIGH").length / 4) : 0;
+  const tension =
+    all && all.total ? Math.min(1, review!.files.flatMap((f) => lurkingOf(f)).filter((x) => x.severity === "HIGH" || x.severity === "CRITICAL").length / 4) : 0;
 
   if (!hydrated || (sampleParam && getSample(sampleParam) && handledSample !== sampleParam)) return <CryptSkeleton />;
   if (!review || !file) return <NoCrypt />;
@@ -300,7 +335,11 @@ export function CryptWorkspace() {
 
   return (
     <div className="crypt-root relative flex min-h-screen flex-col" data-daybreak={daybreak ? "" : undefined}>
-      {daybreak ? <DaybreakSky /> : <CryptAtmosphere tension={tension} alarm={finding?.status === "lurking" && finding.severity === "HIGH"} />}
+      {daybreak ? (
+        <DaybreakSky />
+      ) : (
+        <CryptAtmosphere tension={tension} alarm={finding?.status === "lurking" && (finding.severity === "HIGH" || finding.severity === "CRITICAL")} />
+      )}
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-700"
@@ -345,6 +384,17 @@ export function CryptWorkspace() {
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2 font-mono text-[13px]" aria-live="polite">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={doRescan}
+                disabled={!!banishingId}
+                className="font-sans"
+                title="Run every rule again on this file's current code"
+              >
+                <Icon name="refresh" size={16} />
+                Re-scan file
+              </Button>
               {total.lurking > 1 && (
                 <Button size="sm" variant="ember-outline" onClick={() => setBulk(true)} className="font-sans">
                   <Icon name="flame" size={16} />
@@ -429,9 +479,9 @@ export function CryptWorkspace() {
   );
 }
 
-const SEV_RANK = { LOW: 1, MED: 2, HIGH: 3 } as const;
-function worstOf(file: { findings: { status: string; stale?: boolean; severity: "LOW" | "MED" | "HIGH" }[] }) {
-  let worst: "LOW" | "MED" | "HIGH" | null = null;
+const SEV_RANK: Record<Severity, number> = { LOW: 1, MED: 2, HIGH: 3, CRITICAL: 4 };
+function worstOf(file: { findings: { status: string; stale?: boolean; severity: Severity }[] }) {
+  let worst: Severity | null = null;
   for (const f of file.findings) if (f.status === "lurking" && !f.stale && (!worst || SEV_RANK[f.severity] > SEV_RANK[worst])) worst = f.severity;
   return worst;
 }

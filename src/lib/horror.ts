@@ -38,6 +38,7 @@ export interface Intensity {
 }
 
 export const INTENSITY: Record<Severity, Intensity> = {
+  CRITICAL: { particles: 28, duration: 1.5, spread: 70 },
   LOW: { particles: 8, duration: 1, spread: 34 },
   MED: { particles: 14, duration: 1.15, spread: 46 },
   HIGH: { particles: 22, duration: 1.35, spread: 60 },

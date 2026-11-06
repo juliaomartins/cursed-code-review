@@ -18,10 +18,17 @@ describe("fix engine", () => {
   });
 
   it("applies a fix and re-indents when indentation changed", () => {
-    const code = "if (a) {\n    for (let i = 0; i <= xs.length; i++) {}\n}";
+    const code = "    for (let i = 0; i <= xs.length; i++) {}\n}";
     const [f] = scan("for (let i = 0; i <= xs.length; i++) {}", "javascript");
     const res = applyFix(code, f)!;
-    expect(res.code.split("\n")[1]).toBe("    for (let i = 0; i < xs.length; i++) {}");
+    expect(res.code.split("\n")[0]).toBe("    for (let i = 0; i < xs.length; i++) {}");
+  });
+
+  it("refuses a fix whose target is not exactly where the finding says (regression: no guessing)", () => {
+    // Same code, but on line 2 instead of line 1: this is not the source the finding was made from.
+    const code = "if (a) {\n    for (let i = 0; i <= xs.length; i++) {}\n}";
+    const [f] = scan("for (let i = 0; i <= xs.length; i++) {}", "javascript");
+    expect(applyFix(code, f)).toBeNull();
   });
 
   it("re-locates other monsters after lines are inserted above them", () => {
@@ -144,7 +151,8 @@ describe("selectors", () => {
   it("computes review-wide stats and the worst severity", () => {
     const s = started();
     expect(reviewStats(s.review!)).toMatchObject({ total: 14, lurking: 14, light: 25 });
-    expect(worstSeverity(s.review!.files.flatMap((f) => f.findings))).toBe("HIGH");
+    // The sample's SQL injection takes req.body.name: untrusted input reaching the query is CRITICAL.
+    expect(worstSeverity(s.review!.files.flatMap((f) => f.findings))).toBe("CRITICAL");
     expect(worstSeverity([])).toBeNull();
   });
 

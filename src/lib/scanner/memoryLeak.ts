@@ -1,23 +1,24 @@
 import type { Rule, RawFinding } from "./context";
-import { enclosingFunctionName, escapeRegExp, indentOf, isCommentLine, isJsLike } from "./util";
+import { hasCode } from "./lexer";
+import { enclosingFunctionName, escapeRegExp, indentOf, isJsLike } from "./util";
 
 const ELI5 = "You keep putting toys in a bag and never take any out. One day the bag bursts.";
 const LIMIT = 1000;
 
-function jsRule(lines: string[]): RawFinding[] {
+function jsRule(lines: string[], code: string[]): RawFinding[] {
   const out: RawFinding[] = [];
-  lines.forEach((text, i) => {
+  code.forEach((text, i) => {
     const decl = /^(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*(\[\]|\{\}|new\s+(Map|Set|Array)\b)/.exec(text);
     if (!decl) return;
     const name = decl[1];
     const ev = escapeRegExp(name);
     const evicts = new RegExp(`(?<![\\w$.])${ev}\\.(shift|pop|splice|delete|clear)\\(|(?<![\\w$.])${ev}\\.length\\s*=|(?<![\\w$.])${ev}\\s*=(?!=)`);
-    if (lines.some((l, j) => j !== i && evicts.test(l))) return;
+    if (code.some((l, j) => j !== i && evicts.test(l))) return;
     const mut = new RegExp(`(?<![\\w$.])${ev}(?:\\.(push|unshift|set|add)\\(|\\[[^\\]]+\\]\\s*=(?!=))`);
     for (let j = 0; j < lines.length; j++) {
       const line = lines[j];
-      if (j === i || indentOf(line).length === 0 || isCommentLine(line, "javascript")) continue;
-      const m = mut.exec(line);
+      if (j === i || indentOf(line).length === 0 || !hasCode(code[j])) continue;
+      const m = mut.exec(code[j]);
       if (!m) continue;
       const ind = indentOf(line);
       const op = m[1];
@@ -29,6 +30,7 @@ function jsRule(lines: string[]): RawFinding[] {
       else guard = `if (Object.keys(${name}).length > ${LIMIT}) delete ${name}[Object.keys(${name})[0]];`;
       const fn = enclosingFunctionName(lines, j, "javascript");
       out.push({
+        ruleId: "memory-leak",
         kind: "leech",
         bug: "Memory leak",
         why: `\`${name}\` lives for the whole life of the process and ${fn ? `\`${fn}()\`` : "this code"} adds to it on every call, but nothing ever removes entries. Memory keeps rising until the server slows down or crashes.`,
@@ -42,30 +44,35 @@ function jsRule(lines: string[]): RawFinding[] {
   return out;
 }
 
-function pyRule(lines: string[]): RawFinding[] {
+function pyRule(lines: string[], code: string[]): RawFinding[] {
   const out: RawFinding[] = [];
-  lines.forEach((text, i) => {
+  code.forEach((text, i) => {
     const decl = /^([A-Za-z_]\w*)\s*=\s*(\{\}|\[\]|dict\(\)|list\(\)|set\(\)|OrderedDict\(\))\s*(#.*)?$/.exec(text);
     if (!decl) return;
     const name = decl[1];
     const kind = decl[2].startsWith("[") || decl[2].startsWith("list") ? "list" : decl[2].startsWith("set") ? "set" : "dict";
     const evicts = new RegExp(`(?<![\\w.])${name}\\.(pop|popitem|clear|remove|discard)\\(|\\bdel\\s+${name}\\b|(?<![\\w.])${name}\\s*=(?!=)`);
-    if (lines.some((l, j) => j !== i && evicts.test(l))) return;
+    if (code.some((l, j) => j !== i && evicts.test(l))) return;
     const mut = new RegExp(`(?<![\\w.])${name}(?:\\.(append|add|setdefault|insert)\\(|\\[[^\\]]+\\]\\s*=(?!=))`);
     for (let j = 0; j < lines.length; j++) {
       const line = lines[j];
-      if (j === i || indentOf(line).length === 0 || isCommentLine(line, "python")) continue;
-      if (!mut.test(line)) continue;
+      if (j === i || indentOf(line).length === 0 || !hasCode(code[j])) continue;
+      if (!mut.test(code[j])) continue;
       const ind = indentOf(line);
-      const evict =
-        kind === "list" ? `${name}.pop(0)` : kind === "set" ? `${name}.pop()` : `${name}.pop(next(iter(${name})))`;
+      const evict = kind === "list" ? `${name}.pop(0)` : kind === "set" ? `${name}.pop()` : `${name}.pop(next(iter(${name})))`;
       const fn = enclosingFunctionName(lines, j, "python");
       out.push({
+        ruleId: "memory-leak",
         kind: "leech",
         bug: "Memory leak",
         why: `\`${name}\` is a module-level ${kind} that ${fn ? `\`${fn}()\`` : "this code"} fills on every call and never empties. The process grows forever.`,
         eli5: ELI5,
-        fix: { startLine: j + 1, before: [line], after: [line, `${ind}if len(${name}) > ${LIMIT}: ${evict}`], note: `Caps ${name} at ${LIMIT} entries. functools.lru_cache is another option.` },
+        fix: {
+          startLine: j + 1,
+          before: [line],
+          after: [line, `${ind}if len(${name}) > ${LIMIT}: ${evict}`],
+          note: `Caps ${name} at ${LIMIT} entries. functools.lru_cache is another option.`,
+        },
         lineOffsets: [0],
       });
       return;
@@ -74,8 +81,8 @@ function pyRule(lines: string[]): RawFinding[] {
   return out;
 }
 
-export const memoryLeakRule: Rule = ({ lines, language }) => {
-  if (isJsLike(language)) return jsRule(lines);
-  if (language === "python") return pyRule(lines);
+export const memoryLeakRule: Rule = ({ lines, code, language }) => {
+  if (isJsLike(language)) return jsRule(lines, code);
+  if (language === "python") return pyRule(lines, code);
   return [];
 };

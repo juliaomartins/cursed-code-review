@@ -12,7 +12,10 @@ const start = (r: ReturnType<typeof reviewFromScan>): ReviewState => reviewReduc
 describe("Banish all", () => {
   it("plans every lurking fix, leaving Twin Ghosts and stale ones for review", () => {
     const s = start(reviewFromSamples());
-    const plan = banishAllPlan(s.review!, s.review!.files.map((f) => f.id));
+    const plan = banishAllPlan(
+      s.review!,
+      s.review!.files.map((f) => f.id),
+    );
     const leaky = plan.find((p) => p.file.id === "leaky-cache")!;
     expect(leaky.apply.map((f) => f.kind)).toEqual(["leech", "wraith", "possessor"]);
     expect(leaky.skip.map((f) => f.kind)).toEqual(["twins"]);
@@ -44,8 +47,19 @@ describe("Banish all", () => {
 
 describe("sending fixes to GitHub", () => {
   it("knows where fixes can go", () => {
-    expect(fixDestination(reviewFromScan(fixtureScan()))).toEqual({ mode: "newBranch", owner: "acme", repo: "shop", baseBranch: "main", baseSha: "d".repeat(40) });
-    expect(fixDestination(reviewFromPullRequest(fixturePullRequest()))).toMatchObject({ mode: "prBranch", number: 42, headSha: "c".repeat(40), branch: "feat/session-cache" });
+    expect(fixDestination(reviewFromScan(fixtureScan()))).toEqual({
+      mode: "newBranch",
+      owner: "acme",
+      repo: "shop",
+      baseBranch: "main",
+      baseSha: "d".repeat(40),
+    });
+    expect(fixDestination(reviewFromPullRequest(fixturePullRequest()))).toMatchObject({
+      mode: "prBranch",
+      number: 42,
+      headSha: "c".repeat(40),
+      branch: "feat/session-cache",
+    });
     expect(fixDestination(reviewFromScan(fixtureScan({ target: "commit", ref: "d".repeat(40) }))).mode).toBeNull();
     expect(fixDestination(reviewFromSamples()).mode).toBeNull();
   });
@@ -58,12 +72,12 @@ describe("sending fixes to GitHub", () => {
     const changed = changedFiles(s.review!);
     expect(changed).toHaveLength(1);
     expect(changed[0].message).toBe(
-      "Banish 2 monsters in cursed-login.js\n\n- Possessor · SQL injection (line 5, HIGH)\n- Gremlin · Hardcoded secret (line 7, HIGH)\n\nFixed with Cursed Code Review",
+      "Banish 2 monsters in cursed-login.js\n\n- Possessor · SQL injection (line 5, CRITICAL)\n- Gremlin · Hardcoded secret (line 7, CRITICAL)\n\nFixed with Cursed Code Review",
     );
     expect(fixPrTitle(s.review!)).toBe("🔥 Banish 2 monsters");
     const body = fixPrBody(s.review!);
     expect(body).toContain("### `src/auth/cursed-login.js`");
-    expect(body).toContain("- [x] **Gremlin · Hardcoded secret** (HIGH), line 7");
+    expect(body).toContain("- [x] **Gremlin · Hardcoded secret** (CRITICAL), line 7");
     expect(body).toContain("> Set API_KEY in your environment");
     expect(body).toContain("**Not changed:** 12 monsters");
     expect(defaultBranchName(s.review!, new Date("2026-11-05T10:00:00Z"))).toBe("cursed-fixes/2026-11-05-ddddddd");

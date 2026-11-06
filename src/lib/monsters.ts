@@ -124,6 +124,7 @@ export const MONSTERS: Record<MonsterKind, MonsterInfo> = {
 export const MONSTER_ORDER: MonsterKind[] = ["wraith", "leech", "possessor", "imp", "twins", "zombie", "gremlin"];
 
 export const SEVERITY: Record<Severity, { label: string; bg: string; fg: string; size: number; rank: number }> = {
+  CRITICAL: { label: "CRITICAL", bg: "#FF3D6E", fg: "#1A0007", size: 44, rank: 4 },
   HIGH: { label: "HIGH", bg: "#FF6B5B", fg: "#1A0707", size: 40, rank: 3 },
   MED: { label: "MED", bg: "#FFB547", fg: "#1A1005", size: 34, rank: 2 },
   LOW: { label: "LOW", bg: "#7FD8F5", fg: "#061820", size: 30, rank: 1 },

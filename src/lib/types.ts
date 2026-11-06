@@ -1,6 +1,14 @@
 export type MonsterKind = "wraith" | "leech" | "possessor" | "imp" | "twins" | "zombie" | "gremlin";
 
-export type Severity = "HIGH" | "MED" | "LOW";
+/** CRITICAL is only used with evidence: untrusted input visibly reaching a sink, or a live-format secret. */
+export type Severity = "CRITICAL" | "HIGH" | "MED" | "LOW";
+
+export type Category = "Security" | "Correctness" | "Performance" | "Maintainability";
+
+/** How sure the rule is. "low" means: a potential risk the scanner could not confirm. */
+export type Confidence = "high" | "medium" | "low";
+
+export type IgnoreReason = "false-positive" | "accepted-risk" | "fix-elsewhere";
 
 export type Language = "javascript" | "typescript" | "python" | "php";
 
@@ -28,6 +36,20 @@ export interface Finding {
   /** Explain-it-simply version. */
   eli5: string;
   fix: Fix;
+  /** Stable rule identifier, e.g. "sql-injection". Optional only for reviews saved before rule ids existed. */
+  ruleId?: string;
+  category?: Category;
+  confidence?: Confidence;
+  /** 1-based column of the finding on its primary line. */
+  column?: number;
+  /** The rule saw untrusted input (request data, argv…) reach the sink on this line. Never guessed. */
+  exposure?: "untrusted-input";
+  /** False when no safe automatic fix exists: `fix` is unchanged code and remediation is manual. */
+  autofix?: boolean;
+  /** Why it was dismissed, when status is "ignored". */
+  ignoreReason?: IgnoreReason;
+  /** After banishing: did a re-scan of the fixed code still detect this rule there? */
+  verification?: "resolved" | "still-detected";
   /** Offsets (relative to fix.startLine) of the lines the monster haunts. First is the primary line. */
   lineOffsets: number[];
   /** Offsets (relative to fix.startLine) of lines that should look "dead" (zombie). */

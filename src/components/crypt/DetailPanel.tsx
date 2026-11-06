@@ -4,7 +4,10 @@ import Link from "next/link";
 import { MONSTERS, SEVERITY } from "@/lib/monsters";
 import { findingLines, primaryLine as primaryLineOf } from "@/lib/review/apply";
 import { fileStats, lurkingOf } from "@/lib/review/selectors";
-import type { Finding, ReviewFile } from "@/lib/types";
+import { findingMeta } from "@/lib/scanner/rules";
+import { statusLabel } from "@/lib/report";
+import type { Finding, IgnoreReason, ReviewFile } from "@/lib/types";
+import { useState } from "react";
 import { Sun } from "../Daybreak";
 import { Creature } from "../fx/Creature";
 import { LivingMonster } from "../LivingMonster";
@@ -21,7 +24,7 @@ export interface DetailPanelProps {
   nextFile: ReviewFile | null;
   onSimple: (v: boolean) => void;
   onBanish: () => void;
-  onIgnore: () => void;
+  onIgnore: (reason?: IgnoreReason) => void;
   onRestore: (id: string) => void;
   onReset: () => void;
   onSelectFile: (id: string) => void;
@@ -54,6 +57,7 @@ export function DetailPanel(props: DetailPanelProps) {
 
 function FindingDetail({ finding, banishing, banishMs, resisting, simple, onSimple, onBanish, onIgnore, onCopyFix }: DetailPanelProps & { finding: Finding }) {
   const m = MONSTERS[finding.kind];
+  const meta = findingMeta(finding);
   const sev = SEVERITY[finding.severity];
   const lines = findingLines(finding);
   const lineLabel = lines.length > 1 ? `LINES ${lines.join(" & ")}` : `LINE ${lines[0]}`;
@@ -102,6 +106,7 @@ function FindingDetail({ finding, banishing, banishMs, resisting, simple, onSimp
           </span>
         </div>
         <h2 className="m-0 font-display text-[40px] leading-none font-bold">{m.name}</h2>
+        <FindingFacts finding={finding} />
       </div>
 
       {finding.stale && (
@@ -131,52 +136,69 @@ function FindingDetail({ finding, banishing, banishMs, resisting, simple, onSimp
         ))}
       </div>
       <p className="m-0 text-base leading-[1.55] text-pretty text-ink-body">{simple ? finding.eli5 : finding.why}</p>
+      {!simple && (
+        <div className="flex flex-col gap-3 rounded-xl border border-line bg-well/60 p-3.5 text-[14px] leading-[1.5]">
+          <p className="m-0">
+            <span className="font-semibold text-ink">Impact. </span>
+            <span className="text-ink-2">{meta.rule.impact}</span>
+          </p>
+          <p className="m-0">
+            <span className="font-semibold text-ink">How to fix. </span>
+            <span className="text-ink-2">{meta.rule.remediation}</span>
+          </p>
+        </div>
+      )}
 
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <span className="font-mono text-[11px] tracking-[0.16em] text-ink-3">THE SPELL (FIX)</span>
-          <button
-            type="button"
-            onClick={onCopyFix}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-xs text-ink-3 hover:bg-white/5 hover:text-ink"
-          >
-            <Icon name="copy" size={14} />
-            Copy fix
-          </button>
+      {!meta.autofix ? (
+        <div role="note" className="flex flex-col gap-1.5 rounded-xl border border-sev-med/40 bg-sev-med/[0.07] p-3.5 text-[14px] leading-[1.5]">
+          <span className="font-semibold text-warn-ink">No safe automatic fix</span>
+          <span className="text-ink-2">{finding.fix.note}</span>
+          <span className="text-ink-3">Fix it in your editor, then dismiss it as fixed outside the app.</span>
         </div>
-        <div className="scrollbar-thin relative overflow-x-auto rounded-[10px] border border-line font-mono text-[12.5px]">
-          {finding.fix.before.map((l, i) => (
-            <div key={`b${i}`} className="bg-[rgba(255,107,91,0.10)] px-3 py-1.5 whitespace-pre text-fix-del first:pt-2.5 last:pb-2.5">
-              <span className="sr-only">Removed: </span>- {l}
-            </div>
-          ))}
-          {finding.fix.after.length ? (
-            finding.fix.after.map((l, i) => (
-              <div key={`a${i}`} className="bg-[rgba(111,242,176,0.08)] px-3 py-1.5 whitespace-pre text-fix-add first:pt-2.5 last:pb-2.5">
-                <span className="sr-only">Added: </span>+ {l}
+      ) : (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[11px] tracking-[0.16em] text-ink-3">THE SPELL (FIX)</span>
+            <button
+              type="button"
+              onClick={onCopyFix}
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-xs text-ink-3 hover:bg-white/5 hover:text-ink"
+            >
+              <Icon name="copy" size={14} />
+              Copy fix
+            </button>
+          </div>
+          <div className="scrollbar-thin relative overflow-x-auto rounded-[10px] border border-line font-mono text-[12.5px]">
+            {finding.fix.before.map((l, i) => (
+              <div key={`b${i}`} className="bg-[rgba(255,107,91,0.10)] px-3 py-1.5 whitespace-pre text-fix-del first:pt-2.5 last:pb-2.5">
+                <span className="sr-only">Removed: </span>- {l}
               </div>
-            ))
-          ) : (
-            <div className="bg-[rgba(111,242,176,0.05)] px-3 py-2.5 text-ink-3 italic">Lines removed</div>
-          )}
+            ))}
+            {finding.fix.after.length ? (
+              finding.fix.after.map((l, i) => (
+                <div key={`a${i}`} className="bg-[rgba(111,242,176,0.08)] px-3 py-1.5 whitespace-pre text-fix-add first:pt-2.5 last:pb-2.5">
+                  <span className="sr-only">Added: </span>+ {l}
+                </div>
+              ))
+            ) : (
+              <div className="bg-[rgba(111,242,176,0.05)] px-3 py-2.5 text-ink-3 italic">Lines removed</div>
+            )}
+          </div>
+          {finding.fix.note && <p className="m-0 text-[13px] text-ink-3">{finding.fix.note}</p>}
         </div>
-        {finding.fix.note && <p className="m-0 text-[13px] text-ink-3">{finding.fix.note}</p>}
-      </div>
+      )}
 
       <div className="flex flex-wrap gap-2.5">
-        <Button variant="primary" onClick={onBanish} disabled={banishing || finding.stale} className="min-h-[52px] flex-[2_1_160px] rounded-xl text-base">
-          <Icon name="flame" strokeWidth={2.2} />
-          {banishing ? "Banishing…" : "Banish"}
-          <kbd aria-hidden="true" className="ml-1 hidden rounded border border-ember-ink/30 px-1.5 font-mono text-[11px] lg:inline">
-            B
-          </kbd>
-        </Button>
-        <Button variant="outline" onClick={onIgnore} disabled={banishing} className="min-h-[52px] flex-[1_1_100px] rounded-xl text-[15px] text-ink-body">
-          Ignore
-          <kbd aria-hidden="true" className="ml-1 hidden rounded border border-line-strong px-1.5 font-mono text-[11px] text-ink-3 lg:inline">
-            I
-          </kbd>
-        </Button>
+        {meta.autofix && (
+          <Button variant="primary" onClick={onBanish} disabled={banishing || finding.stale} className="min-h-[52px] flex-[2_1_160px] rounded-xl text-base">
+            <Icon name="flame" strokeWidth={2.2} />
+            {banishing ? "Banishing…" : "Banish"}
+            <kbd aria-hidden="true" className="ml-1 hidden rounded border border-ember-ink/30 px-1.5 font-mono text-[11px] lg:inline">
+              B
+            </kbd>
+          </Button>
+        )}
+        <IgnoreMenu disabled={banishing} manual={!meta.autofix} onIgnore={onIgnore} />
       </div>
       <p className="m-0 text-xs text-ink-3">{m.behavior}</p>
     </div>
@@ -265,7 +287,15 @@ function Graveyard({ file, onRestore }: { file: ReviewFile; onRestore: (id: stri
               <span className="text-xs text-ink-3">{f.bug}</span>
             </span>
             {f.status === "banished" ? (
-              <span className="rounded-full bg-banished/[0.12] px-2 py-0.5 text-xs text-banished">Banished</span>
+              <span
+                title={statusLabel(f)}
+                className={cx(
+                  "rounded-full px-2 py-0.5 text-xs",
+                  f.verification === "still-detected" ? "bg-sev-med/[0.14] text-warn-ink" : "bg-banished/[0.12] text-banished",
+                )}
+              >
+                {f.verification === "resolved" ? "Fixed ✓ re-scan clean" : f.verification === "still-detected" ? "Fixed · still detected" : "Banished"}
+              </span>
             ) : (
               <button
                 type="button"
@@ -274,12 +304,107 @@ function Graveyard({ file, onRestore }: { file: ReviewFile; onRestore: (id: stri
                 className="inline-flex min-h-9 items-center gap-1 rounded-full border border-line-strong px-2.5 text-xs text-ink-2 hover:border-ink-4 hover:text-ink"
               >
                 <Icon name="restore" size={12} />
-                Ignored
+                {f.ignoreReason ? statusLabel(f).replace("Dismissed · ", "") : "Ignored"}
               </button>
             )}
           </li>
         ))}
       </ul>
     </section>
+  );
+}
+
+/** Rule id, category, confidence, exact location, references, and whether untrusted input was seen. */
+function FindingFacts({ finding }: { finding: Finding }) {
+  const meta = findingMeta(finding);
+  const line = primaryLineOf(finding);
+  return (
+    <div className="flex flex-col gap-1.5">
+      <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11.5px] text-ink-3">
+        <span className="rounded bg-well px-1.5 py-0.5 text-ink-2">{meta.ruleId}</span>
+        <span>{meta.category}</span>
+        <span aria-hidden="true">·</span>
+        <span>
+          confidence{" "}
+          <span className={cx(meta.confidence === "high" ? "text-ink" : meta.confidence === "low" ? "text-warn-ink" : "text-ink-2")}>{meta.confidence}</span>
+        </span>
+        <span aria-hidden="true">·</span>
+        <span>
+          L{line}
+          {finding.column ? `:C${finding.column}` : ""}
+        </span>
+        {meta.references.map((r) => (
+          <a
+            key={r.label}
+            href={r.url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex min-h-6 items-center gap-0.5 underline decoration-dotted underline-offset-2"
+          >
+            {r.label}
+            <Icon name="external" size={11} />
+          </a>
+        ))}
+      </p>
+      {finding.exposure === "untrusted-input" && (
+        <p className="m-0 inline-flex items-center gap-1.5 self-start rounded-full bg-sev-high/[0.12] px-2.5 py-1 text-[12px] font-medium text-sev-high">
+          <Icon name="alert" size={13} /> Untrusted input reaches this line
+        </p>
+      )}
+      {meta.confidence === "low" && (
+        <p className="m-0 text-[12px] text-ink-3">Potential risk: the scanner could not confirm this one. Review it before acting.</p>
+      )}
+    </div>
+  );
+}
+
+const REASONS: [IgnoreReason | undefined, string, string][] = [
+  ["false-positive", "False positive", "The code is safe; the rule is wrong here."],
+  ["accepted-risk", "Accepted risk", "Known and accepted, e.g. internal tool."],
+  ["fix-elsewhere", "Fixed outside the app", "Fixed in my editor or another branch."],
+  [undefined, "Just ignore", "No reason recorded."],
+];
+
+/** Ignore with a reason, so the report says why a finding was dismissed. */
+function IgnoreMenu({ disabled, manual, onIgnore }: { disabled: boolean; manual: boolean; onIgnore: (reason?: IgnoreReason) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative flex flex-[1_1_100px]">
+      <Button
+        variant="outline"
+        onClick={() => setOpen((o) => !o)}
+        disabled={disabled}
+        aria-expanded={open}
+        aria-haspopup="true"
+        className="min-h-[52px] w-full rounded-xl text-[15px] text-ink-body"
+      >
+        {manual ? "Dismiss…" : "Ignore"}
+        <kbd aria-hidden="true" className="ml-1 hidden rounded border border-line-strong px-1.5 font-mono text-[11px] text-ink-3 lg:inline">
+          I
+        </kbd>
+      </Button>
+      {open && (
+        <div
+          role="group"
+          aria-label="Why are you dismissing it?"
+          className="absolute right-0 bottom-full z-20 mb-2 flex w-[min(300px,80vw)] flex-col gap-1 rounded-xl border border-line-strong bg-card p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+        >
+          {REASONS.map(([reason, label, hint]) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onIgnore(reason);
+              }}
+              className="flex min-h-11 flex-col items-start rounded-lg px-3 py-1.5 text-left hover:bg-white/[0.05]"
+            >
+              <span className="text-sm font-medium text-ink">{label}</span>
+              <span className="text-xs text-ink-3">{hint}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

@@ -92,7 +92,7 @@ export function ReviewProvider({ children, banishMs = BANISH_MS }: { children: R
       const review = stateRef.current.review;
       const file = review?.files.find((f) => f.findings.some((x) => x.id === findingId));
       const finding = file?.findings.find((x) => x.id === findingId);
-      if (!file || !finding || finding.status !== "lurking") return false;
+      if (!file || !finding || finding.status !== "lurking" || finding.autofix === false) return false;
       // Fix first, spectacle second: a dry run on the current code. If it fails, the reducer marks the
       // finding stale and no banishment is shown.
       if (!applyFix(file.code, finding)) {

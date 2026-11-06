@@ -26,7 +26,17 @@ describe("Report", () => {
     expect(screen.getByTestId("stat-Still lurking")).toHaveTextContent("13");
     const rows = within(screen.getByRole("table", { name: "What lurked in the code" })).getAllByRole("row");
     expect(rows).toHaveLength(15);
-    expect(rows[1]).toHaveTextContent(/Possessor.*cursed-login\.js.*5.*SQL injection.*HIGH.*Banished/);
+    expect(rows[1]).toHaveTextContent(/Possessor.*cursed-login\.js.*5.*SQL injection.*sql-injection.*CRITICAL.*Fixed · verified by re-scan/);
+    // Fix first: the open CRITICAL secret ranks first.
+    const first = within(screen.getByRole("region", { name: "Fix first" })).getAllByRole("button")[0];
+    expect(first).toHaveTextContent(/CRITICAL.*Hardcoded secret.*cursed-login\.js:7/);
+    // Filters narrow the table.
+    const user = userEvent.setup();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Status" }), "fixed");
+    expect(within(screen.getByRole("table", { name: "What lurked in the code" })).getAllByRole("row")).toHaveLength(2);
+    await user.selectOptions(screen.getByRole("combobox", { name: "Status" }), "all");
+    await user.type(screen.getByRole("searchbox", { name: "Search findings" }), "race-condition");
+    expect(screen.getByText(/Showing 1 of 14 findings/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Post review to GitHub PR/ })).toBeDisabled();
   });
 
@@ -62,7 +72,10 @@ describe("Report", () => {
     expect(within(dialog).getByRole("radio", { name: /Approve/ })).toBeDisabled();
     await user.click(within(dialog).getByRole("button", { name: "Post change request" }));
     expect(await within(dialog).findByText("Your review is on the pull request.")).toBeInTheDocument();
-    expect(within(dialog).getByRole("link", { name: /View review on GitHub/ })).toHaveAttribute("href", "https://github.com/kiro-labs/haunted-shop/pull/42#pullrequestreview-9");
+    expect(within(dialog).getByRole("link", { name: /View review on GitHub/ })).toHaveAttribute(
+      "href",
+      "https://github.com/kiro-labs/haunted-shop/pull/42#pullrequestreview-9",
+    );
     expect(posted).toMatchObject({ owner: "kiro-labs", repo: "haunted-shop", number: 42, commitId: "c".repeat(40), event: "REQUEST_CHANGES" });
     expect((posted.comments as unknown[]).length).toBeGreaterThan(0);
     expect(await screen.findByText("5 inline comments on kiro-labs/haunted-shop#42.")).toBeInTheDocument();
@@ -96,7 +109,11 @@ describe("Report", () => {
     mockApi({ "GET /api/auth/session": () => ({ json: { mode: "live", user: { login: "octo", name: "Octo" } } }) });
     const { reviewFromScan } = await import("@/lib/review/factory");
     const { fixtureScan } = await import("@/test/fixtures");
-    const review = { ...reviewFromScan(fixtureScan()), fixesUrl: "https://github.com/acme/shop/pull/12", postedReviewUrl: "https://github.com/acme/shop/issues/3" };
+    const review = {
+      ...reviewFromScan(fixtureScan()),
+      fixesUrl: "https://github.com/acme/shop/pull/12",
+      postedReviewUrl: "https://github.com/acme/shop/issues/3",
+    };
     seedReview(review);
     renderApp(<ReportView />);
     expect(await screen.findByRole("link", { name: /View fix PR on GitHub/ })).toHaveAttribute("href", "https://github.com/acme/shop/pull/12");

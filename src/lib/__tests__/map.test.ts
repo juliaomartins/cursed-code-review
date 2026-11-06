@@ -18,7 +18,7 @@ describe("file tree", () => {
     expect(src.files).toBe(2);
     expect(root.lurking).toBe(14);
     expect(src.lurking).toBe(src.children.reduce((n, c) => n + c.lurking, 0));
-    expect(root.worst).toBe("HIGH");
+    expect(root.worst).toBe("CRITICAL");
   });
 
   it("joins chains of single folders into one row", () => {

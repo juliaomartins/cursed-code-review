@@ -517,11 +517,11 @@ export function playHover(kind: MonsterKind): void {
 }
 
 /** Monsters climbing out of the code: a low swell and a stinger, heavier when something HIGH lurks. */
-export function playEmergence(worst: "LOW" | "MED" | "HIGH"): void {
+export function playEmergence(worst: "LOW" | "MED" | "HIGH" | "CRITICAL"): void {
   const c = live();
   if (!c || !master) return;
   const t = c.currentTime + 0.02;
-  const weight = worst === "HIGH" ? 1 : worst === "MED" ? 0.7 : 0.45;
+  const weight = worst === "CRITICAL" ? 1.15 : worst === "HIGH" ? 1 : worst === "MED" ? 0.7 : 0.45;
   const sw = osc(c, "sawtooth", 46, t, 1.4);
   sw.frequency.exponentialRampToValueAtTime(62, t + 1.2);
   const lp = filt(c, "lowpass", 260);
