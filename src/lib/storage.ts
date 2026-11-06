@@ -23,4 +23,5 @@ export const KEYS = {
   review: "ccr:review:v1",
   prefs: "ccr:prefs:v1",
   user: "ccr:user:v1",
+  explored: "ccr:explored:v1",
 } as const;

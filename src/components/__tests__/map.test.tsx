@@ -16,8 +16,13 @@ describe("Haunted Map", () => {
     seedReview(reviewFromScan(fixtureScan()));
     renderApp(<MapView />);
     expect(await screen.findByRole("heading", { name: "14 monsters roam here." })).toBeInTheDocument();
-    expect(screen.getByText(/3 files scanned · 3 haunted · 0 clear · 4 skipped/)).toBeInTheDocument();
-    const rows = within(screen.getByRole("region", { name: /The rooms/ }) ?? document.body).getAllByRole("button", { name: /^Open / });
+    const stat = (label: string) => screen.getByText(label, { selector: "dt" }).nextElementSibling;
+    expect(stat("files scanned")).toHaveTextContent("3");
+    expect(stat("haunted")).toHaveTextContent("3");
+    expect(stat("clear")).toHaveTextContent("0");
+    expect(stat("skipped")).toHaveTextContent("4");
+    await user.click(screen.getByRole("button", { name: "Most haunted" }));
+    const rows = within(screen.getByRole("region", { name: /The rooms/ })).getAllByRole("button", { name: /^Open / });
     expect(rows[0]).toHaveAccessibleName("Open src/auth/cursed-login.js: 6 monsters lurking");
     await user.click(rows[1]);
     expect(router.push).toHaveBeenCalledWith("/crypt");
@@ -31,21 +36,74 @@ describe("Haunted Map", () => {
       "GET /api/auth/session": () => ({ json: { mode: "off", user: null } }),
       "GET /api/github/scan": () => ({ json: fixtureScan({ target: "folder", path: "src", title: "src @ main" }) }),
     });
-    seedReview(reviewFromScan(fixtureScan({ truncated: { total: 120, scanned: 40, folders: [{ path: "src", count: 90 }, { path: "(root)", count: 3 }] } })));
+    seedReview(
+      reviewFromScan(
+        fixtureScan({
+          truncated: {
+            total: 120,
+            scanned: 40,
+            folders: [
+              { path: "src", count: 90 },
+              { path: "(root)", count: 3 },
+            ],
+          },
+        }),
+      ),
+    );
     renderApp(<MapView />);
     expect(await screen.findByText(/has 120 files the crypt can read/)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /^src\// }));
+    expect(screen.getByText("EXPLORED 0 OF 1")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^src\/ 90 files, Unexplored/ }));
     const asked = api.mock.calls.map(([u]) => decodeURIComponent(String(u))).find((u) => u.includes("/api/github/scan"));
     expect(asked).toContain("url=https://github.com/acme/shop/tree/main/src");
   });
 
-  it("groups files by folder", async () => {
+  it("shows the files as a folder tree you can open, close, search and filter", async () => {
     const user = userEvent.setup();
     seedReview(reviewFromScan(fixtureScan()));
     renderApp(<MapView />);
-    await user.click(await screen.findByRole("button", { name: "By folder" }));
-    expect(screen.getByRole("heading", { name: "src/auth/" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "services/" })).toBeInTheDocument();
+    const src = await screen.findByRole("button", { name: /^src\/: 2 files/ });
+    expect(src).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: /^auth\/: 1 file/ })).toBeInTheDocument();
+    await user.click(src);
+    expect(src).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("button", { name: /^auth\// })).not.toBeInTheDocument();
+
+    await user.type(screen.getByRole("searchbox", { name: "Search files" }), "leaky");
+    expect(screen.getByRole("button", { name: /^Open services\/leaky-cache\.py/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Open src\// })).not.toBeInTheDocument();
+    await user.clear(screen.getByRole("searchbox", { name: "Search files" }));
+
+    await user.click(screen.getByRole("button", { name: /^Gremlin: 1/ }));
+    expect(screen.getByText(/Showing rooms haunted by the Gremlin/)).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(1);
+  });
+
+  it("marks folders you already explored", async () => {
+    const folders = [
+      { path: "src", count: 90 },
+      { path: "lib", count: 4 },
+    ];
+    window.localStorage.setItem(KEYS.explored, JSON.stringify({ "acme/shop@main": { scans: { lib: { files: 4, monsters: 2, at: Date.now() - 5 * 60000 } } } }));
+    seedReview(reviewFromScan(fixtureScan({ truncated: { total: 120, scanned: 40, folders } })));
+    renderApp(<MapView />);
+    expect(await screen.findByRole("button", { name: /^lib\/ 4 files, 2 monsters · 5 min ago\. Scan lib\/ again/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^src\/ 90 files, Unexplored/ })).toBeInTheDocument();
+    expect(screen.getByText("EXPLORED 1 OF 2")).toBeInTheDocument();
+  });
+
+  it("on a folder scan, marks that folder as the current one and offers the whole repository", async () => {
+    window.localStorage.setItem(
+      KEYS.explored,
+      JSON.stringify({
+        "acme/shop@main": { total: 120, scanned: 40, folders: [{ path: "src", count: 90 }], scans: { "": { files: 40, monsters: 9, at: Date.now() } } },
+      }),
+    );
+    seedReview(reviewFromScan(fixtureScan({ target: "folder", path: "src", title: "src @ main" })));
+    renderApp(<MapView />);
+    expect(await screen.findByRole("button", { name: /^src\/ 90 files, You are here/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Whole repository/ })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Where you are" })).toHaveTextContent("src/");
   });
 });
 
