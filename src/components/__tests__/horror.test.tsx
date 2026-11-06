@@ -74,7 +74,7 @@ describe("Horror: creatures follow their findings", () => {
     renderSlow();
     await screen.findByRole("heading", { name: "The Crypt" });
     const gremlin = chip(/Face the Gremlin on line 7/);
-    expect(creatureIn(gremlin)).toHaveClass("cr-sev-HIGH");
+    expect(creatureIn(gremlin)).toHaveClass("cr-sev-CRITICAL");
     expect(creatureIn(chip(/Face the Imp/))).toHaveClass("cr-sev-LOW");
     await user.click(gremlin);
     await waitFor(() => expect(creatureIn(chip(/Face the Gremlin on line 7/))).toHaveAttribute("data-state", "reacting"));

@@ -26,7 +26,11 @@ describe("scan · cursed samples", () => {
     for (const s of SAMPLES) {
       for (const f of scan(s.code, s.language, { fileId: s.id })) {
         expect(f.id).toBe(`${s.id}:${f.kind}:${at(f)}`);
-        expect(["HIGH", "MED", "LOW"]).toContain(f.severity);
+        expect(["CRITICAL", "HIGH", "MED", "LOW"]).toContain(f.severity);
+        expect(f.ruleId).toMatch(/^[a-z-]+$/);
+        expect(["Security", "Correctness", "Performance", "Maintainability"]).toContain(f.category);
+        expect(["high", "medium", "low"]).toContain(f.confidence);
+        expect(f.column).toBeGreaterThan(0);
         expect(f.why.length).toBeGreaterThan(20);
         expect(f.eli5.length).toBeGreaterThan(20);
         expect(f.status).toBe("lurking");
@@ -82,7 +86,9 @@ describe("scan · rules", () => {
     expect(py.fix.after[0]).toBe('DB_PASSWORD = os.environ["DB_PASSWORD"]');
     expect(py.fix.note).toMatch(/import os/);
     expect(scan("$apiToken = 'abcdef123456';", "php")[0].fix.after[0]).toBe("$apiToken = getenv('API_TOKEN');");
-    expect(scan("const config = { clientSecret: 'abc123xyz' };", "javascript")[0].fix.after[0]).toBe("const config = { clientSecret: process.env.CLIENT_SECRET };");
+    expect(scan("const config = { clientSecret: 'abc123xyz' };", "javascript")[0].fix.after[0]).toBe(
+      "const config = { clientSecret: process.env.CLIENT_SECRET };",
+    );
   });
 
   it("does not flag placeholders or non-secret strings", () => {

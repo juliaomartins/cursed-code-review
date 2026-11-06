@@ -1,6 +1,7 @@
 import type { Finding, MonsterKind, Review, ReviewFile } from "../types";
 import { applyFix, relocate } from "./apply";
 import { lurkingOf } from "./selectors";
+import { verifyFix } from "./verify";
 
 /** Kinds left out of "Banish all" unless asked: the Twin Ghosts fix adds a lock you must define. */
 export const REVIEW_FIRST: MonsterKind[] = ["twins"];
@@ -19,8 +20,9 @@ export function banishAllPlan(review: Review, fileIds: string[], skipKinds: Mons
       const lurking = lurkingOf(file);
       return {
         file,
-        apply: lurking.filter((f) => !f.stale && !skipKinds.includes(f.kind)),
-        skip: lurking.filter((f) => f.stale || skipKinds.includes(f.kind)),
+        // Findings without an automatic fix are never part of "Banish all".
+        apply: lurking.filter((f) => !f.stale && f.autofix !== false && !skipKinds.includes(f.kind)),
+        skip: lurking.filter((f) => f.stale || f.autofix === false || skipKinds.includes(f.kind)),
       };
     })
     .filter((p) => p.apply.length || p.skip.length);
@@ -42,7 +44,8 @@ export function banishAllInFile(file: ReviewFile, ids: string[]): { file: Review
       current = { ...current, findings: current.findings.map((x) => (x.id === id ? { ...x, stale: true } : x)) };
       continue;
     }
-    const resolved = current.findings.map((x) => (x.id === id ? { ...x, status: "banished" as const, stale: false } : x));
+    const verification = verifyFix(current, result.code, finding, result);
+    const resolved = current.findings.map((x) => (x.id === id ? { ...x, status: "banished" as const, stale: false, verification } : x));
     current = { ...current, code: result.code, findings: relocate(result.code, resolved, result) };
     banished++;
   }

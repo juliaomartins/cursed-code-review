@@ -1,5 +1,6 @@
 import type { Rule, RawFinding } from "./context";
-import { enclosingFunctionName, escapeRegExp, indentWidth, isCommentLine, isJsLike } from "./util";
+import { hasCode } from "./lexer";
+import { enclosingFunctionName, escapeRegExp, indentWidth, isJsLike } from "./util";
 
 const ELI5 = "You reach into a box for a toy, but the box might be empty. Peek inside first.";
 
@@ -13,14 +14,18 @@ interface Source {
  * `a.find(...)` yes; `f(a.get(...))`, `a.get(k).x` or `a.get(k) ?? d` no.
  */
 export function isWholeCall(rhs: string, method: RegExp): boolean {
-  const expr = rhs.trim().replace(/;$/, "").replace(/^await\s+/, "").trim();
+  const expr = rhs
+    .trim()
+    .replace(/;$/, "")
+    .replace(/^await\s+/, "")
+    .trim();
   let depth = 0;
   for (let i = 0; i < expr.length; i++) {
     const ch = expr[i];
     if (ch === "(" || ch === "[" || ch === "{") depth++;
     else if (ch === ")" || ch === "]" || ch === "}") depth--;
     else if (depth === 0 && (expr.startsWith("??", i) || expr.startsWith("||", i))) return false;
-    if (depth === 0 && ch === "." ) {
+    if (depth === 0 && ch === ".") {
       const m = method.exec(expr.slice(i));
       if (!m || m.index !== 0) continue;
       // find the matching close paren of this call; it must end the expression
@@ -52,11 +57,11 @@ function pySource(rhs: string): Source | null {
   return null;
 }
 
-function jsRule(lines: string[]): RawFinding[] {
+function jsRule(lines: string[], code: string[]): RawFinding[] {
   const out: RawFinding[] = [];
-  lines.forEach((text, i) => {
-    if (isCommentLine(text, "javascript")) return;
-    const decl = /^\s*(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*(.+)$/.exec(text);
+  lines.forEach((_text, i) => {
+    if (!hasCode(code[i])) return;
+    const decl = /^\s*(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*(.+)$/.exec(code[i]);
     if (!decl) return;
     const [, v, rhs] = decl;
     const src = jsSource(rhs.trim());
@@ -68,9 +73,9 @@ function jsRule(lines: string[]): RawFinding[] {
     );
     for (let j = i + 1; j < lines.length; j++) {
       const line = lines[j];
-      if (isCommentLine(line, "javascript")) continue;
-      if (guard.test(line)) return;
-      const m = use.exec(line);
+      if (!hasCode(code[j])) continue;
+      if (guard.test(code[j])) return;
+      const m = use.exec(code[j]);
       if (!m) continue;
       const after = line.slice(m.index + m[0].length);
       if (/^\s*=(?!=)/.test(after) || /^\s*(\+\+|--)/.test(after)) return;
@@ -80,6 +85,9 @@ function jsRule(lines: string[]): RawFinding[] {
       const prop = chain.split(".")[src.depth === 2 ? 2 : 1] ?? chain.split(".")[1];
       const fn = enclosingFunctionName(lines, j, "javascript");
       out.push({
+        ruleId: "null-access",
+        confidence: src.depth === 2 ? "low" : "medium",
+        column: m.index + 1,
         kind: "wraith",
         bug: "Null access",
         why: `\`${v}\` comes from ${src.desc}. Reading \`.${prop}\` on nothing throws a TypeError and crashes ${fn ? `\`${fn}()\`` : "this code"}.`,
@@ -93,11 +101,11 @@ function jsRule(lines: string[]): RawFinding[] {
   return out;
 }
 
-function pyRule(lines: string[]): RawFinding[] {
+function pyRule(lines: string[], code: string[]): RawFinding[] {
   const out: RawFinding[] = [];
   lines.forEach((text, i) => {
-    if (isCommentLine(text, "python")) return;
-    const decl = /^(\s*)([A-Za-z_]\w*)\s*=(?!=)\s*(.+)$/.exec(text);
+    if (!hasCode(code[i])) return;
+    const decl = /^(\s*)([A-Za-z_]\w*)\s*=(?!=)\s*(.+)$/.exec(code[i]);
     if (!decl) return;
     const [, , v, rhs] = decl;
     const src = pySource(rhs);
@@ -107,10 +115,10 @@ function pyRule(lines: string[]): RawFinding[] {
     const guard = new RegExp(`\\b(if|elif|while|and|or|not|assert)\\s+(not\\s+)?${v}\\b|${v}\\s+is\\s+(not\\s+)?None`);
     for (let j = i + 1; j < lines.length; j++) {
       const line = lines[j];
-      if (line.trim() === "" || isCommentLine(line, "python")) continue;
+      if (!hasCode(code[j])) continue;
       if (indentWidth(line) < baseIndent) return;
-      if (guard.test(line)) return;
-      const m = use.exec(line);
+      if (guard.test(code[j])) return;
+      const m = use.exec(code[j]);
       if (!m) continue;
       const assign = /^(\s*)([\w.[\]'"]+\s*=(?!=)\s*)(.+?)\s*$/.exec(line);
       const ret = /^(\s*)return\s+(.+?)\s*$/.exec(line);
@@ -120,6 +128,9 @@ function pyRule(lines: string[]): RawFinding[] {
       if (!fixed) return;
       const fn = enclosingFunctionName(lines, j, "python");
       out.push({
+        ruleId: "null-access",
+        confidence: "medium",
+        column: m.index + 1,
         kind: "wraith",
         bug: "Null access",
         why: `\`${v}\` comes from ${src.desc}. Calling \`.${m[1]}\` on None raises AttributeError and crashes ${fn ? `\`${fn}()\`` : "this code"}.`,
@@ -133,8 +144,8 @@ function pyRule(lines: string[]): RawFinding[] {
   return out;
 }
 
-export const nullAccessRule: Rule = ({ lines, language }) => {
-  if (isJsLike(language)) return jsRule(lines);
-  if (language === "python") return pyRule(lines);
+export const nullAccessRule: Rule = ({ lines, code, language }) => {
+  if (isJsLike(language)) return jsRule(lines, code);
+  if (language === "python") return pyRule(lines, code);
   return [];
 };

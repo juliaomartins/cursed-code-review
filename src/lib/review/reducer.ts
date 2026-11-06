@@ -1,7 +1,8 @@
-import type { MonsterKind, Review, ReviewFile } from "../types";
+import type { IgnoreReason, MonsterKind, Review, ReviewFile } from "../types";
 import { applyFix, relocate } from "./apply";
 import { banishAllInFile, banishAllPlan } from "./bulk";
 import { lurkingOf, nextLurking } from "./selectors";
+import { rescanFile, verifyFix } from "./verify";
 
 export interface Snapshot {
   file: ReviewFile;
@@ -26,7 +27,8 @@ export type ReviewAction =
   | { type: "step"; direction: 1 | -1 }
   | { type: "beginBanish"; findingId: string }
   | { type: "banish"; findingId: string }
-  | { type: "ignore"; findingId: string }
+  | { type: "ignore"; findingId: string; reason?: IgnoreReason }
+  | { type: "rescanFile"; fileId: string }
   | { type: "restore"; findingId: string }
   | { type: "undo" }
   | { type: "resetFile"; fileId: string }
@@ -90,6 +92,7 @@ export function reviewReducer(state: ReviewState, action: ReviewAction): ReviewS
       const file = fileOf(review, action.findingId);
       const finding = file?.findings.find((f) => f.id === action.findingId);
       if (!file || !finding || finding.status !== "lurking") return { ...state, banishing: null };
+      if (finding.autofix === false) return { ...state, banishing: null };
       const result = applyFix(file.code, finding);
       if (!result) {
         return {
@@ -101,7 +104,9 @@ export function reviewReducer(state: ReviewState, action: ReviewAction): ReviewS
           })),
         };
       }
-      const resolved = file.findings.map((x) => (x.id === finding.id ? { ...x, status: "banished" as const, stale: false } : x));
+      // Re-run the analysis on the fixed code: did the fix really resolve what the scanner saw?
+      const verification = verifyFix(file, result.code, finding, result);
+      const resolved = file.findings.map((x) => (x.id === finding.id ? { ...x, status: "banished" as const, stale: false, verification } : x));
       const nextFile: ReviewFile = { ...file, code: result.code, findings: relocate(result.code, resolved, result) };
       return {
         undo: pushUndo(state, file, `Banished ${finding.bug.toLowerCase()}`),
@@ -119,7 +124,7 @@ export function reviewReducer(state: ReviewState, action: ReviewAction): ReviewS
       if (!file || !finding || finding.status !== "lurking") return state;
       const nextFile: ReviewFile = {
         ...file,
-        findings: file.findings.map((x) => (x.id === finding.id ? { ...x, status: "ignored" as const } : x)),
+        findings: file.findings.map((x) => (x.id === finding.id ? { ...x, status: "ignored" as const, ignoreReason: action.reason } : x)),
       };
       return {
         ...state,
@@ -140,7 +145,7 @@ export function reviewReducer(state: ReviewState, action: ReviewAction): ReviewS
         ...file,
         findings: relocate(
           file.code,
-          file.findings.map((x) => (x.id === finding.id ? { ...x, status: "lurking" as const } : x)),
+          file.findings.map((x) => (x.id === finding.id ? { ...x, status: "lurking" as const, ignoreReason: undefined } : x)),
         ),
       };
       return {
@@ -167,7 +172,10 @@ export function reviewReducer(state: ReviewState, action: ReviewAction): ReviewS
       let next = review;
       let total = 0;
       for (const p of plan) {
-        const res = banishAllInFile(p.file, p.apply.map((f) => f.id));
+        const res = banishAllInFile(
+          p.file,
+          p.apply.map((f) => f.id),
+        );
         total += res.banished;
         next = updateFile(next, p.file.id, () => res.file);
       }
@@ -197,6 +205,20 @@ export function reviewReducer(state: ReviewState, action: ReviewAction): ReviewS
         ...state,
         undo: pushUndo(state, file, "Summoned them again"),
         review: { ...updateFile(review, file.id, () => fresh), selectedFindingId: lurkingOf(fresh)[0]?.id ?? null },
+      };
+    }
+
+    case "rescanFile": {
+      const file = review.files.find((f) => f.id === action.fileId);
+      if (!file) return state;
+      const { file: fresh } = rescanFile(file);
+      const selected = fresh.findings.some((f) => f.id === review.selectedFindingId && f.status === "lurking")
+        ? review.selectedFindingId
+        : (lurkingOf(fresh)[0]?.id ?? null);
+      return {
+        ...state,
+        undo: pushUndo(state, file, "Re-scanned the file"),
+        review: { ...updateFile(review, file.id, () => fresh), selectedFindingId: review.activeFileId === file.id ? selected : review.selectedFindingId },
       };
     }
 

@@ -25,22 +25,48 @@ Open http://localhost:3000 and pick **Try a cursed sample**, or go straight to h
 | **Home** `/` | Three doors: cursed samples (one click), paste code (validation, language auto-detect, Ctrl+Enter), and **Bring your code from GitHub**: sign in, pick one of your repositories (searchable; **Import a repository** grants access to more), then scan the whole repo or one of its open pull requests. Without the GitHub App, a link box takes any public GitHub link instead. Summoning progress overlay. Resume banner for an unfinished hunt. |
 | **Haunted Map** `/map` | A moonlit overview of a repository or folder scan: stat cards and a jack-o'-lantern room-light gauge; **Crypts to explore**, one tombstone per folder marked *Unexplored*, *Explored* (what it found, and when) or *You are here*, with progress across the repository; a **monster census** you can tap to filter; and **The rooms**, a folder tree (expand/collapse, search, Haunted/Clear filter, monster counts rolled up into every folder) or a ranked *Most haunted* list. "Enter the crypt" opens the worst file. |
 | **The Crypt** `/crypt` | **Banish all** applies every remaining fix in a file or the whole scan after a preview (Twin Ghosts left for review unless you include them), undone in one step. Syntax-highlighted code with monsters on their lines, sized by severity. Cursor-following lantern, Lights on/off. Optional sound (see below). Detail panel with "What is wrong" / "Explain it simply", the fix as a diff, Banish (burn-away animation, applies the fix) and Ignore. Graveyard with restore, undo everywhere, "summon them again", multi-file navigation, PR changed-line gutter. Keyboard spells (`?`). |
-| **Report** `/report` | Verdict, room light, trapped monsters, stats, worst severity, findings table, patch of every applied fix, Markdown export/copy. Send it back to GitHub: **Open a fix PR** (new branch, one commit per fixed file, a PR listing every fix) for file, folder, repository and comparison scans; **Push fixes to this PR** for pull requests; post a review (Comment / Request changes / Approve; Comment only on your own PR); or **Create GitHub issue**. |
+| **Report** `/report` | Verdict, room light, stats, **Fix first** (top open findings by priority), a findings table you can filter by severity, category and status, search, and sort by priority, each row linking to its code; patch of every applied fix; Markdown export/copy (a shareable report with a severity × status summary and per-finding remediation, secrets redacted). Send it back to GitHub: **Open a fix PR** (new branch, one commit per fixed file, a PR listing every fix) for file, folder, repository and comparison scans; **Push fixes to this PR** for pull requests; post a review (Comment / Request changes / Approve; Comment only on your own PR); or **Create GitHub issue**. |
 | **Bestiary** `/bestiary` | The seven monsters, their bug type, behaviour and an example fix. |
 
-### The bestiary
+### The bestiary: what each monster detects
 
-| Monster | Bug | Default severity |
-| --- | --- | --- |
-| Void Wraith | Null / undefined access | MED |
-| Leech | Memory leak (module-level cache that only grows) | MED |
-| Possessor | SQL injection, XSS | HIGH |
-| Imp | Off-by-one | LOW |
-| Twin Ghosts | Race condition (read, then write after await) | HIGH |
-| Zombie | Dead code after return/throw/break | LOW |
-| Gremlin | Hardcoded secret | HIGH |
+Every finding has a rule id, category, severity (Critical, High, Medium, Low), confidence, exact line and column, an explanation, impact, remediation and a CWE reference. Rules match **code only**: a small lexer masks comments and string contents first, so keywords in comments or UI text never trigger a finding.
 
-Languages: JavaScript, TypeScript, Python, PHP (not every rule applies to every language).
+| Monster | Rule id | What it detects | Languages | Automatic fix |
+| --- | --- | --- | --- | --- |
+| Possessor | `sql-injection` | SQL statements (SELECT…FROM, INSERT INTO, UPDATE…SET, DELETE FROM) built by interpolation or concatenation | JS/TS, Python, PHP | Bound parameters |
+| Possessor | `xss` | `innerHTML`/`outerHTML` assignments of data; PHP `echo $_GET[…]` | JS/TS, PHP | `textContent` / escaping |
+| Possessor | `command-injection` | Shell commands built from variables (`exec` with `child_process`, `shell: true`, `os.system`, `subprocess(…, shell=True)`, PHP `system`…) | JS/TS, Python, PHP | No (guidance) |
+| Possessor | `code-injection` | `eval` / `new Function` / Python `exec` on non-literals | JS/TS, Python, PHP | No (guidance) |
+| Gremlin | `hardcoded-secret` | Known key formats (Stripe, AWS, GitHub, Slack, Google, private keys) or credential-named variables holding credential-shaped values | JS/TS, Python, PHP | Read from env |
+| Gremlin | `tls-verification-disabled` | `rejectUnauthorized: false`, `NODE_TLS_REJECT_UNAUTHORIZED='0'`, `verify=False` | JS/TS, Python | Turn it back on |
+| Gremlin | `jwt-verification-disabled` | `jwt.decode(…, verify=False)`, `algorithms: ['none']` | JS/TS, Python | No (guidance) |
+| Void Wraith | `null-access` | Property access on `.find()`/DOM lookups/`.get()`/regex matches without a check | JS/TS, Python | Optional chaining / guard |
+| Imp | `off-by-one` | `<= length` loops, `[length]` indexes, `range(len(x) + 1)` | JS/TS, Python, PHP | `<` / `- 1` |
+| Twin Ghosts | `race-condition` | Read, `await`, then write back the same value | JS/TS, Python | Lock |
+| Zombie | `swallowed-error` | Empty `catch {}`; bare or catch-all `except: pass` | JS/TS, Python, PHP | No (guidance) |
+| Zombie | `dead-code` | Code after `return`/`throw`/`break`/`continue` | JS/TS, Python, PHP | Delete |
+| Leech | `memory-leak` | Module-level collections that only grow | JS/TS, Python | Size cap |
+
+**Severity is evidence-based.** Critical only when the line shows untrusted input (request data, `argv`…) reaching an injection sink, or for a live-format credential. **Confidence** says how sure a rule is; "low" means a potential risk the scanner could not confirm (for example, only constant-looking values interpolated into SQL), and the explanation says so. Nothing about exploitability or reachability is guessed.
+
+**Silence a finding in code** with a comment on its line or the line above: `// ccr-ignore` or `// ccr-ignore: sql-injection, xss` (`#` in Python/PHP). Strings never count.
+
+### Fixes you can trust
+
+- A fix applies only if its target lines are exactly where the finding says; otherwise it is rejected and the finding is marked stale. It never searches for a lookalike elsewhere.
+- A fix changes only its own lines; when identical code appears twice, each occurrence stays tied to its own finding.
+- The banishment animation starts only after a dry run confirms the fix applies. If it doesn't, the monster **resists** and nothing is reported as fixed.
+- After each fix the file is re-scanned: the graveyard and report say "verified by re-scan" or "re-scan still detects it".
+- Rules without a safe automatic fix explain the remediation and never change code; dismiss them with a reason (false positive, accepted risk, fixed outside the app).
+- Undo restores the exact previous content. **Re-scan file** re-runs every rule on the current code and reports resolved / new / remaining, keeping dismissals for the same finding only.
+- Reports, GitHub issues and review comments redact secret values.
+
+These guarantees are covered by property tests over randomly generated files (`src/lib/__tests__/fixEngine.property.test.ts`).
+
+### Limits
+
+Rules are per file and line-oriented, with a lexer but no full parser: no cross-file or data-flow analysis, no type information. Unhandled promise rejections are not detected. Findings are leads to review, not proof of exploitability.
 
 ## Connect real GitHub (GitHub App)
 

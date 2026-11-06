@@ -1,14 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useReview } from "@/providers/ReviewProvider";
-import { MONSTERS } from "@/lib/monsters";
 import { formatDate, reportFileName, toMarkdown } from "@/lib/report";
-import { primaryLine } from "@/lib/review/apply";
 import { isDaybreak, reviewStats, worstSeverity } from "@/lib/review/selectors";
 import { useDaybreak } from "@/lib/useDaybreak";
-import type { Finding } from "@/lib/types";
 import { DaybreakSky, Sun } from "../Daybreak";
 import { Logo } from "../layout/Logo";
 import { Monster } from "../Monster";
@@ -19,19 +17,15 @@ import { Icon } from "../ui/Icon";
 import { SeverityBadge } from "../ui/SeverityBadge";
 import { useToast } from "../ui/Toast";
 import { PatchView } from "./PatchView";
+import { FindingsTable, FixFirst } from "./FindingsTable";
 import { fixDestination } from "@/lib/fixes";
 import { ApplyFixesDialog } from "./ApplyFixesDialog";
 import { CreateIssueDialog } from "./CreateIssueDialog";
 import { PostReviewDialog } from "./PostReviewDialog";
 
-const STATUS: Record<Finding["status"], { label: string; cls: string }> = {
-  banished: { label: "Banished", cls: "bg-banished/[0.12] text-banished" },
-  ignored: { label: "Ignored", cls: "bg-chip text-ink-2" },
-  lurking: { label: "Lurking", cls: "bg-ember/[0.14] text-ember-soft" },
-};
-
 export function ReportView() {
-  const { review, hydrated } = useReview();
+  const { review, hydrated, dispatch } = useReview();
+  const router = useRouter();
   const { toast } = useToast();
   const [posting, setPosting] = useState(false);
   const [issuing, setIssuing] = useState(false);
@@ -47,6 +41,13 @@ export function ReportView() {
 
   const s = reviewStats(review);
   const all = review.files.flatMap((f) => f.findings.map((x) => ({ f: x, file: f })));
+  const items = all.map((x) => ({ ...x, path: x.file.path }));
+  /** Jump to a finding in the crypt: open its file and select it. */
+  const openFinding = (fileId: string, findingId: string) => {
+    dispatch({ type: "selectFile", fileId });
+    dispatch({ type: "select", findingId });
+    router.push("/crypt");
+  };
   const worst = worstSeverity(all.map((a) => a.f));
   const trapped = Array.from(new Set(all.filter((a) => a.f.status === "banished").map((a) => a.f.kind))).slice(0, 3);
   const multi = review.files.length > 1;
@@ -204,6 +205,8 @@ export function ReportView() {
           </div>
         </section>
 
+        <FixFirst items={items} onOpen={openFinding} />
+
         <section aria-labelledby="found" className="flex flex-col gap-3.5">
           <h2 id="found" className="m-0 font-display text-[40px] font-bold">
             What lurked in the code
@@ -211,55 +214,7 @@ export function ReportView() {
           {all.length === 0 ? (
             <p className="m-0 rounded-2xl border border-line bg-card p-6 text-ink-2">No monsters were found. Every static check came back quiet.</p>
           ) : (
-            <div className="scrollbar-thin relative overflow-x-auto rounded-2xl border border-line bg-card">
-              <table aria-labelledby="found" className="w-full min-w-[720px] border-collapse text-[15px]">
-                <thead>
-                  <tr className="text-left font-mono text-xs tracking-[0.12em] text-ink-3">
-                    <th scope="col" className="px-[18px] py-3.5 font-medium">
-                      MONSTER
-                    </th>
-                    {multi && (
-                      <th scope="col" className="px-[18px] py-3.5 font-medium">
-                        FILE
-                      </th>
-                    )}
-                    <th scope="col" className="px-[18px] py-3.5 font-medium">
-                      LINE
-                    </th>
-                    <th scope="col" className="px-[18px] py-3.5 font-medium">
-                      BUG
-                    </th>
-                    <th scope="col" className="px-[18px] py-3.5 font-medium">
-                      SEVERITY
-                    </th>
-                    <th scope="col" className="px-[18px] py-3.5 font-medium">
-                      STATUS
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {all.map(({ f, file }) => (
-                    <tr key={f.id} className="border-t border-line">
-                      <td className="px-[18px] py-2.5">
-                        <span className="flex items-center gap-3">
-                          <Monster kind={f.kind} size={40} glow={false} />
-                          <strong>{MONSTERS[f.kind].name}</strong>
-                        </span>
-                      </td>
-                      {multi && <td className="px-[18px] py-2.5 font-mono text-[13px] text-ink-2">{file.path.split("/").pop()}</td>}
-                      <td className="px-[18px] py-2.5 font-mono">{primaryLine(f)}</td>
-                      <td className="px-[18px] py-2.5 text-ink-2">{f.bug}</td>
-                      <td className="px-[18px] py-2.5">
-                        <SeverityBadge severity={f.severity} />
-                      </td>
-                      <td className="px-[18px] py-2.5">
-                        <span className={cx("rounded-full px-2.5 py-1 text-[13px] font-medium", STATUS[f.status].cls)}>{STATUS[f.status].label}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <FindingsTable items={items} multi={multi} onOpen={openFinding} />
           )}
         </section>
 

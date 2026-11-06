@@ -90,7 +90,7 @@ export function Creature({
       >
         {children}
       </span>
-      {severity === "HIGH" && !banishing && (
+      {(severity === "HIGH" || severity === "CRITICAL") && !banishing && (
         <span className="cr-aura-embers" aria-hidden="true">
           <span />
           <span />

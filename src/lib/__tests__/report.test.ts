@@ -32,14 +32,22 @@ describe("report", () => {
     let s = reviewReducer(initialState, { type: "start", review: reviewFromSamples("cursed-login") });
     s = reviewReducer(s, { type: "banish", findingId: "cursed-login:possessor:5" });
     s = reviewReducer(s, { type: "ignore", findingId: "cursed-login:gremlin:7" });
+    s = reviewReducer(s, { type: "ignore", findingId: "leaky-cache:wraith:22", reason: "false-positive" });
     const md = toMarkdown(s.review!, new Date("2026-10-31T12:00:00Z"));
-    expect(md).toContain("# Cursed Code Review — Cursed samples");
-    expect(md).toContain("_Generated Oct 31, 2026_");
-    expect(md).toContain("**12 monsters still lurk.**");
-    expect(md).toContain("| 14 | 1 | 1 | 12 | HIGH | 30% |");
-    expect(md).toContain("| 5 | Possessor | SQL injection | HIGH | Banished |");
-    expect(md).toContain("| 7 | Gremlin | Hardcoded secret | HIGH | Ignored |");
+    expect(md).toContain("# Code review report — Cursed samples");
+    expect(md).toContain("**Report generated:** 2026-10-31T12:00:00.000Z");
+    expect(md).toContain("**11 open findings** out of 14.");
+    expect(md).toContain("| Critical | 0 | 1 | 1 |");
+    expect(md).toContain("| **Total** | **11** | **1** | **2** |");
+    expect(md).toMatch(/## Fix first\n\nOpen findings ranked[^\n]*\n\n1\. \*\*High · /);
+    expect(md).toContain("#### Critical · SQL injection — line 5:");
+    expect(md).toContain("- **Status:** Fixed · verified by re-scan");
+    expect(md).toContain("[CWE-89](https://cwe.mitre.org/data/definitions/89.html)");
+    expect(md).toContain("- **Status:** Dismissed · false positive");
     expect(md).toContain("+    'SELECT * FROM users WHERE name = $1', [req.body.name]");
+    // The secret never appears, not in the finding, the suggested change or the patch.
+    expect(md).not.toContain("4f9a8b7c6d5e");
+    expect(md).toContain("«redacted»");
     expect(reportFileName(s.review!)).toBe("cursed-review-Cursed-samples.md");
   });
 
@@ -88,7 +96,11 @@ describe("highlight", () => {
 describe("file names in the crypt", async () => {
   const { displayNames } = await import("@/components/crypt/FileNav");
   it("adds parent folders only when names repeat", () => {
-    expect(displayNames(["src/app/api/pr/route.ts", "src/app/api/review/route.ts", "src/lib/patch.ts"])).toEqual(["pr/route.ts", "review/route.ts", "patch.ts"]);
+    expect(displayNames(["src/app/api/pr/route.ts", "src/app/api/review/route.ts", "src/lib/patch.ts"])).toEqual([
+      "pr/route.ts",
+      "review/route.ts",
+      "patch.ts",
+    ]);
     expect(displayNames(["a/x.ts", "a/x.ts"])).toEqual(["a/x.ts", "a/x.ts"]);
   });
 });
