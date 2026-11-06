@@ -125,6 +125,20 @@ Public pull requests still open: the server reads them anonymously from GitHub (
 
 Folder and repository scans read up to **40 files**, real source before tests and config, skipping `node_modules`, `dist`, `build`, `vendor`, minified and generated files and anything over 1,500 lines. Branch names with slashes (`feature/login`) work. A repository scan costs 2–3 GitHub API calls; file contents come from `raw.githubusercontent.com`, which doesn't count against the API limit.
 
+## The hunt, as a horror game
+
+Every bug is a monster, every fix is a banishment, every victory brings daylight. The spectacle is wired to the real review:
+
+- **Summoning.** Scanning draws a ritual circle in ember light while the files are read.
+- **Emergence.** Monsters climb out of the exact lines where their bugs hide, in reading order, each its own way: the Void Wraith rises out of shadow, the Leech squeezes out, the Possessor flickers in, the Imp pops up, the Twin Ghosts slide in from both sides, the Zombie rises from below, the Gremlin peeks in. The line flashes in its severity colour.
+- **Reactions.** Selecting a monster (click, `J`/`K`) makes it notice you with its own threat move, and it speaks (sound on).
+- **Severity.** LOW is a whisper, MED glows, HIGH smoulders with embers and a pulsing aura. The crypt's fog thickens and reddens while HIGH monsters remain, and the candles gutter when one is selected.
+- **Banishment.** The fix is dry-run first; only a fix that applies gets a banishment. Each creature dies its own death, in step with the timer that applies the fix (longer for HIGH): violet smoke, stolen energy, burning runes, embers, spectral waves, ash, golden sparks. Then the code changes, the room light rises and the next monster is selected. A fix that no longer applies is never shown as a success: the creature **resists**, and the finding is marked stale.
+- **The crypt.** A gothic window, moonlight falling across the room, dust in the beam, drifting fog and candles, all behind the code so the code stays the focus.
+- **The finale.** Banishing the last monster stops the drone, rings bells over a rising arpeggio and birdsong, turns the crypt to daylight and shows **THE CRYPT IS CLEANSED** with monsters discovered, banished, ignored, fixes applied and room light, and the way to the final report. **Undo the last banish** brings the night back.
+
+Presentation lives apart from the review logic: `src/lib/horror.ts` (per-creature config), `src/components/fx/` (`Creature`, `BanishBurst`) and CSS keyframes. Under reduced motion every banishment applies at once and nothing moves.
+
 ## Daybreak
 
 When the last monster is banished, the night lifts. The whole crypt eases into warm morning light: a sun rises behind the header, slow light rays turn, golden motes drift up, the code turns to parchment, the lantern becomes a sun (**Daylight · 100%**) and the page title becomes **Daybreak**. The report of a cleansed scan opens in daylight too. **Undo** brings the night back.
@@ -147,7 +161,8 @@ Off by default. Turn it on with the speaker button in the header (or `M` in the 
   | Zombie | A long, hollow groan |
   | Gremlin | "Heh-heh-heh-heh" |
 
-- **Banish:** the monster's last cry, deeper, under a hiss with ember crackles (**Banish all** gets a bigger burn).
+- **Banish:** the monster's last cry, deeper, under a hiss with ember crackles, plus its own death texture (a breath sucked away, a wet pop, cracking runes, a bright pop, two drifting tones, crumbling bones, tinkling sparks). **Banish all** gets a bigger burn. A fix that no longer applies fizzles instead.
+- **Emergence:** one low swell and stinger per opened file, heavier when something HIGH lurks. A faint breath when the cursor finds a monster (throttled), and now and then the selected monster murmurs while it waits.
 - **The room is cleansed:** when the last monster falls, two bells ring over a warm chord and birds wake up, light floods the crypt and "The room is cleansed" rises. Clearing one file while others are still haunted gets a short chime.
 - **Entering the crypt:** a door creak.
 - **In the crypt:** a very quiet low drone that fades as monsters are banished and stops when none are left.

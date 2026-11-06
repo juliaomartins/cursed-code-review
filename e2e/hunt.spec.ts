@@ -220,6 +220,11 @@ test("Banish all, then open a fix pull request", async ({ page }) => {
   // Every monster gone: the crypt turns to daylight.
   await expect(page.getByRole("heading", { level: 2, name: "Daybreak." })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("data-daybreak", "on");
+  // The finale: victory card with the hunt's numbers, readable on a phone too.
+  const finale = page.getByRole("dialog", { name: "THE CRYPT IS CLEANSED" });
+  await expect(finale).toBeVisible();
+  await expect(finale.getByRole("link", { name: /See the final report/ })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
 
   await page.goto("/report");
   await page.getByRole("button", { name: "Open a fix PR" }).click();

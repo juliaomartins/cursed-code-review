@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { MONSTERS, SEVERITY } from "@/lib/monsters";
-import { findingLines } from "@/lib/review/apply";
+import { findingLines, primaryLine as primaryLineOf } from "@/lib/review/apply";
 import { fileStats, lurkingOf } from "@/lib/review/selectors";
 import type { Finding, ReviewFile } from "@/lib/types";
 import { Sun } from "../Daybreak";
+import { Creature } from "../fx/Creature";
 import { LivingMonster } from "../LivingMonster";
 import { Monster } from "../Monster";
 import { Button, ButtonLink } from "../ui/Button";
@@ -28,6 +29,10 @@ export interface DetailPanelProps {
   onSelect: (id: string) => void;
   /** Every monster in the scan is banished: the panel greets the morning. */
   daybreak?: boolean;
+  /** Length of the banishment now playing, in ms. */
+  banishMs?: number;
+  /** The selected monster's fix just failed to apply. */
+  resisting?: boolean;
 }
 
 export function DetailPanel(props: DetailPanelProps) {
@@ -47,7 +52,7 @@ export function DetailPanel(props: DetailPanelProps) {
   );
 }
 
-function FindingDetail({ finding, banishing, simple, onSimple, onBanish, onIgnore, onCopyFix }: DetailPanelProps & { finding: Finding }) {
+function FindingDetail({ finding, banishing, banishMs, resisting, simple, onSimple, onBanish, onIgnore, onCopyFix }: DetailPanelProps & { finding: Finding }) {
   const m = MONSTERS[finding.kind];
   const sev = SEVERITY[finding.severity];
   const lines = findingLines(finding);
@@ -68,9 +73,22 @@ function FindingDetail({ finding, banishing, simple, onSimple, onBanish, onIgnor
           <path d="M130 32L215 179H45Z M130 228L45 81H215Z" fill="none" stroke="#FF8A3D" strokeOpacity="0.16" strokeWidth="1" />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <div key={finding.id} className={banishing ? "animate-banish" : "animate-float"}>
-            <LivingMonster kind={finding.kind} size={150} label={m.name} />
-          </div>
+          <Creature
+            key={finding.id}
+            kind={finding.kind}
+            severity={finding.severity}
+            reactOnMount
+            idle={false}
+            banishing={banishing}
+            banishMs={banishMs}
+            resisting={resisting}
+            scale={2.6}
+            seed={primaryLineOf(finding)}
+          >
+            <span className={cx("block", !banishing && "animate-float")}>
+              <LivingMonster kind={finding.kind} size={150} label={m.name} />
+            </span>
+          </Creature>
         </div>
       </div>
 
