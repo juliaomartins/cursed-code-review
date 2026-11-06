@@ -116,7 +116,7 @@ export function CreateIssueDialog({ open, onClose, review }: { open: boolean; on
             Ignored monsters are left out. Banished ones are marked &ldquo;fix ready&rdquo;, since the fix was only applied here, not in the repository.
           </p>
           {error && (
-            <div role="alert" className="flex flex-col gap-2 rounded-[10px] border border-sev-high/40 bg-sev-high/[0.07] p-3 text-[13px] text-[#ffc9c2]">
+            <div role="alert" className="flex flex-col gap-2 rounded-[10px] border border-sev-high/40 bg-sev-high/[0.07] p-3 text-[13px] text-alert-ink">
               <span className="flex gap-2">
                 <Icon name="alert" size={16} className="mt-px flex-none text-sev-high" /> {error.message}
               </span>

@@ -434,6 +434,34 @@ export function playCleansed({ small = false }: { small?: boolean } = {}): void 
   env(pad.gain, t, 0.22, 0.7, 0.8, 1.8);
   lp.connect(pad).connect(master);
   for (const f of [261.63, 329.63, 392, 523.25]) osc(c, "triangle", f, t, 3.4).connect(gain(c, 0.25)).connect(lp);
+  // Daybreak: a few birds wake up, one on each side.
+  birdsong(c, t + 1.3);
+}
+
+/** Soft dawn chirps: quick rising whistles in short phrases, left and right. */
+function birdsong(c: AudioContext, t: number) {
+  if (!master) return;
+  const phrases: [number, number, number, number][] = [
+    // start, side, base pitch, chirps
+    [0, -0.6, 3200, 3],
+    [0.55, 0.5, 3900, 2],
+    [1.25, -0.3, 3500, 4],
+    [2.1, 0.7, 4200, 2],
+  ];
+  for (const [start, side, base, count] of phrases) {
+    const out = gain(c, 1);
+    pan(c, out, master, side);
+    for (let i = 0; i < count; i++) {
+      const at = t + start + i * (0.09 + Math.random() * 0.03);
+      const f = base * (0.94 + Math.random() * 0.12);
+      const o = osc(c, "sine", f, at, 0.08);
+      o.frequency.exponentialRampToValueAtTime(f * 1.45, at + 0.05);
+      o.frequency.exponentialRampToValueAtTime(f * 1.1, at + 0.075);
+      const g = gain(c);
+      env(g.gain, at, 0.07, 0.008, 0.03, 0.04);
+      o.connect(g).connect(out);
+    }
+  }
 }
 
 /** A heavy door creaking open: a slow "stick-slip" buzz through wooden resonances. */

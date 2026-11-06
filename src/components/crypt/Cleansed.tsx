@@ -15,8 +15,11 @@ export function Cleansed({ onDone }: { onDone: () => void }) {
     <>
       <div aria-hidden="true" className="cleanse-flare pointer-events-none fixed inset-0 z-40" />
       <div className="pointer-events-none fixed inset-x-0 top-[28vh] z-50 flex justify-center px-4">
-        <div role="status" className="cleanse-banner flex flex-col items-center gap-1 text-center">
-          <span className="font-display text-[44px] leading-none font-bold text-[#FFE7C2] sm:text-[56px]">The room is cleansed</span>
+        <div
+          role="status"
+          className="cleanse-banner flex flex-col items-center gap-1.5 rounded-2xl border border-line bg-card/80 px-6 py-5 text-center shadow-[0_24px_70px_rgba(140,70,10,0.22)] backdrop-blur-md sm:px-10 sm:py-6"
+        >
+          <span className="font-display text-[44px] leading-none font-bold text-ember-pale sm:text-[56px]">The room is cleansed</span>
           <span className="text-base text-ink-2">Every monster is gone. The light is back.</span>
         </div>
       </div>

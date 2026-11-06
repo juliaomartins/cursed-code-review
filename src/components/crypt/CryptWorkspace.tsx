@@ -7,9 +7,11 @@ import { MONSTERS } from "@/lib/monsters";
 import { REVIEW_FIRST } from "@/lib/review/bulk";
 import { reviewFromSamples } from "@/lib/review/factory";
 import { primaryLine } from "@/lib/review/apply";
-import { activeFile, fileStats, lurkingOf, nextLurking, reviewStats, selectedFinding } from "@/lib/review/selectors";
+import { activeFile, fileStats, isDaybreak, lurkingOf, nextLurking, reviewStats, selectedFinding } from "@/lib/review/selectors";
+import { useDaybreak } from "@/lib/useDaybreak";
 import { getSample } from "@/lib/samples";
 import { playBanish, playCleansed, playCreak, playVoice, setDrone } from "@/lib/sound";
+import { DaybreakSky } from "../Daybreak";
 import { Logo } from "../layout/Logo";
 import { Monster } from "../Monster";
 import { SoundToggle, useSound } from "../SoundToggle";
@@ -59,6 +61,8 @@ export function CryptWorkspace() {
   const file = review ? activeFile(review) : null;
   const finding = review ? selectedFinding(review) : null;
   const banishingId = state.banishing;
+  const all = review ? reviewStats(review) : null;
+  const daybreak = !!all && isDaybreak(all);
 
   const select = useCallback(
     (id: string, fromKeyboard = false) => {
@@ -167,7 +171,7 @@ export function CryptWorkspace() {
         b: doBanish,
         i: doIgnore,
         e: () => setPrefs({ explainSimple: !prefs.explainSimple }),
-        l: () => setPrefs({ lights: !prefs.lights }),
+        l: () => !daybreak && setPrefs({ lights: !prefs.lights }),
         m: sound.toggle,
         u: doUndo,
         "]": () => stepFile(1),
@@ -181,7 +185,7 @@ export function CryptWorkspace() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [doBanish, doIgnore, doUndo, prefs, setPrefs, step, stepFile, sound.toggle]);
+  }, [doBanish, doIgnore, doUndo, prefs, setPrefs, step, stepFile, sound.toggle, daybreak]);
 
   // The door creaks once as you walk in.
   const creaked = useRef(false);
@@ -193,12 +197,14 @@ export function CryptWorkspace() {
   }, [hasReview]);
 
   // A low drone that fades as monsters are banished, and stops when none are left.
-  const all = review ? reviewStats(review) : null;
   const droneLevel = all && all.lurking > 0 ? 0.35 + (0.65 * all.lurking) / all.total : 0;
   useEffect(() => {
     setDrone(sound.on ? droneLevel : 0);
   }, [droneLevel, sound.on]);
   useEffect(() => () => setDrone(0), []);
+
+  // Every monster banished: the night lifts and the crypt stands in daylight. Undo brings the night back.
+  useDaybreak(daybreak, hydrated);
 
   // When banishing clears the last monster: a bell and the room fills with light.
   // Clearing one file (with others still haunted) gets a short chime.
@@ -224,18 +230,19 @@ export function CryptWorkspace() {
   const fs = fileStats(file);
   const total = reviewStats(review);
   const nextFile = review.files.find((f) => f.id !== file.id && lurkingOf(f).length > 0) ?? null;
-  const darkness = ((100 - fs.light) / 100) * 0.55;
+  const darkness = daybreak ? 0 : ((100 - fs.light) / 100) * 0.55;
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-[radial-gradient(ellipse_1000px_420px_at_50%_-8%,rgba(255,138,61,0.10),rgba(255,138,61,0)_70%),#0D0A12]">
+    <div className="crypt-root relative flex min-h-screen flex-col" data-daybreak={daybreak ? "" : undefined}>
+      {daybreak && <DaybreakSky />}
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-700"
         style={{ opacity: darkness, background: "radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.9) 100%)" }}
       />
-      <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-7 gap-y-3 border-b border-line bg-[rgba(13,10,18,0.88)] px-4 py-3.5 backdrop-blur sm:px-7">
+      <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-7 gap-y-3 crypt-header border-b border-line px-4 py-3.5 backdrop-blur sm:px-7">
         <Logo tagline size={38} />
-        <RoomLight value={fs.light} className="order-3 w-full sm:order-none sm:w-auto" />
+        <RoomLight value={daybreak ? 100 : fs.light} daybreak={daybreak} className="order-3 w-full sm:order-none sm:w-auto" />
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Button variant="ghost" onClick={doUndo} disabled={!state.undo.length} aria-label="Undo last action" title="Undo (U)" className="px-3">
             <Icon name="undo" />
@@ -250,7 +257,14 @@ export function CryptWorkspace() {
             <Icon name="keyboard" />
           </Button>
           <SoundToggle shortcut />
-          <Switch checked={prefs.lights} onChange={(v) => setPrefs({ lights: v })} label={prefs.lights ? "Lights on" : "Lights off"} />
+          {daybreak ? (
+            <span className="inline-flex min-h-11 items-center gap-2 rounded-full border border-line-strong bg-card-2 px-3.5 text-sm font-medium text-ember-pale">
+              <Icon name="sun" size={16} />
+              Daylight
+            </span>
+          ) : (
+            <Switch checked={prefs.lights} onChange={(v) => setPrefs({ lights: v })} label={prefs.lights ? "Lights on" : "Lights off"} />
+          )}
           <ButtonLink href="/report" variant="ember-outline">
             Finish review
           </ButtonLink>
@@ -265,8 +279,10 @@ export function CryptWorkspace() {
         <main id="main" className="box-border flex min-w-0 flex-auto flex-col gap-3.5 p-4 sm:p-[22px]">
           <div className="flex flex-wrap items-end justify-between gap-2.5">
             <div className="flex flex-col gap-1">
-              <h1 className="m-0 font-display text-[34px] leading-none font-bold">The Crypt</h1>
-              <span className="text-sm text-ink-3">Swing the lantern over the code. Click a monster to face it.</span>
+              <h1 className="m-0 font-display text-[34px] leading-none font-bold">{daybreak ? "Daybreak" : "The Crypt"}</h1>
+              <span className="text-sm text-ink-3">
+                {daybreak ? "Every monster is banished. The crypt stands in daylight." : "Swing the lantern over the code. Click a monster to face it."}
+              </span>
             </div>
             <div className="flex flex-wrap items-center gap-2 font-mono text-[13px]" aria-live="polite">
               {total.lurking > 1 && (
@@ -276,11 +292,11 @@ export function CryptWorkspace() {
                 </Button>
               )}
               <span className="rounded-full bg-track px-3 py-1.5">{fs.lurking} lurking</span>
-              <span className="rounded-full bg-[rgba(111,242,176,0.12)] px-3 py-1.5 text-banished">{fs.banished} banished</span>
+              <span className="rounded-full bg-banished/[0.12] px-3 py-1.5 text-banished">{fs.banished} banished</span>
               {review.files.length > 1 && <span className="hidden rounded-full bg-track px-3 py-1.5 text-ink-3 sm:inline">{total.lurking} across files</span>}
             </div>
           </div>
-          <CodeView file={file} selectedId={finding?.id ?? null} banishingId={banishingId} lights={prefs.lights} onPick={(id) => select(id)} />
+          <CodeView file={file} selectedId={finding?.id ?? null} banishingId={banishingId} lights={prefs.lights || daybreak} onPick={(id) => select(id)} />
           <p className="m-0 hidden text-xs text-ink-4 lg:block">
             Tip: press <kbd className="font-mono text-ink-3">J</kbd>/<kbd className="font-mono text-ink-3">K</kbd> to move between monsters,{" "}
             <kbd className="font-mono text-ink-3">B</kbd> to banish, <kbd className="font-mono text-ink-3">?</kbd> for all spells.
@@ -306,6 +322,7 @@ export function CryptWorkspace() {
             onSelectFile={(id) => dispatch({ type: "selectFile", fileId: id })}
             onCopyFix={copyFix}
             onSelect={(id) => select(id)}
+            daybreak={daybreak}
           />
         </aside>
       </div>

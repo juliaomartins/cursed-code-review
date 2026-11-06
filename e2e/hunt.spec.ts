@@ -217,7 +217,9 @@ test("Banish all, then open a fix pull request", async ({ page }) => {
   await expect(page).toHaveURL(/\/crypt$/, { timeout: 10_000 });
   await page.getByRole("button", { name: "Banish all" }).click();
   await page.getByRole("dialog", { name: "Banish all" }).getByRole("button", { name: "Banish 2 monsters" }).click();
-  await expect(page.getByText("The crypt is clear.")).toBeVisible();
+  // Every monster gone: the crypt turns to daylight.
+  await expect(page.getByRole("heading", { level: 2, name: "Daybreak." })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-daybreak", "on");
 
   await page.goto("/report");
   await page.getByRole("button", { name: "Open a fix PR" }).click();

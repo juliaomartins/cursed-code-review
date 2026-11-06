@@ -6,8 +6,10 @@ import { useReview } from "@/providers/ReviewProvider";
 import { MONSTERS } from "@/lib/monsters";
 import { formatDate, reportFileName, toMarkdown } from "@/lib/report";
 import { primaryLine } from "@/lib/review/apply";
-import { reviewStats, worstSeverity } from "@/lib/review/selectors";
+import { isDaybreak, reviewStats, worstSeverity } from "@/lib/review/selectors";
+import { useDaybreak } from "@/lib/useDaybreak";
 import type { Finding } from "@/lib/types";
+import { DaybreakSky, Sun } from "../Daybreak";
 import { Logo } from "../layout/Logo";
 import { Monster } from "../Monster";
 import { Lantern } from "../crypt/RoomLight";
@@ -37,6 +39,8 @@ export function ReportView() {
   const [today, setToday] = useState<string | null>(null);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- the date is client-only to avoid hydration mismatch
   useEffect(() => setToday(formatDate(new Date().toISOString())), []);
+  const daybreak = !!review && isDaybreak(reviewStats(review));
+  useDaybreak(daybreak, hydrated);
 
   if (!hydrated) return <div className="skeleton m-8 h-[70vh] rounded-2xl" aria-busy="true" aria-label="Loading report" />;
   if (!review) return <NoReport />;
@@ -111,8 +115,9 @@ export function ReportView() {
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-[radial-gradient(ellipse_1200px_520px_at_30%_-5%,rgba(255,178,90,0.20),rgba(255,138,61,0)_70%),#120E17]">
-      <header className="mx-auto box-border flex w-full max-w-[1280px] flex-wrap items-center justify-between gap-4 px-4 py-[18px] sm:px-7">
+    <div className="report-root relative flex min-h-screen flex-col">
+      {daybreak && <DaybreakSky />}
+      <header className="relative z-10 mx-auto box-border flex w-full max-w-[1280px] flex-wrap items-center justify-between gap-4 px-4 py-[18px] sm:px-7">
         <Logo size={38} />
         <ButtonLink href="/crypt" variant="outline">
           <Icon name="arrowLeft" size={16} strokeWidth={2.2} />
@@ -120,7 +125,7 @@ export function ReportView() {
         </ButtonLink>
       </header>
 
-      <main id="main" className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-11 px-4 pt-10 pb-20 sm:px-7">
+      <main id="main" className="relative z-10 mx-auto box-border flex w-full max-w-[1280px] flex-col gap-11 px-4 pt-10 pb-20 sm:px-7">
         <section className="flex flex-wrap items-center justify-between gap-8">
           <div className="flex min-w-0 flex-[1_1_520px] flex-col gap-4">
             <span className="font-mono text-xs tracking-[0.14em] break-words text-ink-3">
@@ -130,7 +135,7 @@ export function ReportView() {
               {clear ? "The crypt is clear." : "The crypt still stirs."}
             </h1>
             <div className="flex flex-wrap items-center gap-3.5">
-              <Lantern />
+              {daybreak ? <Sun /> : <Lantern />}
               <div
                 role="progressbar"
                 aria-label="Room light"
@@ -141,7 +146,9 @@ export function ReportView() {
               >
                 <div className="h-full bg-gradient-to-r from-ember to-ember-gold shadow-[0_0_12px_#FF8A3D]" style={{ width: `${s.light}%` }} />
               </div>
-              <span className="font-mono text-[13px] text-ember-gold">ROOM LIGHT {s.light}%</span>
+              <span className="font-mono text-[13px] text-ember-gold">
+                {daybreak ? "DAYLIGHT" : "ROOM LIGHT"} {s.light}%
+              </span>
             </div>
             {!clear && (
               <p className="m-0 text-[15px] text-ink-2">

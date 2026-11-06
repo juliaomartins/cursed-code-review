@@ -7,8 +7,27 @@ import { fixturePullRequest, fixtureScan } from "@/test/fixtures";
 import { mockApi, renderApp, router } from "./utils";
 
 const reduceMotion = () => {
-  window.matchMedia = ((q: string) => ({ matches: q.includes("reduce"), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as typeof window.matchMedia;
+  window.matchMedia = ((q: string) => ({
+    matches: q.includes("reduce"),
+    media: q,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},
+    removeListener() {},
+    onchange: null,
+    dispatchEvent: () => false,
+  })) as typeof window.matchMedia;
 };
+
+/** The review the app saved. Saving happens just after navigation starts, so wait for it. */
+async function savedReview() {
+  let raw: string | null = null;
+  await waitFor(() => {
+    raw = window.localStorage.getItem(KEYS.review);
+    expect(raw).not.toBeNull();
+  });
+  return JSON.parse(raw!).review;
+}
 
 describe("Home doors", () => {
   beforeEach(() => {
@@ -75,7 +94,8 @@ describe("Home doors", () => {
     await waitFor(() => expect(router.push).toHaveBeenCalledWith("/crypt"));
     const asked = String(vi.mocked(globalThis.fetch).mock.calls.find(([u]) => String(u).includes("/api/github/scan"))![0]);
     expect(decodeURIComponent(asked)).toContain("url=https://github.com/juliaomartins/cursed-code-review/pull/1");
-    expect(JSON.parse(window.localStorage.getItem(KEYS.review)!).review.source).toMatchObject({ kind: "pr", label: "kiro-labs/haunted-shop#42", live: true });
+    const saved = await savedReview();
+    expect(saved.source).toMatchObject({ kind: "pr", label: "kiro-labs/haunted-shop#42", live: true });
   });
 
   it("opens a whole repository on the Haunted Map", async () => {
@@ -89,7 +109,7 @@ describe("Home doors", () => {
     await user.click(screen.getByRole("button", { name: "Open in the crypt" }));
     expect(await screen.findByRole("alertdialog", { name: "Mapping the crypt" }, { timeout: 3000 })).toBeInTheDocument();
     await waitFor(() => expect(router.push).toHaveBeenCalledWith("/map"), { timeout: 3000 });
-    const saved = JSON.parse(window.localStorage.getItem(KEYS.review)!).review;
+    const saved = await savedReview();
     expect(saved.source).toMatchObject({ kind: "github", target: "repo", label: "acme/shop", sha: "d".repeat(40) });
     expect(saved.files).toHaveLength(3);
     // the most haunted file opens first
@@ -100,13 +120,15 @@ describe("Home doors", () => {
     const user = userEvent.setup();
     mockApi({
       "GET /api/auth/session": () => ({ json: { mode: "off", user: null } }),
-      "GET /api/github/scan": () => ({ json: { ...fixtureScan(), target: "file", path: "src/auth/cursed-login.js", files: fixtureScan().files.slice(0, 1), lines: [5, 8] } }),
+      "GET /api/github/scan": () => ({
+        json: { ...fixtureScan(), target: "file", path: "src/auth/cursed-login.js", files: fixtureScan().files.slice(0, 1), lines: [5, 8] },
+      }),
     });
     renderApp(<Doors />);
     await user.type(await screen.findByLabelText("GitHub link"), "https://github.com/acme/shop/blob/main/src/auth/cursed-login.js#L5-L8");
     await user.click(screen.getByRole("button", { name: "Open in the crypt" }));
     await waitFor(() => expect(router.push).toHaveBeenCalledWith("/crypt"), { timeout: 3000 });
-    expect(JSON.parse(window.localStorage.getItem(KEYS.review)!).review.files[0].focusLines).toEqual([5, 8]);
+    expect((await savedReview()).files[0].focusLines).toEqual([5, 8]);
   });
 
   it("shows GitHub's error for a link that can't be opened", async () => {
@@ -137,13 +159,37 @@ describe("Home doors", () => {
   });
 
   const repos = [
-    { owner: "juliaomartins", name: "playground-cursed", fullName: "juliaomartins/playground-cursed", private: true, language: "JavaScript", pushedAt: new Date().toISOString(), defaultBranch: "main", url: "https://github.com/juliaomartins/playground-cursed", description: "Buggy on purpose", archived: false },
-    { owner: "juliaomartins", name: "aprende-ho-cursed", fullName: "juliaomartins/aprende-ho-cursed", private: false, language: "JavaScript", pushedAt: "2026-11-01T00:00:00Z", defaultBranch: "main", url: "https://github.com/juliaomartins/aprende-ho-cursed", description: null, archived: false },
+    {
+      owner: "juliaomartins",
+      name: "playground-cursed",
+      fullName: "juliaomartins/playground-cursed",
+      private: true,
+      language: "JavaScript",
+      pushedAt: new Date().toISOString(),
+      defaultBranch: "main",
+      url: "https://github.com/juliaomartins/playground-cursed",
+      description: "Buggy on purpose",
+      archived: false,
+    },
+    {
+      owner: "juliaomartins",
+      name: "aprende-ho-cursed",
+      fullName: "juliaomartins/aprende-ho-cursed",
+      private: false,
+      language: "JavaScript",
+      pushedAt: "2026-11-01T00:00:00Z",
+      defaultBranch: "main",
+      url: "https://github.com/juliaomartins/aprende-ho-cursed",
+      description: null,
+      archived: false,
+    },
   ];
   const live = (extra: Record<string, () => { status?: number; json?: unknown }> = {}) =>
     mockApi({
       "GET /api/auth/session": () => ({ json: { mode: "live", user: { login: "juliaomartins", name: "Julião" } } }),
-      "GET /api/github/repos": () => ({ json: { repos, installations: [{ account: "juliaomartins", selection: "selected", manageUrl: "https://github.com/settings/installations/1" }] } }),
+      "GET /api/github/repos": () => ({
+        json: { repos, installations: [{ account: "juliaomartins", selection: "selected", manageUrl: "https://github.com/settings/installations/1" }] },
+      }),
       ...extra,
     });
 
@@ -154,7 +200,11 @@ describe("Home doors", () => {
     live();
     renderApp(<Doors />);
     const list = await screen.findByRole("list", { name: "Your repositories" });
-    expect(within(list).getAllByRole("button").map((b) => b.textContent)).toEqual([expect.stringContaining("playground-cursed"), expect.stringContaining("aprende-ho-cursed")]);
+    expect(
+      within(list)
+        .getAllByRole("button")
+        .map((b) => b.textContent),
+    ).toEqual([expect.stringContaining("playground-cursed"), expect.stringContaining("aprende-ho-cursed")]);
     expect(within(list).getByText("Private repository")).toBeInTheDocument();
     await user.type(screen.getByLabelText("Search your repositories"), "aprende");
     expect(within(list).getAllByRole("button")).toHaveLength(1);
@@ -170,8 +220,26 @@ describe("Home doors", () => {
     const api = live({
       "GET /api/github/pulls": () => ({
         json: [
-          { number: 4, title: "Add orders module", author: "juliaomartins", draft: false, headRef: "feat/orders", baseRef: "main", updatedAt: new Date().toISOString(), url: "https://github.com/juliaomartins/playground-cursed/pull/4" },
-          { number: 3, title: "Profile page", author: "mara", draft: true, headRef: "feat/profile", baseRef: "main", updatedAt: "2026-11-01T00:00:00Z", url: "https://github.com/juliaomartins/playground-cursed/pull/3" },
+          {
+            number: 4,
+            title: "Add orders module",
+            author: "juliaomartins",
+            draft: false,
+            headRef: "feat/orders",
+            baseRef: "main",
+            updatedAt: new Date().toISOString(),
+            url: "https://github.com/juliaomartins/playground-cursed/pull/4",
+          },
+          {
+            number: 3,
+            title: "Profile page",
+            author: "mara",
+            draft: true,
+            headRef: "feat/profile",
+            baseRef: "main",
+            updatedAt: "2026-11-01T00:00:00Z",
+            url: "https://github.com/juliaomartins/playground-cursed/pull/3",
+          },
         ],
       }),
       "GET /api/github/scan": () => ({ json: { target: "pr", pr: fixturePullRequest({ owner: "juliaomartins", repo: "playground-cursed", number: 4 }) } }),
@@ -204,7 +272,12 @@ describe("Home doors", () => {
     const user = userEvent.setup();
     const assign = vi.fn();
     vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, assign, pathname: "/", search: "", hash: "" } as Location);
-    live({ "GET /api/github/pulls": () => ({ status: 404, json: { code: "not_installed", message: "Cursed Code Review can't see juliaomartins/playground-cursed. Import it to give the app access." } }) });
+    live({
+      "GET /api/github/pulls": () => ({
+        status: 404,
+        json: { code: "not_installed", message: "Cursed Code Review can't see juliaomartins/playground-cursed. Import it to give the app access." },
+      }),
+    });
     renderApp(<Doors />);
     await user.click(await screen.findByRole("button", { name: /playground-cursed/ }));
     await user.click(await screen.findByRole("button", { name: "Import this repository" }));

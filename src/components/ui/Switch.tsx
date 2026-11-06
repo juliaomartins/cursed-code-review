@@ -8,7 +8,7 @@ export function Switch({ checked, onChange, label, className }: { checked: boole
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={cx(
-        "inline-flex min-h-11 items-center gap-2.5 rounded-full border border-line-strong bg-[#17121f] py-0 pr-3.5 pl-2.5 text-sm font-medium text-ink hover:border-ink-4",
+        "inline-flex min-h-11 items-center gap-2.5 rounded-full border border-line-strong bg-card-2 py-0 pr-3.5 pl-2.5 text-sm font-medium text-ink hover:border-ink-4",
         className,
       )}
     >

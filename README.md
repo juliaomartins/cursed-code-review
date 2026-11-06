@@ -125,6 +125,12 @@ Public pull requests still open: the server reads them anonymously from GitHub (
 
 Folder and repository scans read up to **40 files**, real source before tests and config, skipping `node_modules`, `dist`, `build`, `vendor`, minified and generated files and anything over 1,500 lines. Branch names with slashes (`feature/login`) work. A repository scan costs 2–3 GitHub API calls; file contents come from `raw.githubusercontent.com`, which doesn't count against the API limit.
 
+## Daybreak
+
+When the last monster is banished, the night lifts. The whole crypt eases into warm morning light: a sun rises behind the header, slow light rays turn, golden motes drift up, the code turns to parchment, the lantern becomes a sun (**Daylight · 100%**) and the page title becomes **Daybreak**. The report of a cleansed scan opens in daylight too. **Undo** brings the night back.
+
+It is the same set of colour tokens redefined under `html[data-daybreak]`, so every component follows. Under reduced motion the change is instant and nothing moves.
+
 ## Sound
 
 Off by default. Turn it on with the speaker button in the header (or `M` in the crypt); the choice is remembered.
@@ -142,7 +148,7 @@ Off by default. Turn it on with the speaker button in the header (or `M` in the 
   | Gremlin | "Heh-heh-heh-heh" |
 
 - **Banish:** the monster's last cry, deeper, under a hiss with ember crackles (**Banish all** gets a bigger burn).
-- **The room is cleansed:** when the last monster falls, two bells ring over a warm chord, light floods the crypt and "The room is cleansed" rises. Clearing one file while others are still haunted gets a short chime.
+- **The room is cleansed:** when the last monster falls, two bells ring over a warm chord and birds wake up, light floods the crypt and "The room is cleansed" rises. Clearing one file while others are still haunted gets a short chime.
 - **Entering the crypt:** a door creak.
 - **In the crypt:** a very quiet low drone that fades as monsters are banished and stops when none are left.
 
@@ -162,7 +168,7 @@ npm test
 npm run build && npm run test:e2e
 ```
 
-- **Vitest** (222 tests): every scanner rule, the fix engine (apply / relocate / stale), reducer, selectors, PR URL parsing, mock API, diff, Markdown export, highlighter, component tests for the crypt, home doors, report and sound, and server tests for the GitHub routes (sign-in state check, encrypted session, token refresh, PR loading, review placement) against a fake GitHub API.
+- **Vitest** (226 tests): every scanner rule, the fix engine (apply / relocate / stale), reducer, selectors, PR URL parsing, mock API, diff, Markdown export, highlighter, component tests for the crypt, home doors, report, sound and Daybreak, and server tests for the GitHub routes (sign-in state check, encrypted session, token refresh, PR loading, review placement) against a fake GitHub API.
 - **Playwright** on desktop and Pixel 7: full hunt → report → export, keyboard + undo, PR → sign in → post review (GitHub responses mocked in the browser), no fake sign-in without the app, paste flow, and a no-horizontal-scroll check on every page.
 
 Also: `npm run lint`, `npm run typecheck`.

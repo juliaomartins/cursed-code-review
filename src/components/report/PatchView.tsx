@@ -43,7 +43,7 @@ function HunkRows({ header, lines }: { header: string; lines: ReturnType<typeof 
   return (
     <>
       <tr>
-        <td colSpan={3} className="bg-[#1b1526] px-4 py-1.5 text-ink-4">
+        <td colSpan={3} className="bg-well px-4 py-1.5 text-ink-4">
           {header}
         </td>
       </tr>
