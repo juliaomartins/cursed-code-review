@@ -6,8 +6,13 @@ export const setSearch = (q: string) => {
   searchParams = new URLSearchParams(q);
 };
 
+let pathname = "/";
+export const setPathname = (p: string) => {
+  pathname = p;
+};
+
 export const navigationMock = {
   useRouter: () => router,
   useSearchParams: () => searchParams,
-  usePathname: () => "/",
+  usePathname: () => pathname,
 };

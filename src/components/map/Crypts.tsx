@@ -63,7 +63,7 @@ export function Crypts({ folders, total, scanned, scans, current, busy, error, o
           <li>
             <Stone
               state={repoScan ? "explored" : "unexplored"}
-              title="Whole repository"
+              title="Whole repo"
               detail={repoScan ? `${repoScan.files} files · ${monsters(repoScan.monsters)}` : "Back to the top"}
               action="Back to the whole repository"
               icon="arrowLeft"

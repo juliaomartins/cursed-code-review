@@ -28,4 +28,5 @@ if (typeof window !== "undefined") {
   }
 
   Element.prototype.scrollIntoView ??= function scrollIntoView() {};
+  window.scrollTo = () => {};
 }
