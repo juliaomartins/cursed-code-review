@@ -6,6 +6,7 @@ import { initialState, reviewReducer } from "../review/reducer";
 import { rescanFile, verifyFix } from "../review/verify";
 import { scan, toLines } from "../scanner";
 import type { Finding } from "../types";
+import { FAKE } from "@/test/fakeSecrets";
 
 /**
  * Property tests for the fix engine, with a seeded generator (no extra dependency): many random files built
@@ -14,7 +15,7 @@ import type { Finding } from "../types";
 const VULNERABLE = [
   "  db.query(`SELECT * FROM users WHERE id = ${req.params.id}`);",
   "  for (let i = 0; i <= items.length; i++) total += items[i];",
-  "  const apiKey = 'AKIAABCDEFGHIJKLMNOP';",
+  `  const apiKey = '${FAKE.awsKeyId}';`,
   "  el.innerHTML = userBio;",
   "  https.request({ host, rejectUnauthorized: false });",
 ];

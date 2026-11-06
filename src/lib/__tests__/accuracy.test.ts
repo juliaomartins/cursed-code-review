@@ -4,6 +4,7 @@ import { maskSource } from "../scanner/lexer";
 import { RULES_META } from "../scanner/rules";
 import { entropy, isSecretName } from "../scanner/secrets";
 import type { Language } from "../types";
+import { FAKE } from "@/test/fakeSecrets";
 
 const rules = (code: string, lang: Language) => scan(code, lang).map((f) => f.ruleId);
 const only = (code: string, lang: Language, rule: string) => scan(code, lang).filter((f) => f.ruleId === rule);
@@ -99,14 +100,14 @@ describe("rule corpus: vulnerable code is found, lookalikes are not", () => {
     expect(rules("const authorName = 'Juliao Martins';", "javascript")).toEqual([]);
     expect(rules("const passwordLabel = 'Enter your password';", "javascript")).toEqual([]);
     expect(rules("const password = 'changeme';", "javascript")).toEqual([]);
-    expect(rules("const dbPassword = 'pr0d-S3cret!2026';", "javascript")).toContain("hardcoded-secret");
-    expect(rules("const apiKey = 'AKIAABCDEFGHIJKLMNOP';", "javascript")).toContain("hardcoded-secret");
-    const [live] = only("const key = 'sk_live_51HxABCDEFGHijklmnop';", "javascript", "hardcoded-secret");
+    expect(rules(`const dbPassword = '${FAKE.dbPassword}';`, "javascript")).toContain("hardcoded-secret");
+    expect(rules(`const apiKey = '${FAKE.awsKeyId}';`, "javascript")).toContain("hardcoded-secret");
+    const [live] = only(`const key = '${FAKE.stripeLive}';`, "javascript", "hardcoded-secret");
     expect(live).toMatchObject({ severity: "CRITICAL", confidence: "high" });
-    const [generic] = only("SECRET_KEY = 'f3a9c1e8b7d24c6a9e0f1b2c'", "python", "hardcoded-secret");
+    const [generic] = only(`SECRET_KEY = '${FAKE.generic}'`, "python", "hardcoded-secret");
     expect(generic).toMatchObject({ severity: "HIGH", confidence: "medium" });
     // Regression: a random letter string is a credential even without digits; plain words are not.
-    expect(rules("const token = 'ghp_abcdefghijklmnop';", "javascript")).toContain("hardcoded-secret");
+    expect(rules(`const token = '${FAKE.github}';`, "javascript")).toContain("hardcoded-secret");
     expect(rules("const tokenScope = 'read-write';", "javascript")).toEqual([]);
     expect(rules("const password = 'readwrite';", "javascript")).toEqual([]);
     expect(isSecretName("AWS_SECRET_ACCESS_KEY")).toBe(true);
@@ -131,7 +132,7 @@ describe("locations, duplicates, suppression and robustness", () => {
   it("reports exact 1-based columns", () => {
     const [f] = only("  db.query(`SELECT * FROM t WHERE id = ${id}`);", "javascript", "sql-injection");
     expect(f.column).toBe(12);
-    const [s] = only("const key = 'sk_live_51HxABCDEFGHijklmnop';", "javascript", "hardcoded-secret");
+    const [s] = only(`const key = '${FAKE.stripeLive}';`, "javascript", "hardcoded-secret");
     expect(s.column).toBe(13);
   });
 
@@ -175,7 +176,7 @@ describe("locations, duplicates, suppression and robustness", () => {
       "exec(`ls ${dir}`);",
       "db.query(`SELECT * FROM t WHERE id = ${id}`);",
       "try { a(); } catch (e) {}",
-      "const apiKey = 'AKIAABCDEFGHIJKLMNOP';",
+      `const apiKey = '${FAKE.awsKeyId}';`,
     ].join("\n");
     for (const f of scan(sample, "javascript")) {
       const meta = RULES_META[f.ruleId!];
