@@ -7,9 +7,9 @@ import { MONSTERS } from "@/lib/monsters";
 import { REVIEW_FIRST } from "@/lib/review/bulk";
 import { reviewFromSamples } from "@/lib/review/factory";
 import { primaryLine } from "@/lib/review/apply";
-import { activeFile, fileStats, lurkingOf, reviewStats, selectedFinding } from "@/lib/review/selectors";
+import { activeFile, fileStats, lurkingOf, nextLurking, reviewStats, selectedFinding } from "@/lib/review/selectors";
 import { getSample } from "@/lib/samples";
-import { playBanish, playCreak, setDrone } from "@/lib/sound";
+import { playBanish, playCleansed, playCreak, playVoice, setDrone } from "@/lib/sound";
 import { Logo } from "../layout/Logo";
 import { Monster } from "../Monster";
 import { SoundToggle, useSound } from "../SoundToggle";
@@ -22,6 +22,7 @@ import { DetailPanel } from "./DetailPanel";
 import { FileNav } from "./FileNav";
 import { RoomLight } from "./RoomLight";
 import { BanishAllDialog } from "./BanishAllDialog";
+import { Cleansed } from "./Cleansed";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 
 export function CryptWorkspace() {
@@ -62,12 +63,25 @@ export function CryptWorkspace() {
   const select = useCallback(
     (id: string, fromKeyboard = false) => {
       scrollToSelection.current = fromKeyboard;
+      const picked = file?.findings.find((f) => f.id === id);
+      if (picked && picked.id !== finding?.id && picked.status === "lurking") playVoice(picked.kind);
       dispatch({ type: "select", findingId: id });
       if (!fromKeyboard && window.matchMedia?.("(max-width: 1023px)").matches) {
         requestAnimationFrame(() => asideRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
       }
     },
-    [dispatch],
+    [dispatch, file, finding?.id],
+  );
+
+  /** J/K: the monster you step to speaks. */
+  const step = useCallback(
+    (direction: 1 | -1) => {
+      const next = file ? nextLurking(file, finding?.id ?? null, direction) : null;
+      if (next && next.id !== finding?.id) playVoice(next.kind);
+      scrollToSelection.current = true;
+      dispatch({ type: "step", direction });
+    },
+    [file, finding?.id, dispatch],
   );
 
   useEffect(() => {
@@ -81,7 +95,7 @@ export function CryptWorkspace() {
     const name = MONSTERS[finding.kind].name;
     const left = lurkingOf(file).length - 1;
     banish(finding.id);
-    playBanish();
+    playBanish({ kind: finding.kind });
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     setTimeout(
       () =>
@@ -146,10 +160,10 @@ export function CryptWorkspace() {
       }
       const key = e.key;
       const actions: Record<string, () => void> = {
-        j: () => dispatch({ type: "step", direction: 1 }),
-        n: () => dispatch({ type: "step", direction: 1 }),
-        k: () => dispatch({ type: "step", direction: -1 }),
-        p: () => dispatch({ type: "step", direction: -1 }),
+        j: () => step(1),
+        n: () => step(1),
+        k: () => step(-1),
+        p: () => step(-1),
         b: doBanish,
         i: doIgnore,
         e: () => setPrefs({ explainSimple: !prefs.explainSimple }),
@@ -163,12 +177,11 @@ export function CryptWorkspace() {
       const fn = actions[key.length === 1 ? key.toLowerCase() : key] ?? (key === "?" ? actions["?"] : undefined);
       if (!fn) return;
       e.preventDefault();
-      if (["j", "n", "k", "p"].includes(key.toLowerCase())) scrollToSelection.current = true;
       fn();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dispatch, doBanish, doIgnore, doUndo, prefs, setPrefs, stepFile, sound.toggle]);
+  }, [doBanish, doIgnore, doUndo, prefs, setPrefs, step, stepFile, sound.toggle]);
 
   // The door creaks once as you walk in.
   const creaked = useRef(false);
@@ -186,6 +199,24 @@ export function CryptWorkspace() {
     setDrone(sound.on ? droneLevel : 0);
   }, [droneLevel, sound.on]);
   useEffect(() => () => setDrone(0), []);
+
+  // When banishing clears the last monster: a bell and the room fills with light.
+  // Clearing one file (with others still haunted) gets a short chime.
+  const [cleansed, setCleansed] = useState(0);
+  const fileNow = file ? fileStats(file) : null;
+  const seen = useRef<{ fileId: string; lurking: number; banished: number; total: number; allBanished: number } | null>(null);
+  useEffect(() => {
+    if (!file || !fileNow || !all) return;
+    const prev = seen.current;
+    seen.current = { fileId: file.id, lurking: fileNow.lurking, banished: fileNow.banished, total: all.lurking, allBanished: all.banished };
+    if (!prev) return;
+    if (prev.total > 0 && all.lurking === 0 && all.banished > prev.allBanished) {
+      playCleansed();
+      setCleansed((n) => n + 1);
+    } else if (prev.fileId === file.id && prev.lurking > 0 && fileNow.lurking === 0 && fileNow.banished > prev.banished) {
+      playCleansed({ small: true });
+    }
+  }, [file, fileNow, all]);
 
   if (!hydrated || (sampleParam && getSample(sampleParam) && handledSample !== sampleParam)) return <CryptSkeleton />;
   if (!review || !file) return <NoCrypt />;
@@ -278,6 +309,7 @@ export function CryptWorkspace() {
           />
         </aside>
       </div>
+      {cleansed > 0 && <Cleansed key={cleansed} onDone={() => setCleansed(0)} />}
       <ShortcutsDialog open={shortcuts} onClose={() => setShortcuts(false)} />
       {bulk && (
         <BanishAllDialog

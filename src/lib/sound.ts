@@ -5,6 +5,8 @@
  * created inside a click or key press (`unlock`), so browsers never block it.
  */
 
+import type { MonsterKind } from "./types";
+
 type Ctor = typeof AudioContext;
 
 let ctx: AudioContext | null = null;
@@ -15,6 +17,7 @@ let droneLevel = 0;
 let drone: { out: GainNode; nodes: AudioScheduledSourceNode[] } | null = null;
 let droneStop: ReturnType<typeof setTimeout> | null = null;
 let listening = false;
+let voiceBus: GainNode | null = null;
 
 /** Overall loudness. The drone sits far below the effects. */
 const MASTER = 0.7;
@@ -119,10 +122,12 @@ function noiseSource(c: AudioContext, when: number, dur?: number): AudioBufferSo
   return src;
 }
 
-/** Hiss and crackle as a monster burns away, with a falling sigh under it. */
-export function playBanish({ big = false }: { big?: boolean } = {}): void {
+/** Hiss and crackle as a monster burns away, with its own voice (or a falling sigh) under it. */
+export function playBanish({ big = false, kind }: { big?: boolean; kind?: MonsterKind } = {}): void {
   const c = live();
   if (!c || !master) return;
+  // The monster's last cry: its own voice, deeper and fading.
+  if (kind) playVoice(kind, { pitch: 0.8, gain: 0.75 });
   const t = c.currentTime + 0.01;
   const dur = big ? 1.3 : 0.75;
 
@@ -159,7 +164,9 @@ export function playBanish({ big = false }: { big?: boolean } = {}): void {
     pop.connect(pg).connect(popOut);
   }
 
-  // Sigh: the monster's voice falling away.
+  if (kind) return;
+
+  // Sigh: a voice falling away.
   const sigh = c.createOscillator();
   sigh.type = "sine";
   sigh.frequency.setValueAtTime(big ? 150 : 190, t);
@@ -171,6 +178,262 @@ export function playBanish({ big = false }: { big?: boolean } = {}): void {
   sigh.connect(sg).connect(master);
   sigh.start(t);
   sigh.stop(t + dur);
+}
+
+/* ───────── Monster voices ───────── */
+
+function env(p: AudioParam, t: number, peak: number, attack: number, hold: number, release: number) {
+  p.setValueAtTime(0.0001, t);
+  p.exponentialRampToValueAtTime(peak, t + attack);
+  p.setValueAtTime(peak, t + attack + hold);
+  p.exponentialRampToValueAtTime(0.0001, t + attack + hold + release);
+}
+
+function osc(c: AudioContext, type: OscillatorType, f: number, t: number, dur: number): OscillatorNode {
+  const o = c.createOscillator();
+  o.type = type;
+  o.frequency.setValueAtTime(f, t);
+  o.start(t);
+  o.stop(t + dur + 0.05);
+  return o;
+}
+
+function filt(c: AudioContext, type: BiquadFilterType, f: number, q = 1): BiquadFilterNode {
+  const b = c.createBiquadFilter();
+  b.type = type;
+  b.frequency.value = f;
+  b.Q.value = q;
+  return b;
+}
+
+function gain(c: AudioContext, v = 1): GainNode {
+  const g = c.createGain();
+  g.gain.value = v;
+  return g;
+}
+
+/** Wobbles `param` by ±depth at `rate` Hz. */
+function wobble(c: AudioContext, param: AudioParam, rate: number, depth: number, t: number, dur: number) {
+  const lfo = osc(c, "sine", rate, t, dur);
+  lfo.connect(gain(c, depth)).connect(param);
+}
+
+/** Vowel-like resonances: [frequency, Q, level]. */
+function formants(c: AudioContext, input: AudioNode, out: AudioNode, list: readonly (readonly [number, number, number])[]) {
+  for (const [f, q, g] of list)
+    input
+      .connect(filt(c, "bandpass", f, q))
+      .connect(gain(c, g))
+      .connect(out);
+}
+
+function pan(c: AudioContext, input: AudioNode, out: AudioNode, side: number) {
+  if (typeof c.createStereoPanner !== "function") {
+    input.connect(out);
+    return;
+  }
+  const p = c.createStereoPanner();
+  p.pan.value = side;
+  input.connect(p).connect(out);
+}
+
+type Voice = (c: AudioContext, out: AudioNode, t: number, p: number) => void;
+
+const VOICES: Record<MonsterKind, Voice> = {
+  // Void Wraith: a cold breath with a thin whistle inside it.
+  wraith(c, out, t, p) {
+    const dur = 1.3;
+    const bp = filt(c, "bandpass", 1100 * p, 1.4);
+    bp.frequency.setValueAtTime(1100 * p, t);
+    bp.frequency.exponentialRampToValueAtTime(380 * p, t + dur);
+    const g = gain(c);
+    env(g.gain, t, 0.55, 0.35, 0.2, 0.75);
+    noiseSource(c, t, dur).connect(bp).connect(g).connect(out);
+    const w = osc(c, "sine", 1250 * p, t, dur);
+    w.frequency.exponentialRampToValueAtTime(900 * p, t + dur);
+    wobble(c, w.frequency, 5.5, 16, t, dur);
+    const wg = gain(c);
+    env(wg.gain, t, 0.05, 0.4, 0.2, 0.6);
+    w.connect(wg).connect(out);
+  },
+  // Leech: wet bubbling gurgle.
+  leech(c, out, t, p) {
+    const lp = filt(c, "lowpass", 1500, 0.7);
+    lp.connect(out);
+    for (let i = 0; i < 8; i++) {
+      const at = t + i * 0.07 + Math.random() * 0.04;
+      const f0 = (140 + Math.random() * 120) * p;
+      const o = osc(c, "sine", f0, at, 0.09);
+      o.frequency.exponentialRampToValueAtTime(f0 * 3.2, at + 0.05);
+      const g = gain(c);
+      env(g.gain, at, 0.24, 0.005, 0.01, 0.06);
+      o.connect(g).connect(lp);
+    }
+    const g = gain(c);
+    env(g.gain, t, 0.1, 0.05, 0.3, 0.3);
+    noiseSource(c, t, 0.7)
+      .connect(filt(c, "lowpass", 450))
+      .connect(g)
+      .connect(out);
+  },
+  // Possessor: a rough demonic growl that sinks.
+  possessor(c, out, t, p) {
+    const dur = 1.0;
+    const saw = osc(c, "sawtooth", 84 * p, t, dur);
+    saw.frequency.exponentialRampToValueAtTime(52 * p, t + dur);
+    const rough = gain(c, 0.6);
+    wobble(c, rough.gain, 31, 0.4, t, dur);
+    const g = gain(c);
+    env(g.gain, t, 0.24, 0.12, 0.4, 0.45);
+    saw.connect(rough);
+    formants(c, rough, g, [
+      [420, 6, 1],
+      [1100, 8, 0.5],
+      [2600, 10, 0.2],
+    ]);
+    g.connect(out);
+    const sub = osc(c, "sine", 42 * p, t, dur);
+    const sg = gain(c);
+    env(sg.gain, t, 0.16, 0.1, 0.5, 0.35);
+    sub.connect(sg).connect(out);
+  },
+  // Imp: a quick, squeaky giggle.
+  imp(c, out, t, p) {
+    const steps = [1.0, 1.15, 1.05, 1.22, 1.1, 0.95];
+    steps.forEach((m, i) => {
+      const at = t + i * 0.085;
+      const f = (1050 + Math.random() * 120) * m * p;
+      const o = osc(c, "triangle", f, at, 0.08);
+      o.frequency.exponentialRampToValueAtTime(f * 0.7, at + 0.06);
+      const g = gain(c);
+      env(g.gain, at, 0.3, 0.004, 0.02, 0.05);
+      o.connect(g).connect(out);
+    });
+  },
+  // Twin Ghosts: two whispers, one in each ear, a beat apart.
+  twins(c, out, t, p) {
+    (
+      [
+        [-0.8, 0, 5.5],
+        [0.8, 0.14, 6.4],
+      ] as const
+    ).forEach(([side, off, rate]) => {
+      const at = t + off;
+      const dur = 1.1;
+      const syll = gain(c, 0.6);
+      wobble(c, syll.gain, rate, 0.4, at, dur);
+      const g = gain(c);
+      env(g.gain, at, 1.1, 0.1, 0.6, 0.35);
+      noiseSource(c, at, dur).connect(syll);
+      formants(c, syll, g, [
+        [650 * p, 5, 1],
+        [1150 * p, 6, 0.7],
+        [2500 * p, 4, 0.4],
+      ]);
+      pan(c, g, out, side);
+      const tone = osc(c, "sine", (side < 0 ? 660 : 667) * p, at, dur);
+      const tg = gain(c);
+      env(tg.gain, at, 0.05, 0.3, 0.4, 0.35);
+      pan(c, tone.connect(tg), out, side);
+    });
+  },
+  // Zombie: a long, hollow groan.
+  zombie(c, out, t, p) {
+    const dur = 1.2;
+    const saw = osc(c, "sawtooth", 108 * p, t, dur);
+    saw.frequency.exponentialRampToValueAtTime(72 * p, t + dur);
+    wobble(c, saw.frequency, 4.5, 3, t, dur);
+    const lp = filt(c, "lowpass", 1800);
+    const g = gain(c);
+    env(g.gain, t, 0.7, 0.25, 0.45, 0.5);
+    formants(c, saw, lp, [
+      [520, 5, 1],
+      [920, 6, 0.6],
+      [2400, 8, 0.15],
+    ]);
+    lp.connect(g).connect(out);
+    const bg = gain(c);
+    env(bg.gain, t, 0.08, 0.2, 0.5, 0.4);
+    noiseSource(c, t, dur)
+      .connect(filt(c, "lowpass", 900))
+      .connect(bg)
+      .connect(out);
+  },
+  // Gremlin: "heh-heh-heh-heh".
+  gremlin(c, out, t, p) {
+    for (let i = 0; i < 4; i++) {
+      const at = t + i * 0.14;
+      const f = (330 + i * 18) * p;
+      const o = osc(c, "sawtooth", f, at, 0.1);
+      o.frequency.exponentialRampToValueAtTime(f * 0.9, at + 0.09);
+      const g = gain(c);
+      env(g.gain, at, 0.5, 0.008, 0.04, 0.05);
+      formants(c, o, g, [
+        [750, 6, 1],
+        [1750, 8, 0.6],
+        [2800, 10, 0.3],
+      ]);
+      g.connect(out);
+      const h = gain(c);
+      env(h.gain, at, 0.12, 0.004, 0.02, 0.04);
+      noiseSource(c, at, 0.08)
+        .connect(filt(c, "highpass", 1500))
+        .connect(h)
+        .connect(out);
+    }
+  },
+};
+
+/** The monster speaks. A new voice cuts off the previous one, so stepping quickly never piles them up. */
+export function playVoice(kind: MonsterKind, { pitch = 1, gain: level = 1 }: { pitch?: number; gain?: number } = {}): void {
+  const c = live();
+  if (!c || !master) return;
+  const now = c.currentTime;
+  if (voiceBus) {
+    const old = voiceBus;
+    old.gain.cancelScheduledValues(now);
+    old.gain.setTargetAtTime(0, now, 0.03);
+    setTimeout(() => old.disconnect(), 400);
+  }
+  const out = gain(c, level);
+  out.connect(master);
+  voiceBus = out;
+  VOICES[kind](c, out, now + 0.01, pitch);
+}
+
+/** A bell when the room is clear. `small` is a short chime for one cleared file. */
+export function playCleansed({ small = false }: { small?: boolean } = {}): void {
+  const c = live();
+  if (!c || !master) return;
+  const t = c.currentTime + 0.02;
+  const bell = (base: number, at: number, level: number, decay: number) => {
+    for (const [ratio, g] of [
+      [1, 1],
+      [2, 0.5],
+      [2.76, 0.35],
+      [5.4, 0.2],
+      [8.93, 0.1],
+    ] as const) {
+      const o = osc(c, "sine", base * ratio, at, decay);
+      const og = gain(c);
+      og.gain.setValueAtTime(0.0001, at);
+      og.gain.exponentialRampToValueAtTime(level * g, at + 0.005);
+      og.gain.exponentialRampToValueAtTime(0.0001, at + decay / Math.pow(ratio, 0.35));
+      o.connect(og).connect(master!);
+    }
+  };
+  if (small) {
+    bell(880, t, 0.16, 1.4);
+    return;
+  }
+  bell(523.25, t, 0.26, 3.2);
+  bell(783.99, t + 0.35, 0.17, 2.8);
+  // A warm chord swells under the bells: the light coming back.
+  const lp = filt(c, "lowpass", 1500, 0.5);
+  const pad = gain(c);
+  env(pad.gain, t, 0.22, 0.7, 0.8, 1.8);
+  lp.connect(pad).connect(master);
+  for (const f of [261.63, 329.63, 392, 523.25]) osc(c, "triangle", f, t, 3.4).connect(gain(c, 0.25)).connect(lp);
 }
 
 /** A heavy door creaking open: a slow "stick-slip" buzz through wooden resonances. */
@@ -315,6 +578,7 @@ export function setDrone(level: number): void {
 export function resetSoundForTests(): void {
   killDrone();
   listen(false);
+  voiceBus = null;
   enabled = false;
   droneLevel = 0;
   ctx = null;
