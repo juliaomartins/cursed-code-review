@@ -1,3 +1,4 @@
+import { Sun } from "../Daybreak";
 import { cx } from "../ui/cx";
 
 export function Lantern({ className }: { className?: string }) {
@@ -10,13 +11,13 @@ export function Lantern({ className }: { className?: string }) {
   );
 }
 
-export function RoomLight({ value, className, wide = false }: { value: number; className?: string; wide?: boolean }) {
+export function RoomLight({ value, className, wide = false, daybreak = false }: { value: number; className?: string; wide?: boolean; daybreak?: boolean }) {
   return (
     <div className={cx("flex items-center gap-3", className)}>
-      <Lantern />
+      {daybreak ? <Sun /> : <Lantern />}
       <div className="flex flex-col gap-1.5">
         <span className="font-mono text-[11px] tracking-[0.14em] text-ink-3" id="room-light-label">
-          ROOM LIGHT · {value}%
+          {daybreak ? "DAYLIGHT" : "ROOM LIGHT"} · {value}%
         </span>
         <div
           role="progressbar"

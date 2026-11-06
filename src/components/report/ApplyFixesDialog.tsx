@@ -192,7 +192,7 @@ export function ApplyFixesDialog({ open, onClose, review }: { open: boolean; onC
           )}
           {isPr && <p className="m-0 text-[13px] text-ink-3">The commits go straight onto the PR&apos;s branch, so the pull request updates in place.</p>}
           {error && (
-            <div role="alert" className="flex flex-col gap-2 rounded-[10px] border border-sev-high/40 bg-sev-high/[0.07] p-3 text-[13px] text-[#ffc9c2]">
+            <div role="alert" className="flex flex-col gap-2 rounded-[10px] border border-sev-high/40 bg-sev-high/[0.07] p-3 text-[13px] text-alert-ink">
               <span className="flex gap-2">
                 <Icon name="alert" size={16} className="mt-px flex-none text-sev-high" /> {error.message}
               </span>

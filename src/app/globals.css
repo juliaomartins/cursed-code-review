@@ -38,6 +38,8 @@
   --color-banished: #9df7c9;
   --color-fix-del: #ffb9b0;
   --color-fix-add: #a6f7cf;
+  --color-warn-ink: #ffe0ad;
+  --color-alert-ink: #ffc9c2;
 
   /* Lights-on editor */
   --color-parchment: #fbf7f0;
@@ -256,4 +258,111 @@
   /* No movement: the light and the message simply appear, then go. */
   .cleanse-flare, .cleanse-banner { animation: none; opacity: 1; }
   .cleanse-flare { opacity: 0.6; }
+}
+
+/* ───────── Daybreak (useDaybreak.ts) ─────────
+   When every monster is banished the night lifts: the same tokens, in warm morning light. */
+html[data-daybreak] {
+  color-scheme: light;
+  --color-crypt: #fdf3e4;
+  --color-crypt-report: #fdf3e4;
+  --color-panel: #fff8ee;
+  --color-card: #fffaf4;
+  --color-card-2: #fff4e6;
+  --color-well: #f7ebd9;
+  --color-track: #efdfc8;
+  --color-chip: #ecdcc5;
+  --color-line: #ead8bf;
+  --color-line-strong: #dcc4a3;
+  --color-ink: #2b1d12;
+  --color-ink-2: #4b392a;
+  --color-ink-3: #66523f;
+  --color-ink-4: #7a6550;
+  --color-ink-body: #3a2a1d;
+  --color-ember: #e8701d;
+  --color-ember-soft: #b85410;
+  --color-ember-pale: #93420a;
+  --color-ember-gold: #a87100;
+  --color-sev-high: #c13a2c;
+  --color-sev-med: #9a5a00;
+  --color-sev-low: #17739a;
+  --color-banished: #167848;
+  --color-fix-del: #ab2a20;
+  --color-fix-add: #156b44;
+  --color-warn-ink: #7f4500;
+  --color-alert-ink: #9c2519;
+}
+html[data-daybreak] ::selection { background: rgba(232, 112, 29, 0.25); color: inherit; }
+html[data-daybreak] input::placeholder, html[data-daybreak] textarea::placeholder { color: #8c7660; }
+
+/* Night ↔ day: every colour eases across instead of snapping. */
+html.day-shift *, html.day-shift *::before, html.day-shift *::after {
+  transition: background-color 1.6s ease, border-color 1.6s ease, color 1.6s ease, fill 1.6s ease, stroke 1.6s ease, box-shadow 1.6s ease !important;
+}
+
+.crypt-root { background: radial-gradient(ellipse 1000px 420px at 50% -8%, rgba(255, 138, 61, 0.1), rgba(255, 138, 61, 0) 70%), #0d0a12; }
+.crypt-header { background: rgba(13, 10, 18, 0.88); }
+.report-root { background: radial-gradient(ellipse 1200px 520px at 30% -5%, rgba(255, 178, 90, 0.2), rgba(255, 138, 61, 0) 70%), #120e17; }
+html[data-daybreak] .crypt-root, html[data-daybreak] .report-root { background: #fdf3e4; }
+html[data-daybreak] .crypt-header { background: rgba(255, 248, 238, 0.78); }
+/* Panels let the morning through. */
+html[data-daybreak] .crypt-root aside.bg-panel { background: rgba(255, 248, 238, 0.7); backdrop-filter: blur(8px); }
+
+.daybreak-sky {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 1100px 560px at 50% -12%, rgba(255, 210, 130, 0.8), rgba(255, 190, 120, 0) 70%),
+    linear-gradient(180deg, #ffe2bd 0%, #fff0dc 26%, #fdf3e4 58%, #fbf0df 100%);
+  animation: day-fade 1.8s ease-out both;
+}
+.daybreak-sun {
+  position: absolute;
+  left: 50%;
+  top: -190px;
+  width: 460px;
+  height: 460px;
+  margin-left: -230px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffbe8 0%, #ffe7a8 22%, #ffc56b 42%, rgba(255, 180, 90, 0) 70%);
+  animation: sun-rise 2.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.daybreak-rays {
+  position: absolute;
+  left: 50%;
+  top: 40px;
+  width: 2400px;
+  height: 2400px;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 206, 120, 0.26) 0deg 5deg, rgba(255, 206, 120, 0) 5deg 15deg);
+  -webkit-mask-image: radial-gradient(circle, #000 0%, rgba(0, 0, 0, 0.55) 18%, transparent 46%);
+  mask-image: radial-gradient(circle, #000 0%, rgba(0, 0, 0, 0.55) 18%, transparent 46%);
+  transform: translate(-50%, -50%);
+  animation: rays-spin 140s linear infinite, day-fade 3s ease-out both;
+}
+.daybreak-mote {
+  position: absolute;
+  bottom: -12px;
+  width: var(--s, 5px);
+  height: var(--s, 5px);
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff6d6 0%, #ffcf6e 55%, rgba(255, 200, 100, 0) 75%);
+  opacity: 0;
+  animation: mote-rise var(--d, 14s) linear var(--delay, 0s) infinite;
+}
+@keyframes day-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sun-rise { from { transform: translateY(120px) scale(0.8); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+@keyframes rays-spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes mote-rise {
+  0% { transform: translate(0, 0); opacity: 0; }
+  12% { opacity: 0.9; }
+  50% { transform: translate(var(--sway, 30px), -50vh); }
+  88% { opacity: 0.7; }
+  100% { transform: translate(0, -105vh); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .daybreak-sky, .daybreak-sun, .daybreak-rays { animation: none; }
+  .daybreak-mote { display: none; }
 }

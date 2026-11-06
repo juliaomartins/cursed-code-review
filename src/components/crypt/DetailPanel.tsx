@@ -5,6 +5,7 @@ import { MONSTERS, SEVERITY } from "@/lib/monsters";
 import { findingLines } from "@/lib/review/apply";
 import { fileStats, lurkingOf } from "@/lib/review/selectors";
 import type { Finding, ReviewFile } from "@/lib/types";
+import { Sun } from "../Daybreak";
 import { LivingMonster } from "../LivingMonster";
 import { Monster } from "../Monster";
 import { Button, ButtonLink } from "../ui/Button";
@@ -25,6 +26,8 @@ export interface DetailPanelProps {
   onSelectFile: (id: string) => void;
   onCopyFix: () => void;
   onSelect: (id: string) => void;
+  /** Every monster in the scan is banished: the panel greets the morning. */
+  daybreak?: boolean;
 }
 
 export function DetailPanel(props: DetailPanelProps) {
@@ -84,7 +87,7 @@ function FindingDetail({ finding, banishing, simple, onSimple, onBanish, onIgnor
       </div>
 
       {finding.stale && (
-        <div role="alert" className="flex gap-2 rounded-xl border border-sev-med/40 bg-sev-med/[0.08] p-3 text-[13px] text-[#ffe0ad]">
+        <div role="alert" className="flex gap-2 rounded-xl border border-sev-med/40 bg-sev-med/[0.08] p-3 text-[13px] text-warn-ink">
           <Icon name="alert" size={16} className="mt-px flex-none text-sev-med" />
           The code around this monster changed, so its fix no longer applies cleanly. Ignore it, or undo your last change.
         </div>
@@ -175,22 +178,32 @@ function PickPrompt({ count, onPick }: { count: number; onPick: () => void }) {
   );
 }
 
-function AllClear({ file, nextFile, onReset, onSelectFile }: DetailPanelProps) {
+function AllClear({ file, nextFile, onReset, onSelectFile, daybreak }: DetailPanelProps) {
   const s = fileStats(file);
   const none = s.total === 0;
   return (
     <div className="flex animate-rise flex-col items-center gap-3.5 px-3 py-10 text-center">
-      <svg aria-hidden="true" width="96" height="120" viewBox="0 0 96 120">
-        <circle cx="48" cy="64" r="44" fill="#FF8A3D" opacity="0.18" />
-        <path d="M36 10H60M48 10V20" stroke="#ADA0C2" strokeWidth="3" strokeLinecap="round" />
-        <rect x="28" y="20" width="40" height="8" rx="2" fill="#3D3154" />
-        <path d="M30 28H66L62 96H34Z" fill="#1D1628" stroke="#ADA0C2" strokeWidth="3" strokeLinejoin="round" />
-        <path d="M48 42C55 52 58 58 48 74C38 58 41 52 48 42Z" fill="#FF8A3D" className="origin-[48px_74px] animate-flicker" />
-        <rect x="26" y="96" width="44" height="8" rx="2" fill="#3D3154" />
-      </svg>
-      <h2 className="m-0 font-display text-[40px] leading-none">{none ? "No monsters here." : "The crypt is clear."}</h2>
+      {daybreak ? (
+        <span className="relative grid h-[120px] w-[120px] place-items-center rounded-full bg-[radial-gradient(circle,rgba(255,200,90,0.45),rgba(255,200,90,0)_70%)]">
+          <Sun size={84} />
+        </span>
+      ) : (
+        <svg aria-hidden="true" width="96" height="120" viewBox="0 0 96 120">
+          <circle cx="48" cy="64" r="44" fill="#FF8A3D" opacity="0.18" />
+          <path d="M36 10H60M48 10V20" stroke="#ADA0C2" strokeWidth="3" strokeLinecap="round" />
+          <rect x="28" y="20" width="40" height="8" rx="2" fill="#3D3154" />
+          <path d="M30 28H66L62 96H34Z" fill="#1D1628" stroke="#ADA0C2" strokeWidth="3" strokeLinejoin="round" />
+          <path d="M48 42C55 52 58 58 48 74C38 58 41 52 48 42Z" fill="#FF8A3D" className="origin-[48px_74px] animate-flicker" />
+          <rect x="26" y="96" width="44" height="8" rx="2" fill="#3D3154" />
+        </svg>
+      )}
+      <h2 className="m-0 font-display text-[40px] leading-none">{none ? "No monsters here." : daybreak ? "Daybreak." : "The crypt is clear."}</h2>
       <p className="m-0 text-[15px] leading-normal text-ink-3">
-        {none ? "Every static check came back quiet. This file looks clean." : "Every monster in this file is banished or ignored."}
+        {none
+          ? "Every static check came back quiet. This file looks clean."
+          : daybreak
+            ? "Every monster is banished. The crypt stands in daylight."
+            : "Every monster in this file is banished or ignored."}
       </p>
       {nextFile ? (
         <Button variant="primary" onClick={() => onSelectFile(nextFile.id)} className="min-h-[52px] rounded-xl px-6">

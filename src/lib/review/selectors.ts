@@ -20,6 +20,9 @@ export function statsOf(findings: Finding[]): Stats {
   return { total, lurking, banished, ignored, light };
 }
 
+/** Daybreak: nothing left lurking, and at least one monster was banished (not merely ignored). */
+export const isDaybreak = (s: Stats): boolean => s.lurking === 0 && s.banished > 0;
+
 export const fileStats = (file: ReviewFile): Stats => statsOf(file.findings);
 
 export const reviewStats = (review: Review): Stats => statsOf(review.files.flatMap((f) => f.findings));
