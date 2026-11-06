@@ -257,14 +257,8 @@ export function CryptWorkspace() {
             <Icon name="keyboard" />
           </Button>
           <SoundToggle shortcut />
-          {daybreak ? (
-            <span className="inline-flex min-h-11 items-center gap-2 rounded-full border border-line-strong bg-card-2 px-3.5 text-sm font-medium text-ember-pale">
-              <Icon name="sun" size={16} />
-              Daylight
-            </span>
-          ) : (
-            <Switch checked={prefs.lights} onChange={(v) => setPrefs({ lights: v })} label={prefs.lights ? "Lights on" : "Lights off"} />
-          )}
+          {/* In daylight the code is already lit and the room meter says so: no switch, no second label. */}
+          {!daybreak && <Switch checked={prefs.lights} onChange={(v) => setPrefs({ lights: v })} label={prefs.lights ? "Lights on" : "Lights off"} />}
           <ButtonLink href="/report" variant="ember-outline">
             Finish review
           </ButtonLink>
