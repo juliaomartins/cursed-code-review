@@ -3,8 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { CryptWorkspace } from "../crypt/CryptWorkspace";
 import { SiteHeader } from "../layout/SiteHeader";
-import { reviewFromSamples } from "@/lib/review/factory";
-import { playBanish, resetSoundForTests, setDrone, setSoundEnabled, unlock } from "@/lib/sound";
+import { reviewFromPaste, reviewFromSamples } from "@/lib/review/factory";
+import { playBanish, playCleansed, playVoice, resetSoundForTests, setDrone, setSoundEnabled, unlock } from "@/lib/sound";
+import type { MonsterKind } from "@/lib/types";
 import { KEYS } from "@/lib/storage";
 import { renderApp, seedReview, setSearch } from "./utils";
 
@@ -42,6 +43,7 @@ class FakeNode {
   threshold = new FakeParam();
   ratio = new FakeParam();
   playbackRate = new FakeParam();
+  pan = new FakeParam();
   type = "";
   buffer: unknown = null;
   loop = false;
@@ -87,6 +89,9 @@ class FakeCtx {
   }
   createOscillator() {
     this.oscillators++;
+    return new FakeNode();
+  }
+  createStereoPanner() {
     return new FakeNode();
   }
   createBufferSource() {
@@ -183,5 +188,41 @@ describe("Sound", () => {
     const before = FakeCtx.last!.started;
     playBanish();
     expect(FakeCtx.last!.started).toBeGreaterThan(before);
+  });
+
+  it("gives every monster its own voice, and a bell for a cleansed room", () => {
+    setSoundEnabled(true);
+    unlock();
+    const kinds: MonsterKind[] = ["wraith", "leech", "possessor", "imp", "twins", "zombie", "gremlin"];
+    for (const k of kinds) {
+      const before = FakeCtx.last!.started;
+      playVoice(k);
+      expect(FakeCtx.last!.started, k).toBeGreaterThan(before);
+    }
+    const before = FakeCtx.last!.oscillators;
+    playCleansed();
+    expect(FakeCtx.last!.oscillators - before).toBeGreaterThanOrEqual(10);
+  });
+
+  it("the selected monster speaks when you step to it", async () => {
+    const user = userEvent.setup();
+    window.localStorage.setItem(KEYS.prefs, JSON.stringify({ sound: true }));
+    seedReview(reviewFromSamples());
+    renderApp(<CryptWorkspace />);
+    await screen.findByRole("heading", { name: "The Crypt" });
+    await user.keyboard("j");
+    const before = FakeCtx.last!.started;
+    await user.keyboard("j");
+    expect(FakeCtx.last!.started).toBeGreaterThan(before);
+  });
+
+  it("banishing the last monster cleanses the room", async () => {
+    const user = userEvent.setup();
+    seedReview(reviewFromPaste("function f() {\n  return 1;\n  console.log('never');\n}\n", "javascript"));
+    renderApp(<CryptWorkspace />);
+    await screen.findByRole("heading", { name: "The Crypt" });
+    await user.keyboard("j");
+    await user.click(await screen.findByRole("button", { name: "Banish" }));
+    expect(await screen.findByText("The room is cleansed")).toBeInTheDocument();
   });
 });
