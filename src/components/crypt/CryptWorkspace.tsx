@@ -10,7 +10,8 @@ import { primaryLine } from "@/lib/review/apply";
 import { activeFile, fileStats, isDaybreak, lurkingOf, nextLurking, reviewStats, selectedFinding } from "@/lib/review/selectors";
 import { useDaybreak } from "@/lib/useDaybreak";
 import { getSample } from "@/lib/samples";
-import { playBanish, playCleansed, playCreak, playVoice, setDrone } from "@/lib/sound";
+import { CREATURE_FX } from "@/lib/horror";
+import { playBanish, playCleansed, playCreak, playEmergence, playResist, playVoice, setDrone } from "@/lib/sound";
 import { DaybreakSky } from "../Daybreak";
 import { Logo } from "../layout/Logo";
 import { Monster } from "../Monster";
@@ -24,7 +25,8 @@ import { DetailPanel } from "./DetailPanel";
 import { FileNav } from "./FileNav";
 import { RoomLight } from "./RoomLight";
 import { BanishAllDialog } from "./BanishAllDialog";
-import { Cleansed } from "./Cleansed";
+import { CryptAtmosphere } from "./CryptAtmosphere";
+import { CryptCleansed, type CleansedStats } from "./CryptCleansed";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 
 export function CryptWorkspace() {
@@ -36,6 +38,10 @@ export function CryptWorkspace() {
   const [shortcuts, setShortcuts] = useState(false);
   const [bulk, setBulk] = useState(false);
   const asideRef = useRef<HTMLElement>(null);
+  const [banishMs, setBanishMs] = useState(BANISH_MS);
+  const [resistingId, setResistingId] = useState<string | null>(null);
+  const resistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => void (resistTimer.current && clearTimeout(resistTimer.current)), []);
   const sound = useSound();
   const scrollToSelection = useRef(false);
 
@@ -98,18 +104,32 @@ export function CryptWorkspace() {
     if (!finding || finding.status !== "lurking" || finding.stale || banishingId || !file) return;
     const name = MONSTERS[finding.kind].name;
     const left = lurkingOf(file).length - 1;
-    banish(finding.id);
+    const line = primaryLine(finding);
+    // The provider dry-runs the fix first. Only a fix that applies gets a banishment.
+    const ms = banish(finding.id);
+    if (ms === false) {
+      playResist();
+      setResistingId(finding.id);
+      if (resistTimer.current) clearTimeout(resistTimer.current);
+      resistTimer.current = setTimeout(() => setResistingId(null), 650);
+      toast({
+        title: `The ${name} resists`,
+        description: "The code around it changed, so its fix no longer applies. Ignore it, or undo your last change.",
+        tone: "error",
+      });
+      return;
+    }
+    setBanishMs(ms || BANISH_MS);
     playBanish({ kind: finding.kind });
-    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     setTimeout(
       () =>
         toast({
           title: `${name} banished`,
-          description: left ? `${left} monster${left === 1 ? "" : "s"} left in this file.` : "This file is clear.",
+          description: `It ${CREATURE_FX[finding.kind].death}. Fix applied on line ${line}. ${left ? `${left} monster${left === 1 ? "" : "s"} left in this file.` : "This file is clear."}`,
           tone: "success",
           action: { label: "Undo", onClick: () => dispatch({ type: "undo" }) },
         }),
-      reduced ? 0 : BANISH_MS,
+      ms,
     );
   }, [finding, banishingId, file, banish, toast, dispatch]);
 
@@ -203,6 +223,36 @@ export function CryptWorkspace() {
   }, [droneLevel, sound.on]);
   useEffect(() => () => setDrone(0), []);
 
+  // Monsters climbing out of a newly opened file: one stinger for the whole file, weighted by its worst.
+  const fileId = file?.id;
+  const fileWorst = file ? worstOf(file) : null;
+  const firstEmergence = useRef(true);
+  useEffect(() => {
+    if (!fileId || !fileWorst) return;
+    const t = setTimeout(() => playEmergence(fileWorst), firstEmergence.current ? 700 : 80);
+    firstEmergence.current = false;
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per opened file, not on every banish
+  }, [fileId]);
+
+  // The selected monster murmurs now and then while it waits: rare and quiet, never on top of other sounds.
+  const murmurKind = finding && finding.status === "lurking" && !banishingId ? finding.kind : null;
+  useEffect(() => {
+    if (!murmurKind || !sound.on) return;
+    let t: ReturnType<typeof setTimeout>;
+    const next = () => {
+      t = setTimeout(
+        () => {
+          if (!document.hidden) playVoice(murmurKind, { gain: 0.3, pitch: 0.92 });
+          next();
+        },
+        22000 + Math.random() * 18000,
+      );
+    };
+    next();
+    return () => clearTimeout(t);
+  }, [murmurKind, sound.on]);
+
   // Every monster banished: the night lifts and the crypt stands in daylight. Undo brings the night back.
   useDaybreak(daybreak, hydrated);
 
@@ -219,10 +269,26 @@ export function CryptWorkspace() {
     if (prev.total > 0 && all.lurking === 0 && all.banished > prev.allBanished) {
       playCleansed();
       setCleansed((n) => n + 1);
+      setDrone(0);
     } else if (prev.fileId === file.id && prev.lurking > 0 && fileNow.lurking === 0 && fileNow.banished > prev.banished) {
       playCleansed({ small: true });
     }
   }, [file, fileNow, all]);
+
+  const finaleOpen = cleansed > 0 && daybreak;
+  const stats: CleansedStats | null =
+    review && all
+      ? {
+          discovered: all.total,
+          banished: all.banished,
+          ignored: all.ignored,
+          fixes: all.banished,
+          files: review.files.filter((f) => f.findings.some((x) => x.status === "banished")).length,
+          light: all.light,
+          kinds: Array.from(new Set(review.files.flatMap((f) => f.findings.filter((x) => x.status === "banished").map((x) => x.kind)))),
+        }
+      : null;
+  const tension = all && all.total ? Math.min(1, review!.files.flatMap((f) => lurkingOf(f)).filter((x) => x.severity === "HIGH").length / 4) : 0;
 
   if (!hydrated || (sampleParam && getSample(sampleParam) && handledSample !== sampleParam)) return <CryptSkeleton />;
   if (!review || !file) return <NoCrypt />;
@@ -234,7 +300,7 @@ export function CryptWorkspace() {
 
   return (
     <div className="crypt-root relative flex min-h-screen flex-col" data-daybreak={daybreak ? "" : undefined}>
-      {daybreak && <DaybreakSky />}
+      {daybreak ? <DaybreakSky /> : <CryptAtmosphere tension={tension} alarm={finding?.status === "lurking" && finding.severity === "HIGH"} />}
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-700"
@@ -290,7 +356,15 @@ export function CryptWorkspace() {
               {review.files.length > 1 && <span className="hidden rounded-full bg-track px-3 py-1.5 text-ink-3 sm:inline">{total.lurking} across files</span>}
             </div>
           </div>
-          <CodeView file={file} selectedId={finding?.id ?? null} banishingId={banishingId} lights={prefs.lights || daybreak} onPick={(id) => select(id)} />
+          <CodeView
+            file={file}
+            selectedId={finding?.id ?? null}
+            banishingId={banishingId}
+            banishMs={banishMs}
+            resistingId={resistingId}
+            lights={prefs.lights || daybreak}
+            onPick={(id) => select(id)}
+          />
           <p className="m-0 hidden text-xs text-ink-4 lg:block">
             Tip: press <kbd className="font-mono text-ink-3">J</kbd>/<kbd className="font-mono text-ink-3">K</kbd> to move between monsters,{" "}
             <kbd className="font-mono text-ink-3">B</kbd> to banish, <kbd className="font-mono text-ink-3">?</kbd> for all spells.
@@ -317,10 +391,22 @@ export function CryptWorkspace() {
             onCopyFix={copyFix}
             onSelect={(id) => select(id)}
             daybreak={daybreak}
+            banishMs={banishMs}
+            resisting={!!finding && resistingId === finding.id}
           />
         </aside>
       </div>
-      {cleansed > 0 && <Cleansed key={cleansed} onDone={() => setCleansed(0)} />}
+      {finaleOpen && stats && (
+        <CryptCleansed
+          key={cleansed}
+          stats={stats}
+          onClose={() => setCleansed(0)}
+          onUndo={() => {
+            setCleansed(0);
+            doUndo();
+          }}
+        />
+      )}
       <ShortcutsDialog open={shortcuts} onClose={() => setShortcuts(false)} />
       {bulk && (
         <BanishAllDialog
@@ -341,6 +427,13 @@ export function CryptWorkspace() {
       )}
     </div>
   );
+}
+
+const SEV_RANK = { LOW: 1, MED: 2, HIGH: 3 } as const;
+function worstOf(file: { findings: { status: string; stale?: boolean; severity: "LOW" | "MED" | "HIGH" }[] }) {
+  let worst: "LOW" | "MED" | "HIGH" | null = null;
+  for (const f of file.findings) if (f.status === "lurking" && !f.stale && (!worst || SEV_RANK[f.severity] > SEV_RANK[worst])) worst = f.severity;
+  return worst;
 }
 
 function CryptSkeleton() {

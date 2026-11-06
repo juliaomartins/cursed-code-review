@@ -2,8 +2,9 @@
 
 import { useMemo, useRef, type CSSProperties, type MouseEvent } from "react";
 import { tokenize } from "@/lib/highlight";
+import { emergeDelay } from "@/lib/horror";
 import { SEVERITY } from "@/lib/monsters";
-import { findingLines } from "@/lib/review/apply";
+import { findingLines, primaryLine } from "@/lib/review/apply";
 import { LANGUAGE_LABEL, toLines } from "@/lib/scanner";
 import type { Finding, ReviewFile } from "@/lib/types";
 import { cx } from "../ui/cx";
@@ -15,9 +16,13 @@ export interface CodeViewProps {
   banishingId: string | null;
   lights: boolean;
   onPick: (id: string) => void;
+  /** Length of the banishment now playing, in ms. */
+  banishMs?: number;
+  /** A finding whose fix just failed to apply. */
+  resistingId?: string | null;
 }
 
-export function CodeView({ file, selectedId, banishingId, lights, onPick }: CodeViewProps) {
+export function CodeView({ file, selectedId, banishingId, lights, onPick, banishMs, resistingId = null }: CodeViewProps) {
   const ref = useRef<HTMLDivElement>(null);
   const lines = useMemo(() => toLines(file.code), [file.code]);
 
@@ -41,6 +46,16 @@ export function CodeView({ file, selectedId, banishingId, lights, onPick }: Code
     }
     return { byLine, dim, selectedLines, underline };
   }, [file.findings, selectedId]);
+
+  // Monsters climb out of the code in reading order.
+  const emergeOrder = useMemo(() => {
+    const order = new Map<string, number>();
+    file.findings
+      .filter((f) => f.status === "lurking" && !f.stale)
+      .sort((a, b) => primaryLine(a) - primaryLine(b))
+      .forEach((f, i) => order.set(f.id, i));
+    return order;
+  }, [file.findings]);
 
   // PR mode: map current lines back to "changed" by content of the original changed lines.
   const changed = useMemo(() => {
@@ -133,6 +148,14 @@ export function CodeView({ file, selectedId, banishingId, lights, onPick }: Code
                   <span aria-hidden="true" className={cx("absolute top-0 bottom-0 left-0 w-[3px]", isChanged ? "bg-[#6FF2B0]/70" : "bg-transparent")} />
                 )}
                 {focused && <span aria-hidden="true" className="absolute top-0 bottom-0 left-0 w-[3px] bg-[#7F8CFF]" />}
+                {monsters && (
+                  <span
+                    key={`${file.id}:${monsters[0].id}`}
+                    aria-hidden="true"
+                    className="line-summon"
+                    style={{ "--ed": `${emergeDelay(emergeOrder.get(monsters[0].id) ?? 0)}s`, "--sc": deco } as CSSProperties}
+                  />
+                )}
                 <span
                   className={cx("flex-none text-right select-none", lights ? "text-parchment-dim" : "text-ink-4")}
                   style={{ width: `${Math.max(2, gutter)}ch` }}
@@ -169,6 +192,9 @@ export function CodeView({ file, selectedId, banishingId, lights, onPick }: Code
                         banishing={f.id === banishingId}
                         lights={lights}
                         delay={(i * 0.37) % 3}
+                        emergeAfter={emergeDelay(emergeOrder.get(f.id) ?? 0)}
+                        banishMs={banishMs}
+                        resisting={f.id === resistingId}
                         onPick={() => onPick(f.id)}
                       />
                     ))}

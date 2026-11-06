@@ -164,7 +164,10 @@ export function playBanish({ big = false, kind }: { big?: boolean; kind?: Monste
     pop.connect(pg).connect(popOut);
   }
 
-  if (kind) return;
+  if (kind) {
+    DEATHS[kind](c, master, t + 0.05, big ? 1.3 : 1);
+    return;
+  }
 
   // Sigh: a voice falling away.
   const sigh = c.createOscillator();
@@ -401,6 +404,155 @@ export function playVoice(kind: MonsterKind, { pitch = 1, gain: level = 1 }: { p
   VOICES[kind](c, out, now + 0.01, pitch);
 }
 
+/* ───────── Creature deaths: a texture under the hiss, one per monster ───────── */
+
+type Death = (c: AudioContext, out: AudioNode, t: number, size: number) => void;
+
+const DEATHS: Record<MonsterKind, Death> = {
+  // Void Wraith: a long breath of air sucked away.
+  wraith(c, out, t, size) {
+    const bp = filt(c, "bandpass", 600, 0.8);
+    bp.frequency.setValueAtTime(400, t);
+    bp.frequency.exponentialRampToValueAtTime(2400, t + 0.7 * size);
+    const g = gain(c);
+    env(g.gain, t, 0.22, 0.08, 0.2, 0.5 * size);
+    noiseSource(c, t, 0.9 * size)
+      .connect(bp)
+      .connect(g)
+      .connect(out);
+  },
+  // Leech: a wet pop, then the stolen energy fizzing out.
+  leech(c, out, t) {
+    const o = osc(c, "sine", 180, t + 0.25, 0.15);
+    o.frequency.exponentialRampToValueAtTime(60, t + 0.38);
+    const g = gain(c);
+    env(g.gain, t + 0.25, 0.4, 0.004, 0.02, 0.12);
+    o.connect(g).connect(out);
+    for (let i = 0; i < 6; i++) {
+      const at = t + 0.3 + i * 0.06;
+      const z = osc(c, "sine", 1400 + i * 260, at, 0.05);
+      const zg = gain(c);
+      env(zg.gain, at, 0.05, 0.004, 0.01, 0.04);
+      z.connect(zg).connect(out);
+    }
+  },
+  // Possessor: runes cracking, a low burning roar.
+  possessor(c, out, t, size) {
+    const g = gain(c);
+    env(g.gain, t, 0.3, 0.05, 0.3, 0.5 * size);
+    noiseSource(c, t, 0.9 * size)
+      .connect(filt(c, "lowpass", 700))
+      .connect(g)
+      .connect(out);
+    for (let i = 0; i < 5; i++) {
+      const at = t + 0.08 + i * 0.11;
+      const k = gain(c);
+      env(k.gain, at, 0.35, 0.002, 0.01, 0.05);
+      noiseSource(c, at, 0.06)
+        .connect(filt(c, "bandpass", 900 + i * 300, 3))
+        .connect(k)
+        .connect(out);
+    }
+  },
+  // Imp: a bright pop and a whoosh upward.
+  imp(c, out, t) {
+    const o = osc(c, "triangle", 500, t, 0.25);
+    o.frequency.exponentialRampToValueAtTime(1800, t + 0.22);
+    const g = gain(c);
+    env(g.gain, t, 0.2, 0.01, 0.05, 0.18);
+    o.connect(g).connect(out);
+  },
+  // Twin Ghosts: two shimmering tones drifting apart, one in each ear.
+  twins(c, out, t, size) {
+    ([-0.8, 0.8] as const).forEach((side, i) => {
+      const o = osc(c, "sine", 880, t, 0.9 * size);
+      o.frequency.exponentialRampToValueAtTime(i ? 1320 : 587, t + 0.8 * size);
+      const g = gain(c);
+      env(g.gain, t, 0.08, 0.1, 0.3, 0.45 * size);
+      pan(c, o.connect(g), out, side);
+    });
+  },
+  // Zombie: bones and dirt crumbling.
+  zombie(c, out, t) {
+    for (let i = 0; i < 9; i++) {
+      const at = t + i * 0.055 + Math.random() * 0.03;
+      const k = gain(c);
+      env(k.gain, at, 0.28 - i * 0.02, 0.003, 0.02, 0.07);
+      noiseSource(c, at, 0.1)
+        .connect(filt(c, "lowpass", 500 + Math.random() * 400))
+        .connect(k)
+        .connect(out);
+    }
+  },
+  // Gremlin: a tinkling shower of sparks.
+  gremlin(c, out, t) {
+    for (let i = 0; i < 8; i++) {
+      const at = t + i * 0.045;
+      const f = 2000 + Math.random() * 2600;
+      const o = osc(c, "sine", f, at, 0.12);
+      const g = gain(c);
+      env(g.gain, at, 0.06, 0.003, 0.01, 0.1);
+      o.connect(g).connect(out);
+    }
+  },
+};
+
+/* ───────── Small cues ───────── */
+
+let lastHover = 0;
+
+/** A faint breath when the cursor finds a monster. Throttled so sweeping across chips stays quiet. */
+export function playHover(kind: MonsterKind): void {
+  const c = live();
+  if (!c || !master) return;
+  const now = c.currentTime;
+  if (now - lastHover < 0.35) return;
+  lastHover = now;
+  const pitch: Record<MonsterKind, number> = { wraith: 520, leech: 300, possessor: 220, imp: 900, twins: 660, zombie: 180, gremlin: 760 };
+  const o = osc(c, "sine", pitch[kind], now, 0.18);
+  o.frequency.exponentialRampToValueAtTime(pitch[kind] * 0.82, now + 0.16);
+  const g = gain(c);
+  env(g.gain, now, 0.035, 0.02, 0.03, 0.12);
+  o.connect(g).connect(master);
+}
+
+/** Monsters climbing out of the code: a low swell and a stinger, heavier when something HIGH lurks. */
+export function playEmergence(worst: "LOW" | "MED" | "HIGH"): void {
+  const c = live();
+  if (!c || !master) return;
+  const t = c.currentTime + 0.02;
+  const weight = worst === "HIGH" ? 1 : worst === "MED" ? 0.7 : 0.45;
+  const sw = osc(c, "sawtooth", 46, t, 1.4);
+  sw.frequency.exponentialRampToValueAtTime(62, t + 1.2);
+  const lp = filt(c, "lowpass", 260);
+  lp.frequency.exponentialRampToValueAtTime(900, t + 1.1);
+  const g = gain(c);
+  env(g.gain, t, 0.22 * weight, 0.6, 0.2, 0.55);
+  sw.connect(lp).connect(g).connect(master);
+  const st = osc(c, "triangle", 233, t + 0.75, 0.6);
+  const st2 = osc(c, "triangle", 247, t + 0.75, 0.6);
+  const sg = gain(c);
+  env(sg.gain, t + 0.75, 0.09 * weight, 0.01, 0.1, 0.45);
+  st.connect(sg);
+  st2.connect(sg);
+  sg.connect(master);
+}
+
+/** The spell fizzles: the fix no longer applies. */
+export function playResist(): void {
+  const c = live();
+  if (!c || !master) return;
+  const t = c.currentTime + 0.01;
+  for (const f of [110, 116.5]) {
+    const o = osc(c, "square", f, t, 0.35);
+    const g = gain(c);
+    env(g.gain, t, 0.06, 0.01, 0.12, 0.2);
+    o.connect(filt(c, "lowpass", 600))
+      .connect(g)
+      .connect(master);
+  }
+}
+
 /** A bell when the room is clear. `small` is a short chime for one cleared file. */
 export function playCleansed({ small = false }: { small?: boolean } = {}): void {
   const c = live();
@@ -434,8 +586,16 @@ export function playCleansed({ small = false }: { small?: boolean } = {}): void 
   env(pad.gain, t, 0.22, 0.7, 0.8, 1.8);
   lp.connect(pad).connect(master);
   for (const f of [261.63, 329.63, 392, 523.25]) osc(c, "triangle", f, t, 3.4).connect(gain(c, 0.25)).connect(lp);
+  // A rising arpeggio: the sun clearing the horizon.
+  [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => {
+    const at = t + 0.55 + i * 0.12;
+    const o = osc(c, "triangle", f, at, 1.2);
+    const g = gain(c);
+    env(g.gain, at, 0.07, 0.01, 0.15, 0.9);
+    o.connect(g).connect(master!);
+  });
   // Daybreak: a few birds wake up, one on each side.
-  birdsong(c, t + 1.3);
+  birdsong(c, t + 1.6);
 }
 
 /** Soft dawn chirps: quick rising whistles in short phrases, left and right. */
@@ -607,6 +767,7 @@ export function resetSoundForTests(): void {
   killDrone();
   listen(false);
   voiceBus = null;
+  lastHover = 0;
   enabled = false;
   droneLevel = 0;
   ctx = null;

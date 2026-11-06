@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 import { CryptWorkspace } from "../crypt/CryptWorkspace";
@@ -42,9 +42,37 @@ describe("Daybreak", () => {
     expect(screen.queryByRole("switch", { name: /Lights/ })).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Daybreak." })).toBeInTheDocument();
 
-    await user.keyboard("u");
+    // The finale: the hunt's numbers and the way to the report.
+    const finale = screen.getByRole("dialog", { name: "THE CRYPT IS CLEANSED" });
+    const stat = (label: string) => within(finale).getByText(label, { selector: "dt" }).previousElementSibling;
+    expect(stat("Monsters discovered")).toHaveTextContent("1");
+    expect(stat("Banished")).toHaveTextContent("1");
+    expect(stat("Ignored")).toHaveTextContent("0");
+    expect(stat("Fixes applied")).toHaveTextContent("1");
+    expect(stat("Room light")).toHaveTextContent("100%");
+    expect(within(finale).getByRole("link", { name: /See the final report/ })).toHaveAttribute("href", "/report");
+    expect(within(finale).getByRole("link", { name: /See the final report/ })).toHaveFocus();
+
+    // Undo from the finale: the night comes back and the monster climbs out again.
+    await user.click(within(finale).getByRole("button", { name: "Undo the last banish" }));
     expect(await screen.findByRole("heading", { level: 1, name: "The Crypt" })).toBeInTheDocument();
     expect(daybreakOn()).toBe(false);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Face the Zombie/ })).toBeInTheDocument();
+  });
+
+  it("closing the finale keeps the daylight, and Escape works too", async () => {
+    const user = userEvent.setup();
+    seedReview(oneZombie());
+    renderApp(<CryptWorkspace />);
+    await screen.findByRole("heading", { name: "The Crypt" });
+    await user.keyboard("j");
+    await user.click(await screen.findByRole("button", { name: "Banish" }));
+    await screen.findByRole("dialog", { name: "THE CRYPT IS CLEANSED" });
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(daybreakOn()).toBe(true);
+    expect(screen.getByRole("heading", { level: 1, name: "Daybreak" })).toBeInTheDocument();
   });
 
   it("the report of a cleansed scan is in daylight too, and leaving it returns to night", async () => {

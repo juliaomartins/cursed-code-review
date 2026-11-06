@@ -223,6 +223,6 @@ describe("Sound", () => {
     await screen.findByRole("heading", { name: "The Crypt" });
     await user.keyboard("j");
     await user.click(await screen.findByRole("button", { name: "Banish" }));
-    expect(await screen.findByText("The room is cleansed")).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "THE CRYPT IS CLEANSED" })).toBeInTheDocument();
   });
 });

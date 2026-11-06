@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useReview } from "@/providers/ReviewProvider";
 import type { Review } from "@/lib/types";
 import { Monster } from "../Monster";
@@ -76,11 +76,48 @@ function SummonOverlay({ title, steps, done }: SummonState) {
       aria-describedby="summon-steps"
     >
       <div className="flex w-full max-w-md animate-rise flex-col items-center gap-6 rounded-2xl border border-line bg-card p-8 text-center shadow-[0_40px_120px_rgba(0,0,0,0.7)]">
-        <div className="relative flex h-32 w-32 items-center justify-center">
-          <span className="absolute inset-0 animate-spin-slow rounded-full border border-dashed border-ember/50" />
-          <span className="absolute inset-3 rounded-full bg-[radial-gradient(circle,rgba(255,138,61,0.3),rgba(255,138,61,0)_70%)]" />
-          <span className="animate-float">
-            <Monster kind="wraith" size={72} />
+        <div className="relative flex h-40 w-40 items-center justify-center" aria-hidden="true">
+          <span className="summon-smoke" />
+          {/* The circle and star draw themselves in ember light: something is being called up. */}
+          <svg viewBox="0 0 260 260" className="absolute inset-0 h-full w-full">
+            <circle cx="130" cy="130" r="120" fill="none" stroke="#FF8A3D" strokeOpacity="0.7" strokeWidth="2" className="summon-circle" />
+            <circle
+              cx="130"
+              cy="130"
+              r="104"
+              fill="none"
+              stroke="#FF8A3D"
+              strokeOpacity="0.3"
+              strokeWidth="1"
+              strokeDasharray="2 8"
+              className="origin-center animate-spin-slow"
+            />
+            <path
+              d="M130 14L198 222L20 94H240L62 222Z"
+              fill="none"
+              stroke="#FF8A3D"
+              strokeOpacity="0.45"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+              className="summon-star"
+            />
+          </svg>
+          <span className="absolute inset-6 rounded-full bg-[radial-gradient(circle,rgba(255,138,61,0.32),rgba(255,138,61,0)_70%)]" />
+          {[
+            [-34, 0, 2.2],
+            [12, 0.6, 2.8],
+            [30, 1.2, 2.4],
+            [-10, 1.7, 3],
+            [22, 2.1, 2.6],
+          ].map(([sx, sdl, sd], i) => (
+            <span
+              key={i}
+              className="summon-ember"
+              style={{ left: `${30 + i * 10}%`, "--sx": `${sx}px`, "--sdl": `${sdl}s`, "--sd": `${sd}s` } as CSSProperties}
+            />
+          ))}
+          <span className="relative animate-float">
+            <Monster kind="wraith" size={78} />
           </span>
         </div>
         <h2 id="summon-title" className="m-0 font-display text-4xl leading-none">

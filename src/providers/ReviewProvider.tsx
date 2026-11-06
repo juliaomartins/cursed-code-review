@@ -1,6 +1,8 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from "react";
+import { banishDuration } from "@/lib/horror";
+import { applyFix } from "@/lib/review/apply";
 import { initialState, reviewReducer, type ReviewAction, type ReviewState } from "@/lib/review/reducer";
 import { setSoundEnabled } from "@/lib/sound";
 import { KEYS, readJson, writeJson } from "@/lib/storage";
@@ -22,8 +24,12 @@ interface ReviewValue {
   hydrated: boolean;
   dispatch: (a: ReviewAction) => void;
   start: (r: Review) => void;
-  /** Plays the banish animation, then applies the fix. */
-  banish: (findingId: string) => void;
+  /**
+   * Checks the fix applies, then plays the banishment and applies it.
+   * Returns how long the banishment plays (ms), or `false` when the fix no longer applies: then nothing
+   * is animated as a success, and the finding is marked stale instead.
+   */
+  banish: (findingId: string) => number | false;
   prefs: Prefs;
   setPrefs: (p: Partial<Prefs>) => void;
 }
@@ -74,21 +80,34 @@ export function ReviewProvider({ children, banishMs = BANISH_MS }: { children: R
   }, [hydrated, prefs.sound, reduced]);
 
   const banishingRef = useRef<string | null>(null);
+  const stateRef = useRef(state);
   useEffect(() => {
     banishingRef.current = state.banishing;
-  }, [state.banishing]);
+    stateRef.current = state;
+  }, [state]);
 
   const banish = useCallback(
-    (findingId: string) => {
-      if (banishingRef.current) return;
-      const ms = prefersReducedMotion() ? 0 : banishMs;
+    (findingId: string): number | false => {
+      if (banishingRef.current) return false;
+      const review = stateRef.current.review;
+      const file = review?.files.find((f) => f.findings.some((x) => x.id === findingId));
+      const finding = file?.findings.find((x) => x.id === findingId);
+      if (!file || !finding || finding.status !== "lurking") return false;
+      // Fix first, spectacle second: a dry run on the current code. If it fails, the reducer marks the
+      // finding stale and no banishment is shown.
+      if (!applyFix(file.code, finding)) {
+        dispatch({ type: "banish", findingId });
+        return false;
+      }
+      const ms = prefersReducedMotion() ? 0 : banishDuration(banishMs, finding.severity);
       if (ms === 0) {
         dispatch({ type: "banish", findingId });
-        return;
+        return 0;
       }
       banishingRef.current = findingId;
       dispatch({ type: "beginBanish", findingId });
       timer.current = setTimeout(() => dispatch({ type: "banish", findingId }), ms);
+      return ms;
     },
     [banishMs],
   );
