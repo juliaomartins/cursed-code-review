@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MapView } from "../map/MapView";
@@ -6,7 +6,7 @@ import { CreateIssueDialog } from "../report/CreateIssueDialog";
 import { reviewFromScan } from "@/lib/review/factory";
 import { KEYS } from "@/lib/storage";
 import { fixtureScan } from "@/test/fixtures";
-import { mockApi, renderApp, router, seedReview } from "./utils";
+import { mockApi, renderApp, router, seedReview, setPathname } from "./utils";
 
 describe("Haunted Map", () => {
   afterEach(() => vi.restoreAllMocks());
@@ -92,6 +92,28 @@ describe("Haunted Map", () => {
     expect(screen.getByText("EXPLORED 1 OF 2")).toBeInTheDocument();
   });
 
+  it("goes back from a folder to the whole repository, and the overlay closes on the same page", async () => {
+    const user = userEvent.setup();
+    setPathname("/map");
+    const api = mockApi({
+      "GET /api/auth/session": () => ({ json: { mode: "off", user: null } }),
+      "GET /api/github/scan": () => ({ json: fixtureScan({ truncated: { total: 120, scanned: 40, folders: [{ path: "src", count: 90 }] } }) }),
+    });
+    seedReview(reviewFromScan(fixtureScan({ target: "folder", path: "src", title: "src @ main", files: fixtureScan().files.slice(0, 1) })));
+    renderApp(<MapView />);
+    expect(await screen.findByRole("navigation", { name: "Where you are" })).toHaveTextContent("src/");
+    await user.click(screen.getByRole("button", { name: "Whole repository" }));
+    expect(await screen.findByRole("alertdialog", { name: "Mapping the crypt" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "14 monsters roam here." }, { timeout: 4000 })).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument(), { timeout: 4000 });
+    expect(router.push).not.toHaveBeenCalledWith("/map");
+    const asked = api.mock.calls.map(([u]) => decodeURIComponent(String(u))).find((u) => u.includes("/api/github/scan"));
+    expect(asked).toContain("url=https://github.com/acme/shop/tree/main");
+    expect(screen.queryByRole("button", { name: "Whole repository" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^src\/ 90 files, Unexplored|^src\/ 90 files, 1 monster|^src\/ 90 files, \d+ monsters/ })).toBeInTheDocument();
+    setPathname("/");
+  });
+
   it("on a folder scan, marks that folder as the current one and offers the whole repository", async () => {
     window.localStorage.setItem(
       KEYS.explored,
@@ -102,7 +124,9 @@ describe("Haunted Map", () => {
     seedReview(reviewFromScan(fixtureScan({ target: "folder", path: "src", title: "src @ main" })));
     renderApp(<MapView />);
     expect(await screen.findByRole("button", { name: /^src\/ 90 files, You are here/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Whole repository/ })).toBeInTheDocument();
+    // A button at the top, and a tombstone among the crypts.
+    expect(screen.getByRole("button", { name: "Whole repository" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Whole repo .*Back to the whole repository/ })).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Where you are" })).toHaveTextContent("src/");
   });
 });

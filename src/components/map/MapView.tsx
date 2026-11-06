@@ -52,6 +52,17 @@ export function MapView() {
   const [explored, setExplored] = useState<ExploredRepo | null>(null);
   const [now, setNow] = useState(0);
 
+  // A new scan (e.g. a folder opened from this map) starts with a fresh view: no leftover filters or folds.
+  const [shownId, setShownId] = useState(review?.id);
+  if (review && review.id !== shownId) {
+    setShownId(review.id);
+    setOpenState(null);
+    setKind(null);
+    setQuery("");
+    setShow("all");
+    setError(null);
+  }
+
   const data = useMemo(() => {
     if (!review) return null;
     const all = review.files.flatMap((f) => f.findings);
@@ -165,9 +176,21 @@ export function MapView() {
               <span aria-hidden="true">·</span>
               {gh ? (
                 <>
-                  <span className="break-all text-ink-2">
-                    {gh.owner}/{gh.repo}
-                  </span>
+                  {current ? (
+                    <button
+                      type="button"
+                      onClick={() => scanFolder("")}
+                      disabled={busy}
+                      className="min-h-8 rounded-md break-all text-ink-2 underline decoration-dotted underline-offset-4 hover:text-ink"
+                      title="Back to the whole repository"
+                    >
+                      {gh.owner}/{gh.repo}
+                    </button>
+                  ) : (
+                    <span className="break-all text-ink-2">
+                      {gh.owner}/{gh.repo}
+                    </span>
+                  )}
                   {current ? (
                     <>
                       <span aria-hidden="true">›</span>
@@ -180,6 +203,12 @@ export function MapView() {
                 <span className="break-words">{src.label}</span>
               )}
             </nav>
+            {current ? (
+              <Button size="sm" variant="outline" onClick={() => scanFolder("")} disabled={busy} className="map-glass self-start">
+                <Icon name="arrowLeft" size={16} />
+                Whole repository
+              </Button>
+            ) : null}
             <h1 className="m-0 font-display text-[52px] leading-[0.95] font-bold sm:text-[76px] [text-shadow:0_0_40px_rgba(127,140,255,0.25)]">
               {lurking === 0 ? "Not a single monster." : lurking === 1 ? "1 monster roams here." : `${lurking} monsters roam here.`}
             </h1>
@@ -199,6 +228,12 @@ export function MapView() {
           </div>
           <PumpkinGauge light={data.stats.light} lurking={lurking} />
         </section>
+
+        {error && !(gh && folders.length > 0 && current !== null) && (
+          <p role="alert" className="m-0 text-sm text-sev-high">
+            {error}
+          </p>
+        )}
 
         {gh && folders.length > 0 && current !== null && (
           <Crypts

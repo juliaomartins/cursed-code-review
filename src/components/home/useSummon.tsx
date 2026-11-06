@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useReview } from "@/providers/ReviewProvider";
 import type { Review } from "@/lib/types";
@@ -19,6 +19,7 @@ interface SummonState {
 /** Shows the "lighting the lantern" overlay while a review is built, then opens the crypt. */
 export function useSummon() {
   const router = useRouter();
+  const pathname = usePathname();
   const { start } = useReview();
   const [state, setState] = useState<SummonState | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -45,13 +46,20 @@ export function useSummon() {
         setTimeout(
           () => {
             start(review);
-            router.push(destination?.(review) ?? "/crypt");
+            const to = destination?.(review) ?? "/crypt";
+            if (to === pathname) {
+              // Already on that page (e.g. scanning a folder from the map): the page redraws with the
+              // new review, so close the overlay here; navigating would change nothing.
+              timers.current = [];
+              setState(null);
+              window.scrollTo?.({ top: 0, behavior: reduced ? "auto" : "smooth" });
+            } else router.push(to);
           },
           ms * (steps.length + 1),
         ),
       );
     },
-    [router, start],
+    [router, start, pathname],
   );
 
   const overlay = state ? <SummonOverlay {...state} /> : null;
