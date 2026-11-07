@@ -63,7 +63,7 @@ export function CryptCleansed({ stats, onClose, onUndo }: { stats: CleansedStats
     ["Monsters discovered", stats.discovered],
     ["Banished", stats.banished],
     ["Ignored", stats.ignored],
-    ["Fixes applied", stats.files > 1 ? `${stats.fixes} in ${stats.files} files` : stats.fixes],
+    [stats.files > 1 ? `Fixes applied in ${stats.files} files` : "Fixes applied", stats.fixes],
     ["Room light", `${stats.light}%`],
   ];
   const kinds = MONSTER_ORDER.filter((k) => stats.kinds.includes(k));
