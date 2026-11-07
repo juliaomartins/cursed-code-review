@@ -31,7 +31,7 @@ export default async function SetupCompletePage({ searchParams }: { searchParams
       <main id="main" className="mx-auto box-border flex w-full max-w-[760px] flex-col gap-7 px-4 pt-8 pb-24 sm:px-7">
         {!app ? (
           <section className="flex flex-col items-start gap-4 rounded-2xl border border-sev-high/40 bg-sev-high/[0.06] p-6">
-            <h1 className="m-0 font-display text-4xl">Setup didn&apos;t finish</h1>
+            <h1 className="m-0 font-brand text-4xl">Setup didn&apos;t finish</h1>
             <p className="m-0 text-ink-2">{error}</p>
             <ButtonLink href="/setup" variant="primary">
               Start again
@@ -43,7 +43,7 @@ export default async function SetupCompletePage({ searchParams }: { searchParams
               <span className="flex items-center gap-2 font-mono text-xs tracking-[0.16em] text-banished">
                 <Icon name="check" size={16} /> GITHUB APP CREATED · {app.name.toUpperCase()}
               </span>
-              <h1 className="m-0 font-display text-5xl leading-none">Copy your keys into Vercel</h1>
+              <h1 className="m-0 font-brand text-5xl leading-none">Copy your keys into Vercel</h1>
               <p className="m-0 rounded-xl border border-sev-med/40 bg-sev-med/[0.07] p-3 text-sm text-[#ffe0ad]">
                 These keys are shown only once and are not saved anywhere. Keep this tab open until step 3 is done, and don&apos;t share them.
               </p>

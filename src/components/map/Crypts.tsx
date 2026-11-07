@@ -28,7 +28,7 @@ export function Crypts({ folders, total, scanned, scans, current, busy, error, o
   const repoScan = scans[""];
 
   return (
-    <section aria-labelledby="crypts-title" className="map-glass flex flex-col gap-5 rounded-3xl border border-line p-5 sm:p-6">
+    <section aria-labelledby="crypts-title" className="codex-frame map-glass flex flex-col gap-5 rounded-3xl border border-line p-5 sm:p-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1.5">
           <h2 id="crypts-title" className="m-0 font-display text-[34px] leading-none font-bold">
@@ -50,7 +50,7 @@ export function Crypts({ folders, total, scanned, scans, current, busy, error, o
                 key={f.path}
                 className={cx(
                   "h-2 flex-1 rounded-full",
-                  stateOf(f.path) === "here" ? "bg-ember shadow-[0_0_8px_#FF8A3D]" : stateOf(f.path) === "explored" ? "bg-banished/70" : "bg-track",
+                  stateOf(f.path) === "here" ? "bg-ember shadow-[0_0_8px_#C9A86A]" : stateOf(f.path) === "explored" ? "bg-banished/70" : "bg-track",
                 )}
               />
             ))}

@@ -15,7 +15,7 @@ import { Spinner } from "../ui/Spinner";
 type Build = () => Review;
 export type OnLoaded = (build: Build, steps: string[], multi: boolean) => void;
 
-const card = "box-border flex flex-col gap-3 rounded-2xl border border-line bg-card p-6";
+const card = "codex-frame box-border flex flex-col gap-3 rounded-2xl border border-line bg-card p-6";
 const field =
   "box-border w-full min-h-[46px] rounded-[10px] border border-line-strong bg-well px-3 text-sm text-ink transition-colors hover:border-ink-4 focus:border-ember";
 
@@ -103,7 +103,7 @@ function RepoPicker({ onLoaded, disabled }: { onLoaded: OnLoaded; disabled: bool
 
   return (
     <div className={card}>
-      <h3 className="m-0 text-[21px]">Bring your code from GitHub</h3>
+      <h3 className="m-0 font-display text-[26px] font-semibold">Bring your code from GitHub</h3>
       <p className="m-0 text-[15px] text-ink-3">Pick a repository, then scan all of it or one of its pull requests.</p>
       <label htmlFor={`${id}-q`} className="sr-only">
         Search your repositories
@@ -152,7 +152,7 @@ function RepoPicker({ onLoaded, disabled }: { onLoaded: OnLoaded; disabled: bool
                 type="button"
                 onClick={() => setPicked(r)}
                 disabled={disabled}
-                className="flex min-h-14 w-full items-center gap-3 rounded-xl border border-line bg-well/60 px-3 py-2 text-left transition-colors hover:border-ember/60 hover:bg-[#241b33] disabled:opacity-60"
+                className="flex min-h-14 w-full items-center gap-3 rounded-xl border border-line bg-well/60 px-3 py-2 text-left transition-colors hover:border-ember/60 hover:bg-[#292B35] disabled:opacity-60"
               >
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="flex items-center gap-1.5 truncate font-mono text-sm text-ink">
@@ -337,7 +337,7 @@ function RepoPanel({ repo, onBack, onLoaded, disabled }: { repo: RepoSummary; on
                 type="button"
                 onClick={() => open(p.number)}
                 disabled={disabled || busy !== null}
-                className="flex min-h-14 w-full items-center gap-3 rounded-xl border border-line bg-well/60 px-3 py-2 text-left transition-colors hover:border-ember/60 hover:bg-[#241b33] disabled:opacity-60"
+                className="flex min-h-14 w-full items-center gap-3 rounded-xl border border-line bg-well/60 px-3 py-2 text-left transition-colors hover:border-ember/60 hover:bg-[#292B35] disabled:opacity-60"
               >
                 <span className="flex-none font-mono text-sm text-ink-3">#{p.number}</span>
                 <span className="flex min-w-0 flex-1 flex-col">

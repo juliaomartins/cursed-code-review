@@ -18,10 +18,10 @@ function Bat({ className, style }: { className: string; style?: CSSProperties })
       <path
         className="map-bat-wings"
         d="M32 12c-2-4-6-6-9-5-3-5-10-7-17-5 4 1 6 4 6 7-3-1-7 0-9 2 5 0 9 2 11 6 3-2 7-3 10-2 2 1 4 3 5 5 1-2 3-4 5-5 3-1 7 0 10 2 2-4 6-6 11-6-2-2-6-3-9-2 0-3 2-6 6-7-7-2-14 0-17 5-3-1-7 1-9 5z"
-        fill="#05030a"
+        fill="#040507"
       />
-      <circle cx="30" cy="12" r="0.9" fill="#ff8a3d" />
-      <circle cx="34" cy="12" r="0.9" fill="#ff8a3d" />
+      <circle cx="30" cy="12" r="0.9" fill="#E0566A" />
+      <circle cx="34" cy="12" r="0.9" fill="#E0566A" />
     </svg>
   );
 }

@@ -138,7 +138,7 @@ export function PostReviewDialog({ open, onClose, review }: { open: boolean; onC
                   checked={event === o.v}
                   disabled={o.disabled}
                   onChange={() => setEvent(o.v)}
-                  className="mt-1 accent-[#FF8A3D]"
+                  className="mt-1 accent-[#C9A86A]"
                 />
                 <span className="flex flex-col">
                   <span className="text-sm font-bold">{o.label}</span>

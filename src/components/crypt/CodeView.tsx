@@ -82,8 +82,8 @@ export function CodeView({ file, selectedId, banishingId, lights, onPick, banish
   return (
     <div
       className={cx(
-        "overflow-hidden rounded-[14px] border font-mono text-sm shadow-[0_30px_60px_rgba(0,0,0,0.45)]",
-        lights ? "lights-on border-parchment-line bg-parchment text-parchment-ink" : "border-line text-[#ECE4F6]",
+        "codex-frame overflow-hidden rounded-xl border font-mono text-sm shadow-[0_30px_60px_rgba(0,0,0,0.5)]",
+        lights ? "lights-on border-parchment-line bg-parchment text-parchment-ink" : "border-line text-[#E4DCCB]",
       )}
     >
       <div
@@ -92,14 +92,14 @@ export function CodeView({ file, selectedId, banishingId, lights, onPick, banish
           lights ? "border-parchment-line text-parchment-dim" : "border-line text-ink-4",
         )}
       >
-        <span className="h-2.5 w-2.5 rounded-full bg-[#FF6B5B]" />
-        <span className="h-2.5 w-2.5 rounded-full bg-[#FFB547]" />
-        <span className="h-2.5 w-2.5 rounded-full bg-[#6FF2B0]" />
+        <span className="h-2.5 w-2.5 rounded-full bg-crimson" />
+        <span className="h-2.5 w-2.5 rounded-full bg-gold" />
+        <span className="h-2.5 w-2.5 rounded-full bg-[#9CBF69]" />
         <span className="ml-2 min-w-0 truncate">{file.path}</span>
         <span className="ml-auto flex items-center gap-3">
-          {changed && <span className="rounded-full bg-[#6FF2B0]/15 px-2 py-0.5 text-[#9DF7C9]">{changed.size} changed lines</span>}
+          {changed && <span className="rounded-full bg-[#9CBF69]/15 px-2 py-0.5 text-[#B9D58E]">{changed.size} changed lines</span>}
           {file.focusLines && (
-            <span className="rounded-full bg-[#7F8CFF]/15 px-2 py-0.5 text-[#B9C1FF]">
+            <span className="rounded-full bg-[#8AC7D1]/15 px-2 py-0.5 text-[#A9D6DD]">
               lines {file.focusLines[0]}–{file.focusLines[1]} from your link
             </span>
           )}
@@ -120,7 +120,7 @@ export function CodeView({ file, selectedId, banishingId, lights, onPick, banish
           lights
             ? undefined
             : {
-                background: "radial-gradient(circle 260px at var(--lx, 320px) var(--ly, 220px), rgba(255,138,61,0.17), rgba(255,138,61,0) 72%), #110D18",
+                background: "radial-gradient(circle 260px at var(--lx, 320px) var(--ly, 220px), rgba(232,145,63,0.13), rgba(232,145,63,0) 72%), #0E0F14",
                 boxShadow: "inset 0 0 80px rgba(0,0,0,0.55)",
               }
         }
@@ -142,14 +142,14 @@ export function CodeView({ file, selectedId, banishingId, lights, onPick, banish
                   "code-row relative flex min-h-11 flex-wrap items-center gap-x-4 px-4 transition-[background,opacity] duration-200 sm:flex-nowrap",
                   monsters && "pb-2 sm:pb-0",
                   isSel && (lights ? "bg-[#F1E6D6]" : "bg-ember/10"),
-                  focused && !isSel && (lights ? "bg-[#f3eee6]" : "bg-[#7F8CFF]/[0.07]"),
+                  focused && !isSel && (lights ? "bg-[#f3eee6]" : "bg-[#8AC7D1]/[0.07]"),
                   changed && !isChanged && !monsters && "opacity-60",
                 )}
               >
                 {changed && (
-                  <span aria-hidden="true" className={cx("absolute top-0 bottom-0 left-0 w-[3px]", isChanged ? "bg-[#6FF2B0]/70" : "bg-transparent")} />
+                  <span aria-hidden="true" className={cx("absolute top-0 bottom-0 left-0 w-[3px]", isChanged ? "bg-[#9CBF69]/70" : "bg-transparent")} />
                 )}
-                {focused && <span aria-hidden="true" className="absolute top-0 bottom-0 left-0 w-[3px] bg-[#7F8CFF]" />}
+                {focused && <span aria-hidden="true" className="absolute top-0 bottom-0 left-0 w-[3px] bg-[#8AC7D1]" />}
                 {monsters && (
                   <span
                     key={`${file.id}:${monsters[0].id}`}

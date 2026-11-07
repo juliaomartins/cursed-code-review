@@ -88,7 +88,7 @@ export function BanishAllDialog({
 
         {hasTwins && (
           <label className="flex min-h-11 cursor-pointer items-start gap-3 text-sm text-ink-2">
-            <input type="checkbox" checked={includeTwins} onChange={(e) => setIncludeTwins(e.target.checked)} className="mt-1 h-4 w-4 accent-[#FF8A3D]" />
+            <input type="checkbox" checked={includeTwins} onChange={(e) => setIncludeTwins(e.target.checked)} className="mt-1 h-4 w-4 accent-[#C9A86A]" />
             <span>
               Include <strong className="text-ink">Twin Ghosts</strong> (race conditions). Their fix wraps code in a lock you need to define, so they&apos;re
               left for you to review by default.

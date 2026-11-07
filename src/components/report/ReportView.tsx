@@ -132,7 +132,7 @@ export function ReportView() {
             <span className="font-mono text-xs tracking-[0.14em] break-words text-ink-3">
               REVIEW REPORT · {review.source.label} {today ? `· ${today.toUpperCase()}` : ""}
             </span>
-            <h1 className={cx("m-0 font-display text-[56px] leading-[0.95] font-bold sm:text-[88px]", clear && "[text-shadow:0_0_36px_rgba(255,178,90,0.45)]")}>
+            <h1 className={cx("m-0 font-brand text-[56px] leading-[0.95] font-bold sm:text-[88px]", clear && "[text-shadow:0_0_36px_rgba(201,168,106,0.4)]")}>
               {clear ? "The crypt is clear." : "The crypt still stirs."}
             </h1>
             <div className="flex flex-wrap items-center gap-3.5">
@@ -145,7 +145,7 @@ export function ReportView() {
                 aria-valuenow={s.light}
                 className="h-2 w-[200px] overflow-hidden rounded-full bg-track sm:w-[260px]"
               >
-                <div className="h-full bg-gradient-to-r from-ember to-ember-gold shadow-[0_0_12px_#FF8A3D]" style={{ width: `${s.light}%` }} />
+                <div className="h-full bg-gradient-to-r from-ember to-ember-gold shadow-[0_0_12px_#C9A86A]" style={{ width: `${s.light}%` }} />
               </div>
               <span className="font-mono text-[13px] text-ember-gold">
                 {daybreak ? "DAYLIGHT" : "ROOM LIGHT"} {s.light}%
@@ -167,8 +167,8 @@ export function ReportView() {
                 </radialGradient>
               </defs>
               <ellipse cx="210" cy="120" rx="200" ry="100" fill="url(#ccr-r-glow)" />
-              <path d="M150 140 L270 140 L262 214 L158 214 Z" fill="#1D1628" stroke="#3D3154" strokeWidth="2" />
-              <path d="M140 132 H280 V142 H140 Z" fill="#3D3154" />
+              <path d="M150 140 L270 140 L262 214 L158 214 Z" fill="#1D1628" stroke="#3A3C48" strokeWidth="2" />
+              <path d="M140 132 H280 V142 H140 Z" fill="#3A3C48" />
             </svg>
             <div className="absolute top-[18px] left-1/2 flex -translate-x-1/2 items-end gap-1 opacity-55 grayscale-[0.6]">
               {trapped.map((k) => (
@@ -183,7 +183,7 @@ export function ReportView() {
 
         <section aria-label="Summary" className="grid grid-cols-[repeat(auto-fit,minmax(min(220px,100%),1fr))] gap-4">
           {cards.map((c) => (
-            <div key={c.label} className="flex items-center gap-4 rounded-2xl border border-line bg-card-2 p-[22px]">
+            <div key={c.label} className="codex-frame flex items-center gap-4 rounded-2xl border border-line bg-card-2 p-[22px]">
               {c.icon}
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm text-ink-3">{c.label}</span>
@@ -193,7 +193,7 @@ export function ReportView() {
               </div>
             </div>
           ))}
-          <div className="flex items-center gap-4 rounded-2xl border border-line bg-card-2 p-[22px]">
+          <div className="codex-frame flex items-center gap-4 rounded-2xl border border-line bg-card-2 p-[22px]">
             <div className="flex flex-col gap-2">
               <span className="text-sm text-ink-3">Worst severity</span>
               {worst ? (
@@ -244,7 +244,7 @@ export function ReportView() {
                 onClick={() => setApplying(true)}
                 disabled={!hasFixes}
                 aria-describedby={!hasFixes ? "apply-hint" : undefined}
-                className="shadow-[0_0_28px_rgba(255,138,61,0.4)]"
+                className="shadow-[0_0_28px_rgba(201,168,106,0.4)]"
               >
                 <Icon name="flame" strokeWidth={2.2} />
                 {isPr ? "Push fixes to this PR" : "Open a fix PR"}
@@ -312,7 +312,7 @@ function NoReport() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-5 px-4 text-center">
       <Monster kind="twins" size={120} />
-      <h1 className="m-0 font-display text-5xl leading-none">No hunt to report.</h1>
+      <h1 className="m-0 font-brand text-5xl leading-none">No hunt to report.</h1>
       <p className="m-0 max-w-md text-ink-2">Open the crypt and face a few monsters first. Your report will appear here.</p>
       <ButtonLink href="/crypt?sample=cursed-login" variant="primary" size="lg">
         Enter the crypt
@@ -331,7 +331,7 @@ function GitHubLink({ href, primary = false, children }: { href: string; primary
       className={cx(
         "inline-flex min-h-14 items-center justify-center gap-2.5 rounded-xl px-6 text-base whitespace-nowrap no-underline transition-colors",
         primary
-          ? "bg-ember font-bold text-ember-ink shadow-[0_0_28px_rgba(255,138,61,0.4)] hover:bg-[#ff9a55] hover:text-ember-ink"
+          ? "bg-ember font-bold text-ember-ink shadow-[0_0_28px_rgba(201,168,106,0.4)] hover:bg-[#ff9a55] hover:text-ember-ink"
           : "border border-line-strong font-medium text-ink hover:border-ink-4 hover:text-ink",
       )}
     >

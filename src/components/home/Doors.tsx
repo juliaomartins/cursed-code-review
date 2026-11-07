@@ -16,7 +16,7 @@ import { Icon } from "../ui/Icon";
 import { RepoDoor } from "./RepoDoor";
 import { useSummon } from "./useSummon";
 
-const card = "box-border flex flex-col gap-3 rounded-2xl border p-6";
+const card = "codex-frame box-border flex flex-col gap-3 rounded-2xl border p-6";
 const field =
   "box-border w-full rounded-[10px] border border-line-strong bg-well text-[15px] text-ink transition-colors hover:border-ink-4 focus:border-ember aria-[invalid=true]:border-sev-high";
 const label = "text-sm font-medium text-ink-2";
@@ -48,9 +48,9 @@ export function Doors() {
 
 function SampleDoor({ onPick, disabled }: { onPick: (id: string) => void; disabled: boolean }) {
   return (
-    <div className={cx(card, "gap-3.5 border-ember bg-[linear-gradient(180deg,rgba(255,138,61,0.08),rgba(255,138,61,0)_60%),#15101D]")}>
+    <div className={cx(card, "gap-3.5 border-ember bg-[linear-gradient(180deg,rgba(201,168,106,0.08),rgba(201,168,106,0)_60%),#15101D]")}>
       <div className="flex items-center justify-between gap-2">
-        <h3 className="m-0 text-[21px]">Try a cursed sample</h3>
+        <h3 className="m-0 font-display text-[26px] font-semibold">Try a cursed sample</h3>
         <span className="rounded-full bg-ember px-2.5 py-[3px] text-xs font-bold text-ember-ink">For judges</span>
       </div>
       <p className="m-0 text-[15px] text-ink-3">Files packed with bugs. Monsters appear in one click.</p>
@@ -62,7 +62,7 @@ function SampleDoor({ onPick, disabled }: { onPick: (id: string) => void; disabl
             type="button"
             disabled={disabled}
             onClick={() => onPick(s.id)}
-            className="flex min-h-[52px] items-center justify-between gap-2.5 rounded-[10px] border border-line-strong bg-well px-3.5 text-left font-mono text-sm text-ink transition-colors hover:border-ember/70 hover:bg-[#241b33] disabled:opacity-60"
+            className="flex min-h-[52px] items-center justify-between gap-2.5 rounded-[10px] border border-line-strong bg-well px-3.5 text-left font-mono text-sm text-ink transition-colors hover:border-ember/70 hover:bg-[#292B35] disabled:opacity-60"
           >
             <span>{s.displayName}</span>
             <span className="flex items-center gap-0.5" aria-label={`${s.findings.length} monsters`}>
@@ -104,7 +104,7 @@ function PasteDoor({ onSubmit, disabled }: { onSubmit: (code: string, lang: Lang
 
   return (
     <form className={cx(card, "border-line bg-card")} onSubmit={submit} noValidate>
-      <h3 className="m-0 text-[21px]">Paste your code</h3>
+      <h3 className="m-0 font-display text-[26px] font-semibold">Paste your code</h3>
       <label htmlFor={`${id}-lang`} className={label}>
         Language
       </label>
@@ -252,7 +252,7 @@ function LinkDoor({ onLoaded, disabled }: { onLoaded: (build: Build, steps: stri
 
   return (
     <form className={cx(card, "border-line bg-card")} onSubmit={submit} noValidate>
-      <h3 className="m-0 text-[21px]">Bring a GitHub link</h3>
+      <h3 className="m-0 font-display text-[26px] font-semibold">Bring a GitHub link</h3>
       <p className="m-0 text-[15px] text-ink-3">A pull request, a file, a folder or a whole repository.</p>
       <label htmlFor={`${id}-url`} className={label}>
         GitHub link

@@ -24,7 +24,7 @@ export default async function SetupPage() {
       <main id="main" className="mx-auto box-border flex w-full max-w-[760px] flex-col gap-8 px-4 pt-8 pb-24 sm:px-7">
         <div className="flex flex-col gap-3">
           <span className="font-mono text-xs tracking-[0.16em] text-ink-3">FOR THE SITE OWNER · ONE-TIME SETUP</span>
-          <h1 className="m-0 font-display text-5xl leading-none sm:text-6xl">Connect GitHub</h1>
+          <h1 className="m-0 font-brand text-5xl leading-none sm:text-6xl">Connect GitHub</h1>
           <p className="m-0 text-[17px] leading-relaxed text-ink-2">
             This lets visitors sign in with their own GitHub account, open private pull requests, and post reviews. Public pull requests already work without
             it.

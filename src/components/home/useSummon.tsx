@@ -69,7 +69,7 @@ export function useSummon() {
 function SummonOverlay({ title, steps, done }: SummonState) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#05030a]/85 p-6 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#040507]/85 p-6 backdrop-blur-sm"
       role="alertdialog"
       aria-modal="true"
       aria-labelledby="summon-title"
@@ -80,13 +80,13 @@ function SummonOverlay({ title, steps, done }: SummonState) {
           <span className="summon-smoke" />
           {/* The circle and star draw themselves in ember light: something is being called up. */}
           <svg viewBox="0 0 260 260" className="absolute inset-0 h-full w-full">
-            <circle cx="130" cy="130" r="120" fill="none" stroke="#FF8A3D" strokeOpacity="0.7" strokeWidth="2" className="summon-circle" />
+            <circle cx="130" cy="130" r="120" fill="none" stroke="#C9A86A" strokeOpacity="0.7" strokeWidth="2" className="summon-circle" />
             <circle
               cx="130"
               cy="130"
               r="104"
               fill="none"
-              stroke="#FF8A3D"
+              stroke="#C9A86A"
               strokeOpacity="0.3"
               strokeWidth="1"
               strokeDasharray="2 8"
@@ -95,14 +95,14 @@ function SummonOverlay({ title, steps, done }: SummonState) {
             <path
               d="M130 14L198 222L20 94H240L62 222Z"
               fill="none"
-              stroke="#FF8A3D"
+              stroke="#C9A86A"
               strokeOpacity="0.45"
               strokeWidth="1.5"
               strokeLinejoin="round"
               className="summon-star"
             />
           </svg>
-          <span className="absolute inset-6 rounded-full bg-[radial-gradient(circle,rgba(255,138,61,0.32),rgba(255,138,61,0)_70%)]" />
+          <span className="absolute inset-6 rounded-full bg-[radial-gradient(circle,rgba(201,168,106,0.32),rgba(201,168,106,0)_70%)]" />
           {[
             [-34, 0, 2.2],
             [12, 0.6, 2.8],

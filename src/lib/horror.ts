@@ -16,13 +16,13 @@ export interface CreatureFx {
 }
 
 export const CREATURE_FX: Record<MonsterKind, CreatureFx> = {
-  wraith: { particle: "smoke", colors: ["#8f7dff", "#b9adff", "#5b4bd6"], death: "dissolves into violet smoke" },
-  leech: { particle: "energy", colors: ["#6ff2b0", "#c9ff7a", "#47d6c4"], death: "bursts, and the energy it stole drifts away" },
-  possessor: { particle: "runes", colors: ["#ff6b5b", "#ffb27a", "#ff3d2e"], death: "breaks apart into burning runes" },
-  imp: { particle: "embers", colors: ["#ff8a3d", "#ffd27a", "#ff5d2e"], death: "vanishes in a burst of embers" },
-  twins: { particle: "waves", colors: ["#bfe6ff", "#d9c8ff"], death: "fade together in two spectral waves" },
+  wraith: { particle: "smoke", colors: ["#7a66b8", "#8ac7d1", "#4b3a7a"], death: "dissolves into violet smoke" },
+  leech: { particle: "energy", colors: ["#9cbf69", "#b5d06e", "#6e1f2c"], death: "bursts, and the energy it stole drifts away" },
+  possessor: { particle: "runes", colors: ["#c8243c", "#d9c9a6", "#e0566a"], death: "breaks apart into burning runes" },
+  imp: { particle: "embers", colors: ["#e8913f", "#c2602f", "#f0b070"], death: "vanishes in a burst of embers" },
+  twins: { particle: "waves", colors: ["#9fc3de", "#e6eef3"], death: "fade together in two spectral waves" },
   zombie: { particle: "ash", colors: ["#9a958c", "#c8c2b6", "#6e6a63"], death: "crumbles into ash" },
-  gremlin: { particle: "sparks", colors: ["#ffd27a", "#fff1b8", "#ffb23d"], death: "explodes into tiny golden sparks" },
+  gremlin: { particle: "sparks", colors: ["#d8b86a", "#e3cb91", "#9cbf69"], death: "explodes into tiny golden sparks" },
 };
 
 /** Runes the Possessor breaks into: Elder Futhark letters, never emoji. */
