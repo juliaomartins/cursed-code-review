@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "Fix engine changed → safety properties",
+  "description": "Runs the fix-engine example and property tests when patch logic changes (specs 03-safe-fix-engine, FIX-*).",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/lib/review/**/*.ts",
+      "src/providers/ReviewProvider.tsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Patch logic changed. Run `npm run test:fix-engine`. The property tests must keep holding for every generated file: a fix changes only its own lines, undo restores the exact content, a fix aimed at missing code is rejected and never lands on an identical line, a resolved finding is not re-reported, re-scan keeps dismissals. A failure here is a safety bug: fix the code and add a regression test named after the bug. Never relax a property. Report the command output in one line."
+  }
+}

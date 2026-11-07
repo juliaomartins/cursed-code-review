@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { diffLines, toHunks, unifiedDiff } from "../diff";
 import { tokenize } from "../highlight";
-import { reportFileName, toMarkdown, toReviewComments } from "../report";
+import { reportFileName, toIssue, toMarkdown, toReviewComments } from "../report";
 import { reviewFromPullRequest, reviewFromSamples } from "../review/factory";
 import { reviewReducer, initialState } from "../review/reducer";
 import { fixturePullRequest } from "@/test/fixtures";
@@ -49,6 +49,16 @@ describe("report", () => {
     expect(md).not.toContain("4f9a8b7c6d5e");
     expect(md).toContain("«redacted»");
     expect(reportFileName(s.review!)).toBe("cursed-review-Cursed-samples.md");
+  });
+
+  it("never puts a secret value into a GitHub issue or review comment", () => {
+    const s = reviewReducer(initialState, { type: "start", review: reviewFromSamples("cursed-login") });
+    const secret = "4f9a8b7c6d5e"; // the tail of the sample's fake key
+    expect(s.review!.files[0].code).toContain(secret);
+    const { body } = toIssue(s.review!);
+    expect(body).not.toContain(secret);
+    expect(body).toContain("«redacted»");
+    for (const c of toReviewComments(s.review!)) expect(c.body).not.toContain(secret);
   });
 
   it("builds inline review comments with suggestions, skipping ignored monsters", async () => {

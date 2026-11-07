@@ -1,0 +1,10 @@
+export function listFiles(root: string): string[];
+export function globToRegExp(glob: string): RegExp;
+export function scriptRefs(text: string): string[];
+export function checkHook(name: string, hook: unknown, ctx: { files: string[]; scripts: Record<string, string> }): string[];
+export function checkSteering(name: string, text: string): string[];
+export function requirementIds(text: string): string[];
+export function parseMatrix(text: string): { id: string; source: string; verified: string; status: string }[];
+export function checkRow(row: { id: string; source: string; verified: string; status: string }, ctx: { root: string; scripts: Record<string, string> }): string[];
+export function checkLinks(file: string, text: string, root: string): string[];
+export function runAll(root: string): { errors: string[]; summary: string };

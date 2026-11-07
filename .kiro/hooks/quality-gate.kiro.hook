@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Quality gate (run before pushing)",
+  "description": "Runs lint (including accessibility), typecheck, the Kiro consistency check and every unit, component and server test.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Run `npm run verify` (lint + typecheck + check:kiro + tests). If anything fails, stop and fix it before pushing; summarise failures by spec area using the requirement ids in .kiro/specs/TRACEABILITY.md. For UI or flow changes also run `npm run build` and `npm run test:e2e` (Playwright, desktop and Pixel 7). Report the final counts exactly as printed."
+  }
+}

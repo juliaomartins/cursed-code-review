@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "Detection rule changed → rule corpus",
+  "description": "Runs the rule corpus and scanner tests when a rule, the lexer or the samples change (specs 02-detection-engine, DET-*).",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/lib/scanner/**/*.ts",
+      "src/lib/samples.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A detection rule, the lexer or the samples changed. Run `npm run test:scanner` (accuracy.test.ts: vulnerable and lookalike-safe code per rule, columns, suppression, malformed input; scanner.test.ts: fixes per language). If a test fails, fix the rule, not the test. If behaviour changed on purpose, update .kiro/specs/02-detection-engine/requirements.md and the DET rows of .kiro/specs/TRACEABILITY.md, add a corpus case for the new behaviour (one vulnerable, one lookalike safe), then run `npm run check:kiro`. Report the command output in one line."
+  }
+}

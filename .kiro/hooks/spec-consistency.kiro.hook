@@ -1,0 +1,23 @@
+{
+  "enabled": true,
+  "name": "Specs or tests changed → traceability check",
+  "description": "Checks that hooks, steering, specs, the traceability matrix and doc links still match the repository (spec 07-testing-quality, QA-6).",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      ".kiro/**/*.md",
+      ".kiro/hooks/*.kiro.hook",
+      "package.json",
+      "src/**/__tests__/**/*.ts",
+      "src/**/__tests__/**/*.tsx",
+      "e2e/*.ts",
+      "README.md",
+      "KIRO.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Run `npm run check:kiro`. It fails when a requirement id is missing from .kiro/specs/TRACEABILITY.md, a referenced source file or test name no longer exists (for example after renaming a test), a hook references a missing npm script or a pattern matching no file, steering front matter is invalid, or a relative doc link is broken. Fix the drift at its source: rename the reference, update the requirement, or mark its status honestly (✅ only with a passing test, 🟡 partial with the limitation stated, ❌ not implemented). Never mark something ✅ without a test or command that verifies it."
+  }
+}

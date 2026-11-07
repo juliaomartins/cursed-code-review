@@ -2,7 +2,7 @@
   "name": "cursed-code-review",
   "version": "0.1.0",
   "private": true,
-  "description": "A haunted code review where every bug is a monster. Kiroween 2026 · Costume Contest.",
+  "description": "A haunted code review where every bug is a monster. Kiroween 2026 \u00b7 Costume Contest.",
   "license": "MIT",
   "scripts": {
     "dev": "next dev",
@@ -12,7 +12,13 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "lint:a11y": "eslint \"src/**/*.tsx\"",
+    "test:scanner": "vitest run src/lib/__tests__/accuracy.test.ts src/lib/__tests__/scanner.test.ts",
+    "test:fix-engine": "vitest run src/lib/__tests__/review.test.ts src/lib/__tests__/fixEngine.property.test.ts src/lib/__tests__/fixes.test.ts",
+    "test:ui": "vitest run src/components",
+    "check:kiro": "node scripts/check-kiro.mjs",
+    "verify": "npm run lint && npm run typecheck && npm run check:kiro && npm test"
   },
   "dependencies": {
     "next": "^16.4.5",

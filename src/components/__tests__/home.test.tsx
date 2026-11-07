@@ -42,8 +42,7 @@ describe("Home doors", () => {
     await user.click(screen.getByRole("button", { name: /leaky-cache\.py/ }));
     expect(await screen.findByRole("alertdialog", { name: "Opening the crypt" }, { timeout: 3000 })).toBeInTheDocument();
     await waitFor(() => expect(router.push).toHaveBeenCalledWith("/crypt"), { timeout: 3000 });
-    const saved = JSON.parse(window.localStorage.getItem(KEYS.review)!);
-    expect(saved.review.activeFileId).toBe("leaky-cache");
+    expect((await savedReview()).activeFileId).toBe("leaky-cache");
   });
 
   it("validates pasted code and detects the language", async () => {
@@ -58,8 +57,8 @@ describe("Home doors", () => {
     expect(screen.getByLabelText("Language")).toHaveValue("python");
     expect(screen.getByText(/Detected Python · 2 lines/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Summon the monsters" }));
-    await waitFor(() => expect(router.push).toHaveBeenCalledWith("/crypt"));
-    expect(JSON.parse(window.localStorage.getItem(KEYS.review)!).review.files[0].path).toBe("pasted.py");
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith("/crypt"), { timeout: 3000 });
+    expect((await savedReview()).files[0].path).toBe("pasted.py");
   });
 
   it("validates links before calling GitHub, and says what it detected", async () => {

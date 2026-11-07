@@ -112,6 +112,8 @@ export function CodeView({ file, selectedId, banishingId, lights, onPick, banish
         onMouseMove={lights ? undefined : onMove}
         role="region"
         aria-label={`Code of ${file.path}`}
+        // A horizontally scrollable region must be focusable so keyboard users can scroll it (WCAG 2.1.1).
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
         tabIndex={0}
         className="scrollbar-thin relative overflow-x-auto pt-2.5 pb-3.5"
         style={
