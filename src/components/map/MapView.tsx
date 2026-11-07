@@ -209,7 +209,7 @@ export function MapView() {
                 Whole repository
               </Button>
             ) : null}
-            <h1 className="m-0 font-display text-[52px] leading-[0.95] font-bold sm:text-[76px] [text-shadow:0_0_40px_rgba(127,140,255,0.25)]">
+            <h1 className="m-0 font-brand text-[52px] leading-[0.95] font-bold sm:text-[76px] [text-shadow:0_0_40px_rgba(138,199,209,0.18)]">
               {lurking === 0 ? "Not a single monster." : lurking === 1 ? "1 monster roams here." : `${lurking} monsters roam here.`}
             </h1>
             {gh && (
@@ -270,7 +270,7 @@ export function MapView() {
                   aria-label={`${MONSTERS[k].name}: ${n}`}
                   className={cx(
                     "map-glass flex items-center gap-3 rounded-2xl border p-3.5 text-left transition-[border-color,box-shadow,transform] duration-200",
-                    on ? "border-ember shadow-[0_0_24px_rgba(255,138,61,0.3)]" : "border-line enabled:hover:-translate-y-0.5 enabled:hover:border-line-strong",
+                    on ? "border-ember shadow-[0_0_24px_rgba(201,168,106,0.3)]" : "border-line enabled:hover:-translate-y-0.5 enabled:hover:border-line-strong",
                     !n && "opacity-40",
                   )}
                 >
@@ -304,7 +304,7 @@ export function MapView() {
             />
           </div>
 
-          <div className="map-glass flex flex-col gap-3 rounded-3xl border border-line p-3 sm:p-4">
+          <div className="codex-frame map-glass flex flex-col gap-3 rounded-3xl border border-line p-3 sm:p-4">
             <div className="flex flex-wrap items-center gap-2">
               <label className="relative flex min-w-[200px] flex-1 items-center">
                 <span className="sr-only">Search files</span>
@@ -522,7 +522,7 @@ function NoMap() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-5 px-4 text-center">
       <Monster kind="wraith" size={120} />
-      <h1 className="m-0 font-display text-5xl leading-none">No map to draw yet.</h1>
+      <h1 className="m-0 font-brand text-5xl leading-none">No map to draw yet.</h1>
       <p className="m-0 max-w-md text-ink-2">Bring a GitHub repository or folder link, and the Haunted Map shows where every monster hides.</p>
       <ButtonLink href="/#start" variant="primary" size="lg">
         Bring a GitHub link

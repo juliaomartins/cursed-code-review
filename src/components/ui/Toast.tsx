@@ -54,7 +54,7 @@ function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: () => void
     <div
       role="status"
       className={cx(
-        "pointer-events-auto flex w-full max-w-sm animate-rise items-start gap-3 rounded-xl border bg-card/95 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.55)] backdrop-blur",
+        "codex-frame pointer-events-auto flex w-full max-w-sm animate-rise items-start gap-3 rounded-xl border bg-card/95 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.55)] backdrop-blur",
         item.tone === "error" ? "border-sev-high/60" : item.tone === "success" ? "border-banished/40" : "border-line-strong",
       )}
     >

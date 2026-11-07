@@ -78,7 +78,7 @@ export function CryptCleansed({ stats, onClose, onUndo }: { stats: CleansedStats
         aria-modal="true"
         aria-labelledby="finale-title"
         aria-describedby="finale-sub"
-        className="finale-card relative flex w-full max-w-xl flex-col items-center gap-5 rounded-[28px] border border-line bg-card/90 px-5 py-8 text-center backdrop-blur-xl sm:px-10"
+        className="finale-card codex-frame relative flex w-full max-w-xl flex-col items-center gap-5 rounded-[28px] border border-line bg-card/90 px-5 py-8 text-center backdrop-blur-xl sm:px-10"
       >
         <div className="finale-spirits flex items-end justify-center gap-1" aria-hidden="true">
           {kinds.map((k, i) => (

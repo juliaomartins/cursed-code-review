@@ -40,7 +40,7 @@ export function CreateAppForm() {
     <form method="post" action={createAppUrl(useOrg ? org : "")} onSubmit={onSubmit} className="flex flex-col gap-4">
       <input type="hidden" name="manifest" value={origin ? JSON.stringify(buildManifest(origin)) : ""} />
       <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-ink-2">
-        <input type="checkbox" checked={useOrg} onChange={(e) => setUseOrg(e.target.checked)} className="h-4 w-4 accent-[#FF8A3D]" />
+        <input type="checkbox" checked={useOrg} onChange={(e) => setUseOrg(e.target.checked)} className="h-4 w-4 accent-[#C9A86A]" />
         Create it under a GitHub organization instead of my personal account
       </label>
       {useOrg && (

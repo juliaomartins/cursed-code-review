@@ -31,4 +31,5 @@ inclusion: always
 - `npm run verify` before pushing (lint incl. jsx-a11y, typecheck, `check:kiro`, tests); `npm run test:e2e` for UI flows.
 - Every requirement in `.kiro/specs/*/requirements.md` is traced in `.kiro/specs/TRACEABILITY.md` to code and tests.
 - Never weaken a test to make a change pass; every bug gets a regression test.
+- Visual identity "the Haunted Codex": use the colour tokens in `globals.css` (no new hex values in components), `font-brand` only for page titles, `font-display` for headings, `.codex-frame` for signature surfaces. Gold = primary accent, crimson = danger, toxic green = cleansed, ghost cyan = supernatural.
 - Fonts: JetBrains Mono for code with ligatures OFF so `<=` stays visible.

@@ -151,6 +151,17 @@ Public pull requests still open: the server reads them anonymously from GitHub (
 
 Folder and repository scans read up to **40 files**, real source before tests and config, skipping `node_modules`, `dist`, `build`, `vendor`, minified and generated files and anything over 1,500 lines. Branch names with slashes (`feature/login`) work. A repository scan costs 2–3 GitHub API calls; file contents come from `raw.githubusercontent.com`, which doesn't count against the API limit.
 
+## Visual identity: the Haunted Codex
+
+A haunted Victorian laboratory where bugs become monsters. One design system, defined as tokens in [`src/app/globals.css`](src/app/globals.css):
+
+- **Colour:** obsidian and crypt-black surfaces; bone white for important text, ash gray for the rest. Colours have one job each: antique gold is the primary accent, crimson means danger, toxic green means cleansed, ghost cyan is the supernatural. Severity follows the same scale: Critical crimson, High burnt orange, Medium gold, Low cyan.
+- **Type:** Grenze Gotisch for titles, Cormorant Garamond for headings (lining figures for data), Space Grotesk for interface text, JetBrains Mono for code (ligatures off).
+- **Brand mark:** the Codex Seal ([`CodexSeal.tsx`](src/components/brand/CodexSeal.tsx)), a gold seal ring around a bone skull whose face reads `</>`, with one cursed crimson eye. It is used for the favicon, the header, the title screen and the social card ([`opengraph-image.tsx`](src/app/opengraph-image.tsx)).
+- **Surfaces:** sharp codex corners, hairline borders with antique-gold corner clasps (`.codex-frame`), ornamental rules, a static film grain, moonlight and candlelight gradients. Each page fades up out of the dark on navigation (`template.tsx`).
+- **Creatures:** one universe with a shared obsidian outline and bone highlights. Each has its own colours: Void Wraith violet and cyan, Leech burgundy and sickly green, Possessor crimson and parchment, Imp burnt orange and crimson, Twin Ghosts cold blue and white, Zombie desaturated green and ash, Gremlin antique gold and toxic green. Each also has its own particle colours.
+- **Code:** a Codex syntax theme (gold keywords, green strings, cyan calls, parchment types) on the dark editor, and a weathered-parchment version for "Lights on".
+
 ## The hunt, as a horror game
 
 Every bug is a monster, every fix is a banishment, every victory brings daylight. The spectacle is wired to the real review:

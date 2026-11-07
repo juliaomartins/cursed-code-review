@@ -69,7 +69,7 @@ export function Dialog({ open, onClose, title, description, children, className,
   if (!open || typeof document === "undefined") return null;
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-6" data-dialog-root>
-      <div className="absolute inset-0 bg-[#05030a]/75 backdrop-blur-sm" onClick={() => !locked && onClose()} aria-hidden="true" />
+      <div className="absolute inset-0 bg-[#040507]/75 backdrop-blur-sm" onClick={() => !locked && onClose()} aria-hidden="true" />
       <div
         ref={ref}
         role="dialog"
@@ -77,7 +77,7 @@ export function Dialog({ open, onClose, title, description, children, className,
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
         className={cx(
-          "relative flex max-h-[92vh] w-full max-w-lg animate-rise flex-col overflow-hidden rounded-t-2xl border border-line bg-card shadow-[0_40px_120px_rgba(0,0,0,0.7)] sm:rounded-2xl",
+          "codex-frame relative flex max-h-[92vh] w-full max-w-lg animate-rise flex-col overflow-hidden rounded-t-2xl border border-line bg-card shadow-[0_40px_120px_rgba(0,0,0,0.7)] sm:rounded-2xl",
           className,
         )}
       >

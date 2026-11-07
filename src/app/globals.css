@@ -1,51 +1,73 @@
 @import "tailwindcss";
 
 @theme {
-  --font-display: var(--font-grenze), "Grenze Gotisch", Georgia, serif;
+  /* ── THE HAUNTED CODEX ──
+     Brand: titles in a gothic blackletter, headings in an editorial serif (ancient manuscript),
+     body in a modern grotesk and code in a professional mono (modern engineering). */
+  --font-brand: var(--font-grenze), "Grenze Gotisch", Georgia, serif;
+  --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
   --font-sans: var(--font-space), "Space Grotesk", system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, monospace;
 
-  /* Crypt surfaces */
-  --color-crypt: #0d0a12;
-  --color-crypt-report: #120e17;
-  --color-panel: #110d18;
-  --color-card: #15101d;
-  --color-card-2: #17121f;
-  --color-well: #1d1628;
-  --color-track: #241b33;
-  --color-chip: #2a2139;
-  --color-line: #2e2440;
-  --color-line-strong: #3d3154;
+  /* Corners: sharp like a bound codex, not soft like a SaaS card. */
+  --radius-lg: 0.4rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.625rem;
+  --radius-3xl: 0.875rem;
 
-  /* Ink */
-  --color-ink: #f1eaf8;
-  --color-ink-2: #d9cfe6;
-  --color-ink-3: #ada0c2;
-  --color-ink-4: #948aab;
-  --color-ink-body: #e4dbef;
+  /* Surfaces — obsidian, crypt black, deep charcoal, haunted slate */
+  --color-crypt: #08090d;
+  --color-crypt-report: #0b0c10;
+  --color-panel: #101116;
+  --color-card: #15161c;
+  --color-card-2: #191a21;
+  --color-well: #1e1f27;
+  --color-track: #292b35;
+  --color-chip: #2c2e38;
+  --color-line: #262832;
+  --color-line-strong: #3a3c48;
 
-  /* Lantern */
-  --color-ember: #ff8a3d;
-  --color-ember-soft: #ffb27a;
-  --color-ember-pale: #ffd2ae;
-  --color-ember-gold: #ffd27a;
-  --color-ember-ink: #1a0b02;
+  /* Ink — bone white for what matters, ash gray for the rest */
+  --color-ink: #e8e0d0;
+  --color-ink-2: #cfc7b8;
+  --color-ink-3: #aaa49c;
+  --color-ink-4: #92909a;
+  --color-ink-body: #ddd5c5;
+
+  /* Antique gold: the primary accent, ancient and premium ("ember" names kept for compatibility) */
+  --color-ember: #c9a86a;
+  --color-ember-soft: #d9bf8c;
+  --color-ember-pale: #eadcb9;
+  --color-ember-gold: #e3cb91;
+  --color-ember-ink: #15110a;
+
+  /* Codex accents, used with discipline: crimson = danger, toxic green = cleansed, cyan = the supernatural */
+  --color-crimson: #a51f32;
+  --color-burgundy: #571622;
+  --color-toxic: #9cbf69;
+  --color-ghost: #8ac7d1;
+  --color-gold: #b69a63;
+  --color-candle: #e8913f;
 
   /* Severity & status */
-  --color-sev-high: #ff6b5b;
-  --color-sev-med: #ffb547;
-  --color-sev-low: #7fd8f5;
-  --color-banished: #9df7c9;
-  --color-fix-del: #ffb9b0;
-  --color-fix-add: #a6f7cf;
-  --color-warn-ink: #ffe0ad;
-  --color-alert-ink: #ffc9c2;
+  --color-sev-high: #e0566a;
+  --color-sev-med: #d8b26a;
+  --color-sev-low: #8ac7d1;
+  --color-banished: #9cbf69;
+  --color-fix-del: #e28a8f;
+  --color-fix-add: #a9cb7c;
+  --color-warn-ink: #e6ce9a;
+  --color-alert-ink: #f0b3b8;
 
-  /* Lights-on editor */
-  --color-parchment: #fbf7f0;
-  --color-parchment-ink: #1e1726;
-  --color-parchment-dim: #6b6378;
-  --color-parchment-line: #e2d6c4;
+  /* Lights-on editor: weathered parchment */
+  --color-parchment: #f4ecdc;
+  --color-parchment-ink: #1b1712;
+  --color-parchment-dim: #6d6355;
+  --color-parchment-line: #ddd0b8;
+
+  /* Motion */
+  --ease-codex: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration-room: 420ms;
 
   --animate-float: ccr-float 3s ease-in-out infinite;
   --animate-flicker: ccr-flicker 1.6s ease-in-out infinite;
@@ -66,7 +88,7 @@
 @keyframes ccr-spin { to { transform: rotate(360deg); } }
 @keyframes ccr-banish {
   0% { transform: scale(1); opacity: 1; }
-  35% { transform: scale(1.2); opacity: 1; filter: brightness(2.2) drop-shadow(0 0 18px #ff8a3d); }
+  35% { transform: scale(1.2); opacity: 1; filter: brightness(2.2) drop-shadow(0 0 18px #c9a86a); }
   100% { transform: scale(0.15) translateY(-50px); opacity: 0; filter: brightness(3) blur(6px); }
 }
 @keyframes ccr-rise {
@@ -76,7 +98,7 @@
 /* Per-monster idle behaviours from the bestiary sheet */
 @keyframes ccr-wraith { 0%, 100% { opacity: 1; } 45% { opacity: 1; } 50% { opacity: 0.35; } 55% { opacity: 0.9; } 60% { opacity: 0.45; } 65% { opacity: 1; } }
 @keyframes ccr-leech { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.09); } }
-@keyframes ccr-possessor { 0%, 100% { filter: drop-shadow(0 0 2px #ff5d4d00); } 50% { filter: drop-shadow(0 0 10px #ff5d4dcc); } }
+@keyframes ccr-possessor { 0%, 100% { filter: drop-shadow(0 0 2px #c8243c00); } 50% { filter: drop-shadow(0 0 10px #c8243ccc); } }
 @keyframes ccr-imp { 0%, 60%, 100% { transform: translateY(0); } 70% { transform: translateY(-9px) rotate(-6deg); } 80% { transform: translateY(0); } 88% { transform: translateY(-4px); } }
 @keyframes ccr-zombie { 0%, 100% { transform: rotate(-4deg) translateX(-1px); } 50% { transform: rotate(4deg) translateX(1px); } }
 @keyframes ccr-twins { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
@@ -94,7 +116,7 @@
 .code-row:hover .gremlin-dart { transform: translateX(14px) rotate(8deg); transition: transform 160ms ease-out; }
 
 .skeleton {
-  background: linear-gradient(90deg, #17121f 0%, #241b33 50%, #17121f 100%);
+  background: linear-gradient(90deg, #15161c 0%, #292b35 50%, #15161c 100%);
   background-size: 200% 100%;
   animation: ccr-shimmer 1.6s linear infinite;
 }
@@ -115,28 +137,28 @@
     outline: 2px solid var(--color-ember);
     outline-offset: 2px;
   }
-  ::selection { background: rgba(255, 138, 61, 0.35); color: #fff; }
+  ::selection { background: rgba(201, 168, 106, 0.35); color: #fff8ea; }
   button:not(:disabled) { cursor: pointer; }
-  input::placeholder, textarea::placeholder { color: #8a7fa0; }
+  input::placeholder, textarea::placeholder { color: #85838c; }
 }
 
-/* Syntax colours */
-.tok-keyword { color: #c9a7ff; }
-.tok-string { color: #a6f7cf; }
-.tok-comment { color: #8b81a1; font-style: italic; }
-.tok-number { color: #ffb27a; }
-.tok-fn { color: #8bd5ff; }
-.tok-type { color: #ffd27a; }
-.tok-variable { color: #f7a8d8; }
-.lights-on .tok-keyword { color: #6b3fc9; }
-.lights-on .tok-string { color: #1e7a50; }
-.lights-on .tok-comment { color: #7a7187; }
-.lights-on .tok-number { color: #a8480f; }
-.lights-on .tok-fn { color: #1f6fa8; }
-.lights-on .tok-type { color: #855600; }
-.lights-on .tok-variable { color: #a12f7a; }
+/* Syntax colours — the Codex palette: gold keywords, sickly-green strings, ghost-cyan calls, parchment types */
+.tok-keyword { color: #d4b372; }
+.tok-string { color: #a9cb7c; }
+.tok-comment { color: #8a8791; font-style: italic; }
+.tok-number { color: #e39a6c; }
+.tok-fn { color: #8ac7d1; }
+.tok-type { color: #dccca8; }
+.tok-variable { color: #dd929b; }
+.lights-on .tok-keyword { color: #7a5718; }
+.lights-on .tok-string { color: #3d6a1d; }
+.lights-on .tok-comment { color: #766b5b; }
+.lights-on .tok-number { color: #9a461a; }
+.lights-on .tok-fn { color: #1b6474; }
+.lights-on .tok-type { color: #6a521e; }
+.lights-on .tok-variable { color: #8c2a3a; }
 
-.scrollbar-thin { scrollbar-width: thin; scrollbar-color: #3d3154 transparent; }
+.scrollbar-thin { scrollbar-width: thin; scrollbar-color: #3A3C48 transparent; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -272,9 +294,9 @@ html.day-shift *, html.day-shift *::before, html.day-shift *::after {
   transition: background-color 1.6s ease, border-color 1.6s ease, color 1.6s ease, fill 1.6s ease, stroke 1.6s ease, box-shadow 1.6s ease !important;
 }
 
-.crypt-root { background: radial-gradient(ellipse 1000px 420px at 50% -8%, rgba(255, 138, 61, 0.1), rgba(255, 138, 61, 0) 70%), #0d0a12; }
-.crypt-header { background: rgba(13, 10, 18, 0.88); }
-.report-root { background: radial-gradient(ellipse 1200px 520px at 30% -5%, rgba(255, 178, 90, 0.2), rgba(255, 138, 61, 0) 70%), #120e17; }
+.crypt-root { background: radial-gradient(ellipse 900px 380px at 50% -10%, rgba(138, 199, 209, 0.07), transparent 70%), radial-gradient(ellipse 700px 420px at 50% 115%, rgba(232, 145, 63, 0.06), transparent 70%), var(--color-crypt); }
+.crypt-header { background: rgba(8, 9, 13, 0.86); }
+.report-root { background: radial-gradient(ellipse 1200px 520px at 30% -5%, rgba(201, 168, 106, 0.13), transparent 70%), var(--color-crypt-report); }
 html[data-daybreak] .crypt-root, html[data-daybreak] .report-root { background: #fdf3e4; }
 html[data-daybreak] .crypt-header { background: rgba(255, 248, 238, 0.78); }
 /* Panels let the morning through. */
@@ -340,7 +362,7 @@ html[data-daybreak] .crypt-root aside.bg-panel { background: rgba(255, 248, 238,
 }
 
 /* ───────── Haunted Map (map/*.tsx) ───────── */
-.map-root { background: radial-gradient(ellipse 1100px 560px at 78% -8%, rgba(127, 140, 255, 0.16), rgba(127, 140, 255, 0) 70%), #0d0a12; }
+.map-root { background: radial-gradient(ellipse 1100px 560px at 78% -8%, rgba(138, 199, 209, 0.11), transparent 70%), var(--color-crypt); }
 .map-sky {
   position: absolute; inset: 0 0 auto 0; height: 620px; overflow: hidden; pointer-events: none; z-index: 0;
   -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
@@ -393,9 +415,9 @@ html[data-daybreak] .crypt-root aside.bg-panel { background: rgba(255, 248, 238,
   background: linear-gradient(180deg, #221a2f 0%, #17121f 100%);
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
-.map-stone:hover:not(:disabled) { transform: translateY(-4px); box-shadow: 0 14px 34px rgba(255, 138, 61, 0.18); }
+.map-stone:hover:not(:disabled) { transform: translateY(-4px); box-shadow: 0 14px 34px rgba(201, 168, 106, 0.18); }
 .map-stone[data-state="explored"] { background: linear-gradient(180deg, #1c2a26 0%, #14181a 100%); }
-.map-stone[data-state="here"] { background: linear-gradient(180deg, #2e1d17 0%, #1a1214 100%); box-shadow: 0 0 0 1px rgba(255, 138, 61, 0.6), 0 0 30px rgba(255, 138, 61, 0.25); }
+.map-stone[data-state="here"] { background: linear-gradient(180deg, #2e1d17 0%, #1a1214 100%); box-shadow: 0 0 0 1px rgba(201, 168, 106, 0.6), 0 0 30px rgba(201, 168, 106, 0.25); }
 .map-tree-row { transition: background-color 140ms ease, border-color 140ms ease; }
 .map-tree-row:hover { background: rgba(255, 255, 255, 0.035); }
 @media (prefers-reduced-motion: reduce) {
@@ -412,10 +434,10 @@ html[data-daybreak] .crypt-root aside.bg-panel { background: rgba(255, 248, 238,
 
 /* Severity: LOW is a whisper, MED glows, HIGH smoulders. */
 .cr-sev-MED .cr-body { filter: drop-shadow(0 0 5px rgba(255, 181, 71, 0.35)); }
-.cr-sev-HIGH { filter: drop-shadow(0 0 6px rgba(255, 93, 77, 0.45)); animation: cr-aura 2.6s ease-in-out infinite; }
-.cr-sev-CRITICAL { filter: drop-shadow(0 0 8px rgba(255, 61, 110, 0.6)); animation: cr-aura-crit 1.8s ease-in-out infinite; }
-@keyframes cr-aura-crit { 0%, 100% { filter: drop-shadow(0 0 6px rgba(255, 61, 110, 0.45)); } 50% { filter: drop-shadow(0 0 15px rgba(255, 61, 110, 0.9)); } }
-@keyframes cr-aura { 0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 93, 77, 0.35)); } 50% { filter: drop-shadow(0 0 11px rgba(255, 93, 77, 0.7)); } }
+.cr-sev-HIGH { filter: drop-shadow(0 0 6px rgba(200, 36, 60, 0.45)); animation: cr-aura 2.6s ease-in-out infinite; }
+.cr-sev-CRITICAL { filter: drop-shadow(0 0 8px rgba(200, 36, 60, 0.6)); animation: cr-aura-crit 1.8s ease-in-out infinite; }
+@keyframes cr-aura-crit { 0%, 100% { filter: drop-shadow(0 0 6px rgba(200, 36, 60, 0.45)); } 50% { filter: drop-shadow(0 0 15px rgba(200, 36, 60, 0.9)); } }
+@keyframes cr-aura { 0%, 100% { filter: drop-shadow(0 0 4px rgba(200, 36, 60, 0.35)); } 50% { filter: drop-shadow(0 0 11px rgba(200, 36, 60, 0.7)); } }
 .cr-aura-embers { position: absolute; inset: 0; pointer-events: none; }
 .cr-aura-embers span {
   position: absolute; bottom: 20%; width: 3px; height: 3px; border-radius: 50%; background: #ff8a3d; box-shadow: 0 0 6px #ff5d2e; opacity: 0;
@@ -445,7 +467,7 @@ html[data-daybreak] .crypt-root aside.bg-panel { background: rgba(255, 248, 238,
 
 /* Selection: the creature notices you. */
 .cr-reacting { animation: var(--react) 0.65s cubic-bezier(0.3, 0.7, 0.3, 1) both; }
-@keyframes cr-react-wraith { 0% { transform: none; } 35% { transform: scale(1.22) translateY(-4px); filter: brightness(1.6) drop-shadow(0 0 12px #8f7dff); } 100% { transform: none; } }
+@keyframes cr-react-wraith { 0% { transform: none; } 35% { transform: scale(1.22) translateY(-4px); filter: brightness(1.6) drop-shadow(0 0 12px #8ac7d1); } 100% { transform: none; } }
 @keyframes cr-react-leech { 0% { transform: none; } 30% { transform: scale(1.22, 0.82); } 60% { transform: scale(0.9, 1.12); } 100% { transform: none; } }
 @keyframes cr-react-possessor { 0%, 100% { transform: none; } 15% { transform: rotate(-9deg) scale(1.08); filter: brightness(1.5) saturate(1.6); } 30% { transform: rotate(8deg); } 45% { transform: rotate(-6deg); } 60% { transform: rotate(4deg); } 75% { transform: rotate(-2deg); } }
 @keyframes cr-react-imp { 0% { transform: none; } 40% { transform: translateY(-16px) rotate(-14deg); } 65% { transform: translateY(0) rotate(4deg); } 82% { transform: translateY(-5px); } 100% { transform: none; } }
@@ -455,7 +477,7 @@ html[data-daybreak] .crypt-root aside.bg-panel { background: rgba(255, 248, 238,
 
 /* The fix didn't apply: the spell fizzles and the creature shrugs it off. */
 .cr-resisting { animation: cr-resist 0.6s ease both; }
-@keyframes cr-resist { 0%, 100% { transform: none; } 20% { transform: translateX(-5px); filter: brightness(1.6) drop-shadow(0 0 8px #ff6b5b); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
+@keyframes cr-resist { 0%, 100% { transform: none; } 20% { transform: translateX(-5px); filter: brightness(1.6) drop-shadow(0 0 8px #e0566a); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
 
 /* Banishment: each creature dies its own death, in step with the fix timer (--bd). */
 .cr-banishing { animation: var(--banish) var(--bd, 700ms) cubic-bezier(0.5, 0, 0.75, 0) forwards; }
@@ -570,7 +592,7 @@ html[data-daybreak] .crypt-atmos { display: none; }
 .crypt-flame {
   position: absolute; left: 50%; bottom: 100%; width: 10px; height: 18px; margin-left: -5px; border-radius: 50% 50% 45% 45% / 65% 65% 35% 35%;
   background: radial-gradient(circle at 50% 70%, #fff6c8 0%, #ffb23d 45%, #ff6a1a 75%, transparent 80%);
-  box-shadow: 0 0 22px 8px rgba(255, 138, 61, 0.35); transform-origin: 50% 100%;
+  box-shadow: 0 0 22px 8px rgba(232, 145, 63, 0.32); transform-origin: 50% 100%;
   animation: crypt-flicker 1.9s ease-in-out infinite;
 }
 .crypt-atmos[data-alarm] .crypt-flame { animation-duration: 0.55s; }
@@ -630,3 +652,55 @@ html[data-daybreak] .crypt-atmos { display: none; }
   .finale-spirit { display: none; }
   .crypt-mote, .summon-ember { display: none; }
 }
+
+/* ───────── The Haunted Codex: shared environment and signature surfaces ───────── */
+body {
+  background:
+    radial-gradient(ellipse 1200px 640px at 50% -12%, rgba(138, 199, 209, 0.06), transparent 70%),
+    radial-gradient(ellipse 900px 500px at 10% 110%, rgba(232, 145, 63, 0.05), transparent 70%),
+    var(--color-crypt);
+}
+/* Film grain: one static texture over everything, like an old photograph of the crypt. */
+html::after {
+  content: ""; position: fixed; inset: 0; z-index: 90; pointer-events: none; opacity: 0.045; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+html[data-daybreak]::after { opacity: 0.03; mix-blend-mode: multiply; }
+
+/* Codex frame: a hairline border with antique-gold corner clasps, the signature surface of the app. */
+.codex-frame { position: relative; }
+.codex-frame::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  --c: rgba(201, 168, 106, 0.75); --l: 12px; --w: 1.5px;
+  background:
+    linear-gradient(var(--c), var(--c)) top left / var(--l) var(--w) no-repeat,
+    linear-gradient(var(--c), var(--c)) top left / var(--w) var(--l) no-repeat,
+    linear-gradient(var(--c), var(--c)) top right / var(--l) var(--w) no-repeat,
+    linear-gradient(var(--c), var(--c)) top right / var(--w) var(--l) no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom left / var(--l) var(--w) no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom left / var(--w) var(--l) no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom right / var(--l) var(--w) no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom right / var(--w) var(--l) no-repeat;
+  transition: --c 200ms ease;
+}
+.codex-frame:is(:hover, :focus-within)::before { --c: rgba(227, 203, 145, 1); }
+html[data-daybreak] .codex-frame::before { --c: rgba(168, 113, 0, 0.6); }
+
+/* Ornamental rule: gold hairlines meeting at a small diamond. */
+.codex-rule { display: flex; align-items: center; gap: 10px; color: var(--color-gold); }
+.codex-rule::before, .codex-rule::after { content: ""; height: 1px; flex: 1; background: linear-gradient(90deg, transparent, currentColor 40%, currentColor 60%, transparent); opacity: 0.6; }
+.codex-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--color-gold); }
+
+/* Entering a room: each page fades up out of the dark. */
+.room-enter { animation: room-enter var(--duration-room) var(--ease-codex) both; }
+@keyframes room-enter { from { opacity: 0; transform: translateY(6px); filter: brightness(0.6); } to { opacity: 1; transform: none; filter: none; } }
+
+/* Selected finding: a restrained gold glow, not a neon one. */
+.codex-selected { box-shadow: 0 0 0 1px rgba(201, 168, 106, 0.8), 0 0 18px rgba(201, 168, 106, 0.18); }
+
+@media (prefers-reduced-motion: reduce) {
+  .room-enter { animation: none; }
+}
+
+/* The editorial serif reads data with lining figures (Cormorant defaults to old-style). */
+.font-display { font-variant-numeric: lining-nums; }

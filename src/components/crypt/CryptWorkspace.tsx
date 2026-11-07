@@ -378,7 +378,7 @@ export function CryptWorkspace() {
         <main id="main" className="box-border flex min-w-0 flex-auto flex-col gap-3.5 p-4 sm:p-[22px]">
           <div className="flex flex-wrap items-end justify-between gap-2.5">
             <div className="flex flex-col gap-1">
-              <h1 className="m-0 font-display text-[34px] leading-none font-bold">{daybreak ? "Daybreak" : "The Crypt"}</h1>
+              <h1 className="m-0 font-brand text-[34px] leading-none font-bold">{daybreak ? "Daybreak" : "The Crypt"}</h1>
               <span className="text-sm text-ink-3">
                 {daybreak ? "Every monster is banished. The crypt stands in daylight." : "Swing the lantern over the code. Click a monster to face it."}
               </span>
@@ -508,7 +508,7 @@ function NoCrypt() {
       <span className="behave-zombie">
         <Monster kind="zombie" size={120} />
       </span>
-      <h1 className="m-0 font-display text-5xl leading-none">The crypt is sealed.</h1>
+      <h1 className="m-0 font-brand text-5xl leading-none">The crypt is sealed.</h1>
       <p className="m-0 max-w-md text-ink-2">Open a cursed sample, paste your own code or bring a pull request to start a hunt.</p>
       <div className="flex flex-wrap justify-center gap-3">
         <ButtonLink href="/crypt?sample=cursed-login" variant="primary" size="lg">

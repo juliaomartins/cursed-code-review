@@ -12,7 +12,7 @@ export default function NotFound() {
           <Monster kind="wraith" size={140} />
         </span>
         <p className="m-0 font-mono text-xs tracking-[0.14em] text-ink-3">ERROR 404 · NULL ACCESS</p>
-        <h1 className="m-0 font-display text-6xl leading-none">This room does not exist.</h1>
+        <h1 className="m-0 font-brand text-6xl leading-none">This room does not exist.</h1>
         <p className="m-0 text-ink-2">A Void Wraith reached for a page that was never there.</p>
         <ButtonLink href="/" variant="primary" size="lg">
           Back to the entrance

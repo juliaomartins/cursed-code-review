@@ -67,14 +67,14 @@ function FindingDetail({ finding, banishing, banishMs, resisting, simple, onSimp
         <svg aria-hidden="true" viewBox="0 0 260 260" className="absolute inset-0 h-full w-full animate-spin-slow">
           <defs>
             <radialGradient id="ccr-glow">
-              <stop offset="0" stopColor="#FF8A3D" stopOpacity="0.28" />
-              <stop offset="1" stopColor="#FF8A3D" stopOpacity="0" />
+              <stop offset="0" stopColor="#C9A86A" stopOpacity="0.28" />
+              <stop offset="1" stopColor="#C9A86A" stopOpacity="0" />
             </radialGradient>
           </defs>
           <circle cx="130" cy="130" r="118" fill="url(#ccr-glow)" />
-          <circle cx="130" cy="130" r="118" fill="none" stroke="#FF8A3D" strokeOpacity="0.5" strokeWidth="1.5" strokeDasharray="2 9" strokeLinecap="round" />
-          <circle cx="130" cy="130" r="98" fill="none" stroke="#FF8A3D" strokeOpacity="0.22" strokeWidth="1" />
-          <path d="M130 32L215 179H45Z M130 228L45 81H215Z" fill="none" stroke="#FF8A3D" strokeOpacity="0.16" strokeWidth="1" />
+          <circle cx="130" cy="130" r="118" fill="none" stroke="#C9A86A" strokeOpacity="0.5" strokeWidth="1.5" strokeDasharray="2 9" strokeLinecap="round" />
+          <circle cx="130" cy="130" r="98" fill="none" stroke="#C9A86A" strokeOpacity="0.22" strokeWidth="1" />
+          <path d="M130 32L215 179H45Z M130 228L45 81H215Z" fill="none" stroke="#C9A86A" strokeOpacity="0.16" strokeWidth="1" />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
           <Creature
@@ -229,12 +229,12 @@ function AllClear({ file, nextFile, onReset, onSelectFile, daybreak }: DetailPan
         </span>
       ) : (
         <svg aria-hidden="true" width="96" height="120" viewBox="0 0 96 120">
-          <circle cx="48" cy="64" r="44" fill="#FF8A3D" opacity="0.18" />
+          <circle cx="48" cy="64" r="44" fill="#E8913F" opacity="0.18" />
           <path d="M36 10H60M48 10V20" stroke="#ADA0C2" strokeWidth="3" strokeLinecap="round" />
-          <rect x="28" y="20" width="40" height="8" rx="2" fill="#3D3154" />
+          <rect x="28" y="20" width="40" height="8" rx="2" fill="#3A3C48" />
           <path d="M30 28H66L62 96H34Z" fill="#1D1628" stroke="#ADA0C2" strokeWidth="3" strokeLinejoin="round" />
           <path d="M48 42C55 52 58 58 48 74C38 58 41 52 48 42Z" fill="#FF8A3D" className="origin-[48px_74px] animate-flicker" />
-          <rect x="26" y="96" width="44" height="8" rx="2" fill="#3D3154" />
+          <rect x="26" y="96" width="44" height="8" rx="2" fill="#3A3C48" />
         </svg>
       )}
       <h2 className="m-0 font-display text-[40px] leading-none">{none ? "No monsters here." : daybreak ? "Daybreak." : "The crypt is clear."}</h2>

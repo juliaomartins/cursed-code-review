@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { WatchingWraith } from "../WatchingWraith";
+import { CodexSeal } from "../brand/CodexSeal";
 
 export function Logo({ tagline = false, size = 40 }: { tagline?: boolean; size?: number }) {
   return (
-    <Link href="/" className="flex items-center gap-2.5 text-ink no-underline hover:text-ink" aria-label="Cursed Code Review home">
-      <WatchingWraith size={size} />
+    <Link href="/" className="group flex items-center gap-3 text-ink no-underline hover:text-ink" aria-label="Cursed Code Review home">
+      <CodexSeal size={size} className="flex-none transition-transform duration-500 ease-[var(--ease-codex)] group-hover:rotate-[-8deg]" />
       <span className="flex flex-col leading-none">
-        <span className="font-display text-[26px] font-bold tracking-[0.01em] sm:text-[30px]">Cursed Code Review</span>
-        {tagline && <span className="mt-1 hidden font-mono text-[11px] tracking-[0.14em] text-ink-3 sm:block">EVERY BUG IS A MONSTER</span>}
+        <span className="font-brand text-[26px] font-bold tracking-[0.01em] sm:text-[30px]">Cursed Code Review</span>
+        {tagline && <span className="codex-eyebrow mt-1.5 hidden text-[10px] sm:block">The Haunted Codex</span>}
       </span>
     </Link>
   );

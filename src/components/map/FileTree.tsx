@@ -57,7 +57,7 @@ function Node({ node, max, ...props }: Omit<FileTreeProps, "root"> & { node: Tre
         <span className="hidden w-24 sm:block" aria-hidden="true">
           {node.lurking > 0 && (
             <span className="block h-1.5 overflow-hidden rounded-full bg-track">
-              <span className="block h-full rounded-full" style={{ width: `${Math.max(8, (node.lurking / max) * 100)}%`, background: sev?.bg ?? "#FF8A3D" }} />
+              <span className="block h-full rounded-full" style={{ width: `${Math.max(8, (node.lurking / max) * 100)}%`, background: sev?.bg ?? "#C9A86A" }} />
             </span>
           )}
         </span>
@@ -129,7 +129,7 @@ function FileNode({ node, onOpen, query }: { node: TreeFile; onOpen: (f: ReviewF
 
 function Count({ lurking }: { lurking: number }) {
   return lurking > 0 ? (
-    <span className="min-w-8 rounded-full bg-ember px-2 py-0.5 text-center font-mono text-sm font-bold text-ember-ink shadow-[0_0_12px_rgba(255,138,61,0.45)]">
+    <span className="min-w-8 rounded-full bg-ember px-2 py-0.5 text-center font-mono text-sm font-bold text-ember-ink shadow-[0_0_12px_rgba(201,168,106,0.45)]">
       {lurking}
     </span>
   ) : (

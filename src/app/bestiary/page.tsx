@@ -12,13 +12,13 @@ export const metadata: Metadata = { title: "Bestiary", description: "Seven monst
 
 export default function BestiaryPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-[radial-gradient(ellipse_900px_500px_at_80%_0%,rgba(127,140,255,0.10),rgba(127,140,255,0)_70%),#0D0A12]">
+    <div className="flex min-h-screen flex-col bg-[radial-gradient(ellipse_900px_500px_at_80%_0%,rgba(138,199,209,0.08),rgba(138,199,209,0)_70%),#08090D]">
       <SiteHeader />
       <main id="main" className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-10 px-4 pt-10 pb-24 sm:px-7">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div className="flex flex-col gap-2">
             <span className="font-mono text-xs tracking-[0.16em] text-ink-3">CURSED CODE REVIEW · FIELD GUIDE</span>
-            <h1 className="m-0 font-display text-6xl leading-none font-bold sm:text-[72px]">The Bestiary</h1>
+            <h1 className="m-0 font-brand text-6xl leading-none font-bold sm:text-[72px]">The Bestiary</h1>
           </div>
           <p className="m-0 max-w-[460px] text-[15px] leading-normal text-ink-3">
             Seven monsters, one per bug type. All share a 120×120 grid, a 3px ink outline and a glow in their own colour. The worse the bug, the bigger the monster.
@@ -30,10 +30,10 @@ export default function BestiaryPage() {
           {MONSTER_ORDER.map((k) => {
             const m = MONSTERS[k];
             return (
-              <li key={k} id={k} className="flex scroll-mt-8 flex-col gap-3 rounded-[18px] border border-line bg-card p-5 target:border-ember target:shadow-[0_0_0_1px_#FF8A3D,0_0_40px_rgba(255,138,61,0.2)]">
+              <li key={k} id={k} className="codex-frame flex scroll-mt-8 flex-col gap-3 rounded-2xl border border-line bg-card p-5 transition-[transform,border-color] duration-300 hover:-translate-y-1 hover:border-line-strong target:border-ember target:shadow-[0_0_0_1px_#C9A86A,0_0_40px_rgba(201,168,106,0.2)]">
                 <div
                   className="flex h-[170px] items-center justify-center rounded-xl"
-                  style={{ background: `radial-gradient(circle 90px at 50% 55%, ${m.glow}47, rgba(0,0,0,0) 72%), #110D18` }}
+                  style={{ background: `radial-gradient(circle 90px at 50% 55%, ${m.glow}47, rgba(0,0,0,0) 72%), #101116` }}
                 >
                   <span className={`behave-${k}`}>
                     <LivingMonster kind={k} size={124} label={m.name} />

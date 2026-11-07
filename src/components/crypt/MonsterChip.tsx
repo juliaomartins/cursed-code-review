@@ -52,9 +52,9 @@ export function MonsterChip({
       className={cx(
         "inline-flex min-h-11 flex-none items-center gap-2.5 rounded-full py-0.5 pr-3 pl-1.5 font-sans text-[13px] font-bold transition-[background,border-color] duration-150",
         selected
-          ? cx("border-[1.5px] border-ember", lights ? "bg-[#FFE9D6]" : "bg-[#2b1c1f]")
+          ? cx("border-[1.5px] border-ember", lights ? "bg-[#FFE9D6]" : "bg-[#2A2318]")
           : cx("border", lights ? "border-[#D8CCBB] bg-white hover:border-[#bfae96]" : "border-line-strong bg-well hover:border-ink-4"),
-        lights ? "shadow-[-14px_0_14px_#FBF7F0]" : "shadow-[-14px_0_14px_#110D18]",
+        lights ? "shadow-[-14px_0_14px_#FBF7F0]" : "shadow-[-14px_0_14px_#101116]",
       )}
     >
       <Creature
