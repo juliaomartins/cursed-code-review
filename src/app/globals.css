@@ -668,10 +668,11 @@ html::after {
 html[data-daybreak]::after { opacity: 0.03; mix-blend-mode: multiply; }
 
 /* Codex frame: a hairline border with antique-gold corner clasps, the signature surface of the app. */
-.codex-frame { position: relative; }
+/* Square corners so the clasps sit exactly on them. Unlayered, so it wins over any rounded-* utility. */
+.codex-frame { position: relative; border-radius: 0; }
 .codex-frame::before {
   content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
-  --c: rgba(201, 168, 106, 0.75); --l: 12px; --w: 1.5px;
+  --c: rgba(201, 168, 106, 0.8); --l: 14px; --w: 2px;
   background:
     linear-gradient(var(--c), var(--c)) top left / var(--l) var(--w) no-repeat,
     linear-gradient(var(--c), var(--c)) top left / var(--w) var(--l) no-repeat,
