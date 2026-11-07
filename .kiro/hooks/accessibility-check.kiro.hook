@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "UI changed → accessibility pass",
+  "description": "Runs the jsx-a11y lint and reviews the change against the accessibility rules (spec 06-accessibility-performance, A11Y-*).",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/components/**/*.tsx",
+      "src/app/**/*.tsx",
+      "src/app/globals.css"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A UI file changed. 1) Run `npm run lint:a11y` (jsx-a11y recommended rules) and fix every error; an exception needs an eslint-disable comment with the reason, like the scrollable code region in CodeView.tsx. 2) Review the edited file for what lint cannot see: interactive targets at least 44 px (min-h-11 / 44px), icon-only buttons with aria-label, decorative SVG aria-hidden, keyboard reachability and visible focus, any new animation guarded by prefers-reduced-motion (CSS media query or useReducedMotion), text contrast in both night and Daybreak themes. 3) If a dialog was touched, focus must be trapped and Escape must close it. Report what you checked and changed."
+  }
+}

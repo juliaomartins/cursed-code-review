@@ -212,7 +212,7 @@ npm run build && npm run test:e2e
 - **Vitest** (235 tests): every scanner rule, the fix engine (apply / relocate / stale), reducer, selectors, PR URL parsing, mock API, diff, Markdown export, highlighter, component tests for the crypt, home doors, report, sound and Daybreak, and server tests for the GitHub routes (sign-in state check, encrypted session, token refresh, PR loading, review placement) against a fake GitHub API.
 - **Playwright** on desktop and Pixel 7: full hunt → report → export, keyboard + undo, PR → sign in → post review (GitHub responses mocked in the browser), no fake sign-in without the app, paste flow, and a no-horizontal-scroll check on every page.
 
-Also: `npm run lint`, `npm run typecheck`.
+Also: `npm run lint` (includes the jsx-a11y recommended rules), `npm run typecheck`, `npm run check:kiro` (Kiro artefacts vs. code), and `npm run verify` (all of these plus the tests). Focused runs: `npm run test:scanner`, `npm run test:fix-engine`, `npm run test:ui`.
 
 ## How it is built
 
@@ -222,17 +222,26 @@ Also: `npm run lint`, `npm run typecheck`.
 - `src/providers/ReviewProvider.tsx` — reducer-based store persisted to localStorage, with undo.
 - Accessibility: real buttons and links, 44px targets, focus-visible outlines, labelled icons, live regions, focus-trapped dialogs, `prefers-reduced-motion`.
 
-## How Kiro was used
+## Built with Kiro
 
-The `.kiro/` folder is part of the submission:
+The `.kiro/` folder is the project's specification and rulebook, and it is checked against the code on every pull request. Full evidence and verification steps: **[KIRO.md](KIRO.md)**.
 
-- **Specs** — `.kiro/specs/haunted-review-frontend/` (requirements in EARS form, design, tasks).
-- **Steering** — product, tech and structure rules (e.g. "code font ligatures off so `<=` stays visible").
-- **Hooks** — rerun scanner tests when a rule changes; accessibility pass when a component is saved.
+- **Specs** ([.kiro/specs/](.kiro/specs/)): seven specs (monster experience, detection engine, safe fix engine, GitHub, developer review experience, accessibility and performance, testing). Each has EARS requirements with ids, non-functional requirements, edge cases, security notes, a design and a task list. Unfinished work stays unchecked.
+- **Traceability** ([TRACEABILITY.md](.kiro/specs/TRACEABILITY.md)): each of the 74 requirements maps to its source files, the tests that verify it, and an honest status (69 ✅, 3 🟡, 2 ❌).
+- **Steering** ([.kiro/steering/](.kiro/steering/)): product, tech and structure always on; [scanner-rules.md](.kiro/steering/scanner-rules.md) and [fix-engine.md](.kiro/steering/fix-engine.md) load only when those folders are edited.
+- **Hooks** ([.kiro/hooks/](.kiro/hooks/)):
+  - a rule edit runs `npm run test:scanner`;
+  - a fix-engine edit runs the safety property tests (`npm run test:fix-engine`);
+  - a UI edit runs `npm run lint:a11y` with an accessibility checklist;
+  - a spec, test or doc edit runs `npm run check:kiro`;
+  - a manual quality gate runs `npm run verify`.
+- **Consistency check** ([scripts/check-kiro.mjs](scripts/check-kiro.mjs)): `npm run check:kiro` fails when a hook names a missing script, a requirement is untraced, a referenced test was renamed, or a doc link breaks. It runs in `npm test` and in CI.
+
+The code and these artefacts were written in AI-assisted sessions (commits carry a `Claude-Session` trailer); the steps that need the Kiro IDE itself are listed in [KIRO.md](KIRO.md#steps-that-need-the-kiro-ide).
 
 ## Roadmap
 
-Webhooks so the app reviews new PRs automatically, an LLM for richer explanations, and the demo video.
+Webhooks so the app reviews new PRs automatically, unhandled-promise detection (DET-20), automated contrast and target-size checks (A11Y-5, A11Y-6), and the demo video.
 
 ## License
 
