@@ -47,6 +47,9 @@ describe("Kiro consistency check", () => {
     expect(checkSteering("b.md", "# no front matter")).toHaveLength(1);
     expect(checkSteering("c.md", "---\ninclusion: fileMatch\n---\n")[0]).toMatch(/fileMatchPattern/);
     expect(checkSteering("d.md", "---\ninclusion: sometimes\n---\n")[0]).toMatch(/inclusion/);
+    // CRLF checkouts (Windows, core.autocrlf=true) must parse exactly like LF ones.
+    expect(checkSteering("e.md", "---\r\ninclusion: always\r\n---\r\n# x")).toEqual([]);
+    expect(checkSteering("f.md", '---\r\ninclusion: fileMatch\r\nfileMatchPattern: "src/**"\r\n---\r\n# x')).toEqual([]);
   });
 
   it("reports traceability rows whose evidence does not exist", () => {

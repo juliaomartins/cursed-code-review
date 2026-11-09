@@ -10,6 +10,7 @@ This page is the evidence package for Kiroween 2026: what the Kiro artefacts are
 | Traceability matrix | Every requirement → source files → tests that verify it → status (✅ / 🟡 / ❌) | [.kiro/specs/TRACEABILITY.md](.kiro/specs/TRACEABILITY.md) |
 | 5 steering files | Product, tech and structure (always on); scanner-rule and fix-engine rules (load only when editing those folders) | [.kiro/steering/](.kiro/steering/) |
 | 5 hooks | Rule corpus on rule edits, safety properties on fix-engine edits, accessibility lint on UI edits, traceability check on spec/test edits, a manual quality gate | [.kiro/hooks/](.kiro/hooks/) |
+| 5 skills | The repeatable workflows, as Agent Skills Kiro loads on demand: `add-detection-rule` (a scanner rule with corpus cases and a DET row), `safe-fix-change` (edit the fix engine without breaking its invariants), `new-requirement` (a feature spec-first, EARS id → design → tasks → matrix row), `ui-accessibility-pass` (design tokens, labels, reduced motion), `ship-to-production` (quality gate, feature branch, PR into `main`). Each one points at the steering, spec and test files rather than restating them | [.kiro/skills/](.kiro/skills/) |
 | Consistency checker | Fails when hooks, steering, specs, the matrix or doc links drift from the code | [scripts/check-kiro.mjs](scripts/check-kiro.mjs), tested in [kiro.test.ts](src/lib/__tests__/kiro.test.ts) |
 | CI | Runs lint (with accessibility rules), typecheck, the Kiro check, all tests, build, e2e on every PR | [.github/workflows/ci.yml](.github/workflows/ci.yml) |
 
@@ -68,10 +69,40 @@ To see the checker catch drift, rename a test that the matrix references (for ex
 
 ## Steps that need the Kiro IDE
 
-These can't be done from a repository alone; do them in Kiro (and, ideally, show them in the demo video):
+### Verified in a Kiro agent session
 
-1. Open the project in Kiro and check that the five hooks appear in the Agent Hooks panel and are enabled. The hook files were written by hand in the `.kiro.hook` JSON format (`when.type` `fileEdited` / `userTriggered`, `then.type` `askAgent`); if Kiro's current format differs, adjust them in the hook editor and re-run `npm run check:kiro`.
-2. Edit a file in `src/lib/scanner/` and watch "Detection rule changed → rule corpus" run `npm run test:scanner`.
-3. Run "Quality gate (run before pushing)" from the hooks panel.
-4. Open a spec in Kiro's spec view and work through an unchecked task (for example DET-20, unhandled promise rejections) to see requirements → design → tasks → code in Kiro itself.
-5. Confirm the steering files load: always-on files in every session, `scanner-rules.md` only when a scanner file is in context.
+- ✅ **Steering inclusion works as declared.** The three `inclusion: always` files (product, tech,
+  structure) were present in the agent's context from the first turn. `scanner-rules.md` was
+  injected only once a file under `src/lib/scanner/**` entered context (reading
+  `src/lib/scanner/rules.ts`), and `fix-engine.md` only once `src/lib/review/apply.ts` did.
+  Conditional `fileMatch` inclusion is live, not just declared.
+- ✅ **Skills are discovered and activate.** The five skills in `.kiro/skills/` appear in the
+  agent's skill registry by `name` and `description`, and activating one returns its full
+  `SKILL.md` body along with its directory path. `npm run check:kiro` link-checks them (the
+  doc count went from 29 to 34).
+- ✅ **The quality gate passes.** `npm run verify` was run from the terminal — lint, typecheck,
+  `check:kiro`, then 285 tests across 27 files, all green.
+
+### Still needs the Kiro IDE
+
+These cannot be done from an agent session or a repository alone:
+
+1. Open the Agent Hooks panel and confirm the five hooks are listed and enabled. **Note on
+   format:** the hook files here use the IDE 0.x `.kiro.hook` schema (`when.type`
+   `fileEdited` / `userTriggered`, `then.type` `askAgent`). Kiro's current schema is a
+   `.kiro/hooks/<id>.json` file with `version: "v1"` and PascalCase triggers
+   (`fileEdited` → `PostFileSave`), a single regex `matcher` instead of a glob array, and no
+   equivalent at all for `userTriggered` — so the manual "Quality gate" hook cannot be
+   migrated as a hook. The IDE offers an upgrade badge on legacy hooks; migrating also means
+   updating `scripts/check-kiro.mjs`, which currently requires `.kiro/hooks/*.kiro.hook` and
+   validates the 0.x shape. Decide and do both together.
+2. Confirm a file-edit hook actually fires. An agent edit to `src/lib/scanner/rules.ts` (a blank
+   line added, then reverted) did **not** trigger "Detection rule changed → rule corpus" in the
+   agent session, which is consistent with the legacy format no longer being executed. Worth
+   re-testing in the IDE before relying on any hook.
+3. Run "Quality gate (run before pushing)" from the hooks panel. Its prompt body
+   (`npm run verify`) was run directly and passes; the panel's play button was not used.
+4. Open a spec in Kiro's spec view and work through an unchecked task (for example DET-20,
+   unhandled promise rejections) to see requirements → design → tasks → code in Kiro itself.
+   The spec files themselves are verified by `check:kiro`: 7 folders each with
+   `requirements.md`, `design.md` and `tasks.md`, and 74 unique requirement ids.

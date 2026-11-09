@@ -89,9 +89,9 @@ export function checkHook(name, hook, { files, scripts }) {
   return errors;
 }
 
-/** Validates steering front matter. */
+/** Validates steering front matter. Tolerates CRLF so Windows checkouts behave like CI. */
 export function checkSteering(name, text) {
-  const m = /^---\n([\s\S]*?)\n---\n/.exec(text);
+  const m = /^---\n([\s\S]*?)\n---\n/.exec(text.replace(/\r\n/g, "\n"));
   if (!m) return [`${name}: missing front matter (---\\ninclusion: always\\n---)`];
   const fields = Object.fromEntries(
     m[1]
