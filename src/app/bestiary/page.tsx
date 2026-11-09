@@ -17,7 +17,7 @@ export default function BestiaryPage() {
       <main id="main" className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-10 px-4 pt-10 pb-24 sm:px-7">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div className="flex flex-col gap-2">
-            <span className="font-mono text-xs tracking-[0.16em] text-ink-3">CURSED CODE REVIEW · FIELD GUIDE</span>
+            <span className="font-mono text-xs tracking-[0.16em] text-ink-3">MATEKLAMAR CODE REVIEW · FIELD GUIDE</span>
             <h1 className="m-0 font-brand text-6xl leading-none font-bold sm:text-[72px]">The Bestiary</h1>
           </div>
           <p className="m-0 max-w-[460px] text-[15px] leading-normal text-ink-3">

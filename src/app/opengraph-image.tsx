@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Cursed Code Review — every bug is a monster";
+export const alt = "Mateklamar Code Review — every bug is a monster";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -36,7 +36,7 @@ export default function OpenGraphImage() {
         </svg>
         <div style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 640 }}>
           <div style={{ fontSize: 22, letterSpacing: 8, color: "#B69A63", textTransform: "uppercase" }}>The Haunted Codex</div>
-          <div style={{ fontSize: 76, fontWeight: 700, lineHeight: 1.02, letterSpacing: -1 }}>Cursed Code Review</div>
+          <div style={{ fontSize: 76, fontWeight: 700, lineHeight: 1.02, letterSpacing: -1 }}>Mateklamar Code Review</div>
           <div style={{ display: "flex", height: 2, width: 460, background: "linear-gradient(90deg, #B69A63, transparent)" }} />
           <div style={{ display: "flex", fontSize: 34, color: "#CFC7B8" }}>
             Every bug is a <span style={{ color: "#E0566A", marginLeft: 10 }}>monster.</span>

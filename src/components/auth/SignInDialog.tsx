@@ -49,7 +49,7 @@ export function SignInDialog() {
           </span>
         </div>
         <p className="m-0 text-center text-[15px] text-ink-2">
-          <strong className="text-ink">Cursed Code Review</strong> would like to:
+          <strong className="text-ink">Mateklamar Code Review</strong> would like to:
         </p>
         <ul className="m-0 flex list-none flex-col gap-3 p-0">
           {SCOPES.map((s) => (

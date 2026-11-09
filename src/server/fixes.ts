@@ -98,7 +98,7 @@ export async function pushFixes(token: string, input: PushFixesInput, deps: GitH
       {},
       deps,
     ).catch((e) => {
-      if (e instanceof ApiError && e.status === 404) throw new ApiError(404, "not_installed", "Couldn't open that pull request. Is Cursed Code Review installed on the repository?", "/api/auth/github/login?install=1");
+      if (e instanceof ApiError && e.status === 404) throw new ApiError(404, "not_installed", "Couldn't open that pull request. Is Mateklamar Code Review installed on the repository?", "/api/auth/github/login?install=1");
       throw e;
     });
     if (pr.state !== "open") throw new ApiError(422, "pr_closed", "That pull request is closed, so it can't take new commits. Open a fix PR instead.");

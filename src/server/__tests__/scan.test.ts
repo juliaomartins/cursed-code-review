@@ -172,7 +172,7 @@ describe("GitHub issues", () => {
     s = reviewReducer(s, { type: "banish", findingId: `${login.id}:possessor:5` });
     s = reviewReducer(s, { type: "ignore", findingId: `${login.id}:zombie:15` });
     const { title, body } = toIssue(s.review!);
-    expect(title).toBe("🎃 Cursed Code Review: 13 monsters in acme/shop");
+    expect(title).toBe("🎃 Mateklamar Code Review: 13 monsters in acme/shop");
     expect(body).toContain(`[line 5](https://github.com/acme/shop/blob/${"d".repeat(40)}/src/auth/cursed-login.js#L5)`);
     expect(body).toContain("**Possessor · SQL injection** (HIGH)");
     expect(body).toContain("_fix ready_");

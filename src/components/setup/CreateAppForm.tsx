@@ -7,7 +7,7 @@ import { Icon } from "../ui/Icon";
 /** The GitHub App definition. GitHub pre-fills its "create app" form from this. */
 export function buildManifest(origin: string) {
   return {
-    name: "Cursed Code Review",
+    name: "Mateklamar Code Review",
     url: origin,
     description: "A haunted code review: every bug is a monster on the line where it hides. Banish them to fix your pull requests.",
     redirect_url: `${origin}/setup/complete`,

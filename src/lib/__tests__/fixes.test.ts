@@ -72,7 +72,7 @@ describe("sending fixes to GitHub", () => {
     const changed = changedFiles(s.review!);
     expect(changed).toHaveLength(1);
     expect(changed[0].message).toBe(
-      "Banish 2 monsters in cursed-login.js\n\n- Possessor · SQL injection (line 5, CRITICAL)\n- Gremlin · Hardcoded secret (line 7, CRITICAL)\n\nFixed with Cursed Code Review",
+      "Banish 2 monsters in cursed-login.js\n\n- Possessor · SQL injection (line 5, CRITICAL)\n- Gremlin · Hardcoded secret (line 7, CRITICAL)\n\nFixed with Mateklamar Code Review",
     );
     expect(fixPrTitle(s.review!)).toBe("🔥 Banish 2 monsters");
     const body = fixPrBody(s.review!);
@@ -80,7 +80,7 @@ describe("sending fixes to GitHub", () => {
     expect(body).toContain("- [x] **Gremlin · Hardcoded secret** (CRITICAL), line 7");
     expect(body).toContain("> Set API_KEY in your environment");
     expect(body).toContain("**Not changed:** 12 monsters");
-    expect(defaultBranchName(s.review!, new Date("2026-11-05T10:00:00Z"))).toBe("cursed-fixes/2026-11-05-ddddddd");
+    expect(defaultBranchName(s.review!, new Date("2026-11-05T10:00:00Z"))).toBe("mateklamar-fixes/2026-11-05-ddddddd");
     expect(await sha256Hex("a\r\nb")).toBe(await sha256Hex("a\nb"));
   });
 });

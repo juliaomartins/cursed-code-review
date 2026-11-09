@@ -9,17 +9,25 @@ const space = Space_Grotesk({ subsets: ["latin"], weight: ["400", "500", "700"],
 const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-jetbrains", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "Cursed Code Review — Every bug is a monster", template: "%s · Cursed Code Review" },
-  description: "A haunted code review. Bugs crawl out onto the lines where they hide. Fix them to banish them and bring the light back.",
-  applicationName: "Cursed Code Review",
+  title: { default: "Mateklamar Code Review — Every bug is a monster", template: "%s · Mateklamar Code Review" },
+  description:
+    "Mateklamar Code Review is a haunted code review: bugs crawl out as monsters onto the lines where they hide, and fixing one banishes it. Mateklamar is Tetum, the language of Timor-Leste, for ghost.",
+  applicationName: "Mateklamar Code Review",
+  keywords: ["Mateklamar", "Mateklamar Code Review", "code review", "static analysis", "bug detection", "security review", "Tetum", "Timor-Leste"],
   icons: { icon: "/icon.svg" },
   metadataBase: new URL("https://cursed-code-review.vercel.app"),
   openGraph: {
-    title: "Cursed Code Review",
-    description: "Every bug is a monster. Banish them to bring the light back.",
+    siteName: "Mateklamar Code Review",
+    title: "Mateklamar Code Review — Every bug is a monster",
+    description: "Mateklamar (Tetum for ghost) turns every bug into a monster on its own line. Banish them to bring the light back.",
+    locale: "en",
     type: "website",
   },
-  twitter: { card: "summary_large_image", title: "Cursed Code Review", description: "Every bug is a monster. Banish them to bring the light back." },
+  twitter: {
+    card: "summary_large_image",
+    title: "Mateklamar Code Review — Every bug is a monster",
+    description: "Mateklamar (Tetum for ghost) turns every bug into a monster on its own line. Banish them to bring the light back.",
+  },
 };
 
 export const viewport: Viewport = { themeColor: "#08090D", colorScheme: "dark" };

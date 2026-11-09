@@ -42,7 +42,7 @@ export function changedFiles(review: Review): { file: ReviewFile; message: strin
         "",
         ...fixes.map((f) => `- ${MONSTERS[f.kind].name} · ${f.bug} (line ${lineOf(file, f)}, ${f.severity})`),
         "",
-        "Fixed with Cursed Code Review",
+        "Fixed with Mateklamar Code Review",
       ].join("\n");
       return { file, message, fixes };
     });
@@ -58,7 +58,7 @@ export function fixPrBody(review: Review): string {
   const all = review.files.flatMap((f) => f.findings);
   const leftOver = all.filter((f) => f.status !== "banished");
   const out = [
-    `Cursed Code Review found monsters in this code and banished **${changed.reduce((n, c) => n + c.fixes.length, 0)}** of them. Each file is its own commit, so you can review or revert them one by one.`,
+    `Mateklamar Code Review found monsters in this code and banished **${changed.reduce((n, c) => n + c.fixes.length, 0)}** of them. Each file is its own commit, so you can review or revert them one by one.`,
     "",
   ];
   for (const { file, fixes } of changed) {
@@ -71,15 +71,15 @@ export function fixPrBody(review: Review): string {
   if (leftOver.length) {
     out.push(`**Not changed:** ${leftOver.length} monster${leftOver.length === 1 ? " was" : "s were"} ignored or left for review in the crypt.`, "");
   }
-  out.push("---", "<sub>Opened by [Cursed Code Review](https://cursed-code-review.vercel.app). Every bug is a monster.</sub>");
+  out.push("---", "<sub>Opened by [Mateklamar Code Review](https://cursed-code-review.vercel.app). Every bug is a monster.</sub>");
   return out.join("\n");
 }
 
-/** e.g. "cursed-fixes/2026-11-05-a9607ea" */
+/** e.g. "mateklamar-fixes/2026-11-05-a9607ea" */
 export function defaultBranchName(review: Review, now = new Date()): string {
   const src = review.source;
   const sha = src.kind === "github" ? src.sha.slice(0, 7) : "fixes";
-  return `cursed-fixes/${now.toISOString().slice(0, 10)}-${sha}`;
+  return `mateklamar-fixes/${now.toISOString().slice(0, 10)}-${sha}`;
 }
 
 export async function sha256Hex(text: string): Promise<string> {

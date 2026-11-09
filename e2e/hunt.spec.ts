@@ -50,7 +50,7 @@ test("home → sample → banish everything → report", async ({ page, isMobile
 
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: /Export report/ }).click();
-  expect((await download).suggestedFilename()).toBe("cursed-review-Cursed-samples.md");
+  expect((await download).suggestedFilename()).toBe("mateklamar-review-Mateklamar-samples.md");
   if (!isMobile) await expect(page.getByText("+    'SELECT * FROM users WHERE name = $1', [req.body.name]").first()).toBeAttached();
 });
 
