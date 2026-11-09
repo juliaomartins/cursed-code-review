@@ -2,7 +2,7 @@ import { ButtonLink } from "../ui/Button";
 import { Icon } from "../ui/Icon";
 import { Monster } from "../Monster";
 import { WatchingWraith } from "../WatchingWraith";
-import { CodexSeal } from "../brand/CodexSeal";
+import { MateklamarMark } from "../brand/MateklamarMark";
 import type { MonsterKind } from "@/lib/types";
 
 const HERO_LINES: { t: string; k: MonsterKind | null; c: string | null }[] = [
@@ -20,7 +20,7 @@ export function Hero() {
     <section className="mx-auto box-border flex w-full max-w-[1280px] flex-wrap items-center gap-14 px-4 pt-10 pb-[72px] sm:px-7 sm:pt-14">
       <div className="flex min-w-0 flex-[1_1_460px] flex-col gap-6">
         <div className="flex items-center gap-4">
-          <CodexSeal size={64} className="flex-none drop-shadow-[0_0_18px_rgba(201,168,106,0.25)]" />
+          <MateklamarMark size={64} className="flex-none drop-shadow-[0_0_18px_rgba(201,168,106,0.25)]" />
           <span className="codex-eyebrow flex flex-col gap-1">
             <span>The Haunted Codex</span>
             <span className="text-ink-4">A code review you can see</span>

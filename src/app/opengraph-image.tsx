@@ -4,7 +4,7 @@ export const alt = "Mateklamar Code Review — every bug is a monster";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-/** The social card: the Codex Seal on obsidian, gold hairlines, the title and the promise. */
+/** The social card: the Mateklamar ghost on obsidian, gold hairlines, the title and the promise. */
 export default function OpenGraphImage() {
   return new ImageResponse(
     (
@@ -21,18 +21,12 @@ export default function OpenGraphImage() {
           color: "#E8E0D0",
         }}
       >
+        {/* Literal colours: Satori resolves no CSS variables, so the tokens cannot be used here. */}
         <svg width="300" height="300" viewBox="0 0 64 64">
-          <circle cx="32" cy="32" r="30" fill="#101116" />
-          <circle cx="32" cy="32" r="28.5" fill="none" stroke="#B69A63" strokeWidth="2.5" />
-          <circle cx="32" cy="32" r="24" fill="none" stroke="#B69A63" strokeWidth="0.8" strokeDasharray="1.5 3" />
-          <path
-            d="M32 12c-9.4 0-16 6.6-16 15.2 0 5.3 2.4 8.9 5.6 11v5.3c0 1.3 1 2.3 2.3 2.3h16.2c1.3 0 2.3-1 2.3-2.3v-5.3c3.2-2.1 5.6-5.7 5.6-11C48 18.6 41.4 12 32 12Z"
-            fill="#E8E0D0"
-          />
-          <path d="M27 23.5l-5 4.5 5 4.5M37 23.5l5 4.5-5 4.5" fill="none" stroke="#08090D" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M33.4 30.5l-2.8 6.5" stroke="#08090D" strokeWidth="2.6" strokeLinecap="round" />
-          <path d="M27.5 41.5v4M32 41.5v4M36.5 41.5v4" stroke="#08090D" strokeWidth="1.8" strokeLinecap="round" />
-          <circle cx="39.6" cy="28" r="1.8" fill="#E0566A" />
+          <path d="M12 40V28A20 20 0 0 1 52 28V40L45.3 50 38.7 40 32 50 25.3 40 18.7 50Z" fill="#E8E0D0" />
+          <path d="M24 22.5L29 27.5L24 32.5L19 27.5Z" fill="#08090D" />
+          <path d="M40 22.5L45 27.5L40 32.5L35 27.5Z" fill="#08090D" />
+          <path d="M40 24.9L42.6 27.5L40 30.1L37.4 27.5Z" fill="#A51F32" />
         </svg>
         <div style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 640 }}>
           <div style={{ fontSize: 22, letterSpacing: 8, color: "#B69A63", textTransform: "uppercase" }}>The Haunted Codex</div>
