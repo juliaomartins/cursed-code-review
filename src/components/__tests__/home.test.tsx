@@ -62,7 +62,7 @@ describe("Home doors", () => {
   });
 
   it("validates links before calling GitHub, and says what it detected", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const api = mockApi({ "GET /api/auth/session": () => ({ json: { mode: "off", user: null } }) });
     renderApp(<Doors />);
     const box = screen.getByLabelText("GitHub link");
@@ -116,7 +116,7 @@ describe("Home doors", () => {
   });
 
   it("opens a single file straight in the crypt, with its line range", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     mockApi({
       "GET /api/auth/session": () => ({ json: { mode: "off", user: null } }),
       "GET /api/github/scan": () => ({
