@@ -1,8 +1,8 @@
 import type { SVGProps } from "react";
 
 /**
- * The Mateklamar mark: a ghost (mateklamar, Tetum for "ghost") whose hem is cut in the sharp
- * diamond sawtooth of Timorese tais weaving, with one crimson glint in the right socket.
+ * The Mateklamar mark: a ghost (mateklamar, Tetum for "ghost") with a softly lobed hem and
+ * eye sockets cut as the diamonds of Timorese tais weaving, one holding a crimson glint.
  *
  * Drawn on a 64-unit grid as one closed silhouette so the shape itself is recognisable at
  * 16 px, where fine detail would disappear. Only three fills, all design tokens:
@@ -29,13 +29,14 @@ export function MateklamarMark({
       {...rest}
     >
       {title && <title>{title}</title>}
-      {/* Body: domed head, straight shoulders, tais sawtooth hem. */}
-      <path d="M12 40V28A20 20 0 0 1 52 28V40L45.3 50 38.7 40 32 50 25.3 40 18.7 50Z" fill="var(--color-ink)" />
+      {/* Body: domed head over three soft lobes. Taller than wide, and the hem curves match the
+          dome's curvature so the whole silhouette reads as one drawn line. */}
+      <path d="M16 42V28A16 16 0 0 1 48 28V42Q42.67 50 37.33 42Q32 50 26.67 42Q21.33 50 16 42Z" fill="var(--color-ink)" />
       {/* Eye sockets as tais diamonds, punched in the background colour. */}
-      <path d="M24 22.5L29 27.5L24 32.5L19 27.5Z" fill="var(--color-crypt)" />
-      <path d="M40 22.5L45 27.5L40 32.5L35 27.5Z" fill="var(--color-crypt)" />
+      <path d="M26 23L30 27L26 31L22 27Z" fill="var(--color-crypt)" />
+      <path d="M38 23L42 27L38 31L34 27Z" fill="var(--color-crypt)" />
       {/* The one glint that is still watching. */}
-      <path className="mk-glint" d="M40 24.9L42.6 27.5L40 30.1L37.4 27.5Z" fill="var(--color-crimson)" />
+      <path className="mk-glint" d="M38 24.8L40.2 27L38 29.2L35.8 27Z" fill="var(--color-crimson)" />
     </svg>
   );
 }

@@ -22,11 +22,11 @@ export default function OpenGraphImage() {
         }}
       >
         {/* Literal colours: Satori resolves no CSS variables, so the tokens cannot be used here. */}
-        <svg width="300" height="300" viewBox="0 0 64 64">
-          <path d="M12 40V28A20 20 0 0 1 52 28V40L45.3 50 38.7 40 32 50 25.3 40 18.7 50Z" fill="#E8E0D0" />
-          <path d="M24 22.5L29 27.5L24 32.5L19 27.5Z" fill="#08090D" />
-          <path d="M40 22.5L45 27.5L40 32.5L35 27.5Z" fill="#08090D" />
-          <path d="M40 24.9L42.6 27.5L40 30.1L37.4 27.5Z" fill="#A51F32" />
+        <svg width="300" height="300" viewBox="8 6 48 48">
+          <path d="M16 42V28A16 16 0 0 1 48 28V42Q42.67 50 37.33 42Q32 50 26.67 42Q21.33 50 16 42Z" fill="#E8E0D0" />
+          <path d="M26 23L30 27L26 31L22 27Z" fill="#08090D" />
+          <path d="M38 23L42 27L38 31L34 27Z" fill="#08090D" />
+          <path d="M38 24.8L40.2 27L38 29.2L35.8 27Z" fill="#A51F32" />
         </svg>
         <div style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 640 }}>
           <div style={{ fontSize: 22, letterSpacing: 8, color: "#B69A63", textTransform: "uppercase" }}>The Haunted Codex</div>

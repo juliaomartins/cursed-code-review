@@ -2,10 +2,10 @@
   <!-- Favicon: literal colours on purpose. A static file cannot read the globals.css tokens,
        and the dark tile keeps the bone ghost legible on a light browser tab. -->
   <rect width="64" height="64" rx="14" fill="#08090d"/>
-  <g transform="translate(32 32) scale(0.76) translate(-32 -32)">
-    <path d="M12 40V28A20 20 0 0 1 52 28V40L45.3 50 38.7 40 32 50 25.3 40 18.7 50Z" fill="#e8e0d0"/>
-    <path d="M24 22.5L29 27.5L24 32.5L19 27.5Z" fill="#08090d"/>
-    <path d="M40 22.5L45 27.5L40 32.5L35 27.5Z" fill="#08090d"/>
-    <path d="M40 24.9L42.6 27.5L40 30.1L37.4 27.5Z" fill="#a51f32"/>
+  <g transform="translate(32 32) scale(1.12) translate(-32 -29)">
+    <path d="M16 42V28A16 16 0 0 1 48 28V42Q42.67 50 37.33 42Q32 50 26.67 42Q21.33 50 16 42Z" fill="#e8e0d0"/>
+    <path d="M26 23L30 27L26 31L22 27Z" fill="#08090d"/>
+    <path d="M38 23L42 27L38 31L34 27Z" fill="#08090d"/>
+    <path d="M38 24.8L40.2 27L38 29.2L35.8 27Z" fill="#a51f32"/>
   </g>
 </svg>

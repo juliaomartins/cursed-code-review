@@ -695,24 +695,24 @@ html[data-daybreak] .codex-frame::before { --c: rgba(168, 113, 0, 0.6); }
    Hovering the logo wakes the ghost: it lifts, tilts, settles back, and the crimson glint
    blinks once. Pivot is low in the shape so the hem stays put and the head does the moving.
    Safe to transform: this is a 40px inline mark, never a page wrapper. */
-.mk-mark { transform-origin: 50% 82%; }
+.mk-mark { transition: transform 420ms var(--ease-codex); }
 .group:hover .mk-mark,
 .group:focus-visible .mk-mark,
-.mk-mark:hover { animation: mk-wake 820ms var(--ease-codex); }
-@keyframes mk-wake {
-  0% { transform: translateY(0) rotate(0deg) scale(1); }
-  22% { transform: translateY(-3.5px) rotate(-8deg) scale(1.05); }
-  48% { transform: translateY(1.5px) rotate(6deg) scale(0.98); }
-  72% { transform: translateY(-1.5px) rotate(-3deg) scale(1.02); }
-  100% { transform: translateY(0) rotate(0deg) scale(1); }
+.mk-mark:hover { animation: mk-float 2600ms ease-in-out infinite; }
+/* Translate only: no rotate (which reads as tilting a sticker) and no scale (which makes a
+   40px mark jitter as it resamples). A slow drift up and sideways is what reads as floating. */
+@keyframes mk-float {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-0.75px, -3px); }
+  50% { transform: translate(0, -4.5px); }
+  75% { transform: translate(0.75px, -3px); }
 }
 .group:hover .mk-glint,
 .group:focus-visible .mk-glint,
-.mk-mark:hover .mk-glint { animation: mk-glint 820ms ease-in-out; }
+.mk-mark:hover .mk-glint { animation: mk-glint 2600ms ease-in-out infinite; }
 @keyframes mk-glint {
   0%, 100% { opacity: 1; }
-  35% { opacity: 0.2; }
-  55% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 @media (prefers-reduced-motion: reduce) {
   .mk-mark, .mk-glint { animation: none !important; }
