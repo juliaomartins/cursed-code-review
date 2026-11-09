@@ -64,7 +64,7 @@ export function scanPriority(path: string): number {
 function accessError(e: unknown, label: string, access: PrAccess): never {
   if (!(e instanceof ApiError) || (e.status !== 404 && e.status !== 403)) throw e;
   if (access.asUser)
-    throw new ApiError(404, "not_installed", `Couldn't open ${label}. Either it doesn't exist, or Cursed Code Review isn't installed on that repository yet.`, "/api/auth/github/login?install=1");
+    throw new ApiError(404, "not_installed", `Couldn't open ${label}. Either it doesn't exist, or Mateklamar Code Review isn't installed on that repository yet.`, "/api/auth/github/login?install=1");
   if (access.signInAvailable) throw new ApiError(401, "auth_required", `Couldn't find ${label} publicly. If the repository is private, sign in with GitHub.`);
   throw new ApiError(404, "not_found", `Couldn't find ${label}. Check the link. Only public repositories can be opened on this site right now.`);
 }

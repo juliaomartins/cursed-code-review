@@ -34,7 +34,7 @@ describe("report", () => {
     s = reviewReducer(s, { type: "ignore", findingId: "cursed-login:gremlin:7" });
     s = reviewReducer(s, { type: "ignore", findingId: "leaky-cache:wraith:22", reason: "false-positive" });
     const md = toMarkdown(s.review!, new Date("2026-10-31T12:00:00Z"));
-    expect(md).toContain("# Code review report — Cursed samples");
+    expect(md).toContain("# Code review report — Mateklamar samples");
     expect(md).toContain("**Report generated:** 2026-10-31T12:00:00.000Z");
     expect(md).toContain("**11 open findings** out of 14.");
     expect(md).toContain("| Critical | 0 | 1 | 1 |");
@@ -48,7 +48,7 @@ describe("report", () => {
     // The secret never appears, not in the finding, the suggested change or the patch.
     expect(md).not.toContain("4f9a8b7c6d5e");
     expect(md).toContain("«redacted»");
-    expect(reportFileName(s.review!)).toBe("cursed-review-Cursed-samples.md");
+    expect(reportFileName(s.review!)).toBe("mateklamar-review-Mateklamar-samples.md");
   });
 
   it("never puts a secret value into a GitHub issue or review comment", () => {

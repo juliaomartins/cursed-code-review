@@ -1,7 +1,7 @@
 # Requirements — Haunted Monster Experience
 
 ## Problem
-Code review output is a wall of text that people skim. Cursed Code Review turns each finding into a creature on the line where the bug lives, so problems are noticed, remembered and dealt with. The theme must serve the review, never hide it.
+Code review output is a wall of text that people skim. Mateklamar Code Review turns each finding into a creature on the line where the bug lives, so problems are noticed, remembered and dealt with. The theme must serve the review, never hide it.
 
 ## Goals
 - Every bug type has one recognisable creature, the same everywhere in the app.

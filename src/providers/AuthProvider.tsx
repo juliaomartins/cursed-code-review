@@ -32,7 +32,7 @@ const AuthContext = createContext<AuthValue | null>(null);
 
 const AUTH_MESSAGES: Record<string, { title: string; description?: string; tone: "success" | "error" | "default" }> = {
   success: { title: "Connected to GitHub", description: "You can open pull requests from your repositories.", tone: "success" },
-  installed: { title: "Cursed Code Review installed", description: "The repositories you picked are ready for the crypt.", tone: "success" },
+  installed: { title: "Mateklamar Code Review installed", description: "The repositories you picked are ready for the crypt.", tone: "success" },
   denied: { title: "Sign-in cancelled", description: "GitHub access was not granted.", tone: "default" },
   error: { title: "GitHub sign-in failed", description: "Please try again.", tone: "error" },
   not_configured: { title: "GitHub sign-in isn't available yet", description: "Public pull requests still work without signing in.", tone: "error" },

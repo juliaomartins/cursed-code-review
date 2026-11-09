@@ -28,7 +28,7 @@ describe("one-click GitHub App setup", () => {
         new Response(
           JSON.stringify({
             slug: "cursed-code-review",
-            name: "Cursed Code Review",
+            name: "Mateklamar Code Review",
             client_id: "Iv23abc",
             client_secret: "s3cr3t",
             html_url: "https://github.com/apps/cursed-code-review",
@@ -41,7 +41,7 @@ describe("one-click GitHub App setup", () => {
     const app = await convertManifest("c0de", { fetch: fetch as unknown as typeof globalThis.fetch });
     expect(app).toEqual({
       slug: "cursed-code-review",
-      name: "Cursed Code Review",
+      name: "Mateklamar Code Review",
       clientId: "Iv23abc",
       clientSecret: "s3cr3t",
       htmlUrl: "https://github.com/apps/cursed-code-review",
@@ -85,7 +85,7 @@ describe("setup health check", () => {
     ) as unknown as typeof fetch;
 
   it("passes when the slug, Client ID and secret all match", async () => {
-    const checks = await checkSetup(config, { fetch: fake(200, { client_id: config.clientId, name: "Cursed Code Review" }, 404) });
+    const checks = await checkSetup(config, { fetch: fake(200, { client_id: config.clientId, name: "Mateklamar Code Review" }, 404) });
     expect(checks.map((c) => [c.id, c.ok])).toEqual([
       ["app", true],
       ["client_id", true],

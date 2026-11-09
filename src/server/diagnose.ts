@@ -42,7 +42,7 @@ export async function explainMissingAccess(
     return new ApiError(
       404,
       "not_installed",
-      `Cursed Code Review isn't installed on ${owner}'s account, so it can't ${need.label} on ${owner}/${repo}.`,
+      `Mateklamar Code Review isn't installed on ${owner}'s account, so it can't ${need.label} on ${owner}/${repo}.`,
       "/api/auth/github/login?install=1",
     );
 
@@ -72,7 +72,7 @@ export async function explainMissingAccess(
       return new ApiError(
         403,
         "repo_not_selected",
-        `${owner}/${repo} isn't one of the repositories Cursed Code Review can access. Open the installation, add it under “Repository access” (or choose “All repositories”), save, then try again.`,
+        `${owner}/${repo} isn't one of the repositories Mateklamar Code Review can access. Open the installation, add it under “Repository access” (or choose “All repositories”), save, then try again.`,
         inst.html_url,
       );
   }
@@ -80,7 +80,7 @@ export async function explainMissingAccess(
   return new ApiError(
     403,
     "missing_permission",
-    "The installation looks right, but GitHub still refused. Sign out of Cursed Code Review and sign in again to get a fresh token, then try again.",
+    "The installation looks right, but GitHub still refused. Sign out of Mateklamar Code Review and sign in again to get a fresh token, then try again.",
     inst.html_url,
   );
 }

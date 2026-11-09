@@ -41,7 +41,7 @@ async function tokenRequest(config: GitHubAppConfig, params: Record<string, stri
   const f = deps.fetch ?? fetch;
   const res = await f("https://github.com/login/oauth/access_token", {
     method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "cursed-code-review" },
+    headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "mateklamar-code-review" },
     body: new URLSearchParams({ client_id: config.clientId, client_secret: config.clientSecret, ...params }).toString(),
   });
   const data = (await res.json().catch(() => ({}))) as TokenResponse;
@@ -77,7 +77,7 @@ export async function gh<T>(token: string | undefined, path: string, init: Reque
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       Accept: init.raw ? "application/vnd.github.raw+json" : "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",
-      "User-Agent": "cursed-code-review",
+      "User-Agent": "mateklamar-code-review",
       ...(init.body ? { "Content-Type": "application/json" } : {}),
       ...init.headers,
     },
@@ -178,7 +178,7 @@ export async function getPullRequest(ref: PrRef, access: PrAccess, deps: GitHubD
       throw new ApiError(
         404,
         "not_installed",
-        `Couldn't open ${label}. Either it doesn't exist, or Cursed Code Review isn't installed on that repository yet.`,
+        `Couldn't open ${label}. Either it doesn't exist, or Mateklamar Code Review isn't installed on that repository yet.`,
         "/api/auth/github/login?install=1",
       );
     if (signInAvailable)
@@ -303,7 +303,7 @@ export async function convertManifest(code: string, deps: GitHubDeps = {}): Prom
   const f = deps.fetch ?? fetch;
   const res = await f(`${API}/app-manifests/${code}/conversions`, {
     method: "POST",
-    headers: { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "cursed-code-review" },
+    headers: { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "mateklamar-code-review" },
     cache: "no-store",
   });
   if (res.status === 404 || res.status === 422)
@@ -327,7 +327,7 @@ export interface SetupCheck {
  */
 export async function checkSetup(config: GitHubAppConfig, deps: GitHubDeps = {}): Promise<SetupCheck[]> {
   const f = deps.fetch ?? fetch;
-  const headers = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "cursed-code-review" };
+  const headers = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "mateklamar-code-review" };
   const checks: SetupCheck[] = [];
 
   let appClientId: string | null = null;
@@ -370,7 +370,7 @@ export async function checkSetup(config: GitHubAppConfig, deps: GitHubDeps = {})
     const res = await f(`${API}/applications/${enc(config.clientId)}/token`, {
       method: "POST",
       headers: { ...headers, "Content-Type": "application/json", Authorization: `Basic ${Buffer.from(`${config.clientId}:${config.clientSecret}`).toString("base64")}` },
-      body: JSON.stringify({ access_token: "ghu_cursedcodereviewsetupcheck000000000000" }),
+      body: JSON.stringify({ access_token: "ghu_mateklamarcodereviewsetupcheck000000000" }),
       cache: "no-store",
     });
     checks.push(
@@ -411,7 +411,7 @@ export async function createIssue(token: string, input: { owner: string; repo: s
     if (e instanceof ApiError && (e.status === 410 || /issues are disabled/i.test(e.message)))
       throw new ApiError(410, "issues_disabled", "Issues are turned off for this repository. Turn them on under the repository's Settings → General → Features.");
     if (e instanceof ApiError && e.status === 404)
-      throw new ApiError(404, "not_installed", "Cursed Code Review isn't installed on this repository, so it can't create an issue there.", "/api/auth/github/login?install=1");
+      throw new ApiError(404, "not_installed", "Mateklamar Code Review isn't installed on this repository, so it can't create an issue there.", "/api/auth/github/login?install=1");
     throw e;
   }
 }

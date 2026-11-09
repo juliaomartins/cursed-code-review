@@ -148,7 +148,7 @@ describe("Create GitHub issue", () => {
     seedReview(review);
     renderApp(<CreateIssueDialog open onClose={() => {}} review={review} />);
     const dialog = await screen.findByRole("dialog", { name: "Create a GitHub issue" });
-    expect(within(dialog).getByLabelText("Title")).toHaveValue("🎃 Cursed Code Review: 14 monsters in acme/shop");
+    expect(within(dialog).getByLabelText("Title")).toHaveValue("🎃 Mateklamar Code Review: 14 monsters in acme/shop");
     await user.click(await within(dialog).findByRole("button", { name: "Create issue" }));
     expect(await screen.findByText("Issue #7 created")).toBeInTheDocument();
     expect(sent).toMatchObject({ owner: "acme", repo: "shop" });
@@ -178,7 +178,7 @@ describe("Open a fix PR", () => {
     renderApp(<ApplyFixesDialog open onClose={() => {}} review={s.review!} />);
     const dialog = await screen.findByRole("dialog", { name: "Open a fix pull request" });
     expect(within(dialog).getByText(/One commit per file \(1 commit, 1 fix\)/)).toBeInTheDocument();
-    expect((within(dialog).getByLabelText("New branch") as HTMLInputElement).value).toMatch(/^cursed-fixes\/\d{4}-\d{2}-\d{2}-ddddddd$/);
+    expect((within(dialog).getByLabelText("New branch") as HTMLInputElement).value).toMatch(/^mateklamar-fixes\/\d{4}-\d{2}-\d{2}-ddddddd$/);
     await user.click(within(dialog).getByRole("button", { name: "Open fix pull request" }));
     expect(await within(dialog).findByText("Your fix pull request is open.")).toBeInTheDocument();
     expect(sent!.owner).toBe("acme");

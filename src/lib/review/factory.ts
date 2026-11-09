@@ -28,7 +28,7 @@ function build(source: ReviewSource, files: ReviewFile[], activeFileId?: string)
 /** All three cursed samples, with `sampleId` opened first. */
 export function reviewFromSamples(sampleId?: string): Review {
   const files = SAMPLES.map((s) => makeFile(s.id, s.path, s.language, s.code));
-  return build({ kind: "sample", label: "Cursed samples" }, files, sampleId);
+  return build({ kind: "sample", label: "Mateklamar samples" }, files, sampleId);
 }
 
 export function reviewFromPaste(code: string, language: Language, fileName?: string): Review {

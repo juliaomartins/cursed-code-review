@@ -1,8 +1,8 @@
 {
-  "name": "cursed-code-review",
+  "name": "mateklamar-code-review",
   "version": "0.1.0",
   "private": true,
-  "description": "A haunted code review where every bug is a monster. Kiroween 2026 \u00b7 Costume Contest.",
+  "description": "Mateklamar Code Review \u2014 a haunted code review where every bug is a monster. Mateklamar is Tetum, the language of Timor-Leste, for ghost. Kiroween 2026 \u00b7 Costume Contest.",
   "license": "MIT",
   "scripts": {
     "dev": "next dev",

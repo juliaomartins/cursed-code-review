@@ -1,6 +1,8 @@
-# Cursed Code Review
+# Mateklamar Code Review
 
 **Every bug is a monster.** Open your code in the crypt and bugs crawl out onto the exact lines where they hide. Apply the fix to banish them, and watch the room fill with light.
+
+**Mateklamar** is Tetum, the language of Timor-Leste, for **ghost** — the name the project carries.
 
 Built for **Kiroween 2026 · Costume Contest**.
 
@@ -88,7 +90,7 @@ GitHub → **Settings → Developer settings → GitHub Apps → New GitHub App*
 
 | Field | Value |
 | --- | --- |
-| GitHub App name | `Cursed Code Review` (must be unique) |
+| GitHub App name | `Mateklamar Code Review` (must be unique) |
 | Homepage URL | `https://cursed-code-review.vercel.app` |
 | Callback URL | `https://cursed-code-review.vercel.app/api/auth/callback/github` |
 | Expire user authorization tokens | ✅ checked |

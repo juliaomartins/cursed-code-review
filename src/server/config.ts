@@ -8,7 +8,7 @@ import { hkdfSync } from "node:crypto";
 export interface GitHubAppConfig {
   clientId: string;
   clientSecret: string;
-  /** The app's URL name, e.g. "cursed-code-review" in github.com/apps/cursed-code-review */
+  /** The app's URL name, e.g. "mateklamar-code-review" in github.com/apps/mateklamar-code-review */
   slug: string;
   sessionSecret: string;
   /** Optional fixed public URL. Defaults to the URL of the incoming request. */
@@ -29,14 +29,17 @@ export function missingEnv(): string[] {
 function sessionKey(clientSecret: string): string {
   const own = process.env.SESSION_SECRET?.trim();
   if (own && own.length >= 32) return own;
+  // The salt below is a fixed cryptographic constant, not a brand string. Changing it derives a
+  // different key, which invalidates every session cookie already issued and signs everyone out.
+  // It deliberately kept its original value through the Mateklamar rename. Do not "tidy" it.
   return Buffer.from(hkdfSync("sha256", clientSecret, "cursed-code-review", "session-cookie-v1", 32)).toString("base64url");
 }
 
 /**
  * Accepts the slug itself or any GitHub App address people tend to paste:
- * "cursed-code-review", "https://github.com/apps/cursed-code-review",
- * "github.com/settings/apps/cursed-code-review/installations/new",
- * "https://github.com/organizations/acme/settings/apps/cursed-code-review".
+ * "mateklamar-code-review", "https://github.com/apps/mateklamar-code-review",
+ * "github.com/settings/apps/mateklamar-code-review/installations/new",
+ * "https://github.com/organizations/acme/settings/apps/mateklamar-code-review".
  */
 export function normalizeSlug(value: string | undefined): string | undefined {
   const v = value?.trim().replace(/^["']|["']$/g, "");

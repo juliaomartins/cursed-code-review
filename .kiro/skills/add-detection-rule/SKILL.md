@@ -1,6 +1,6 @@
 ---
 name: add-detection-rule
-description: Add or change a scanner detection rule in the Cursed Code Review engine, with corpus tests and traceability. Use when adding a new rule, editing an existing rule family, changing the lexer, tuning severity or confidence, or fixing a false positive or false negative in src/lib/scanner.
+description: Add or change a scanner detection rule in the Mateklamar Code Review engine, with corpus tests and traceability. Use when adding a new rule, editing an existing rule family, changing the lexer, tuning severity or confidence, or fixing a false positive or false negative in src/lib/scanner.
 ---
 
 # Add or change a detection rule

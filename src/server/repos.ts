@@ -87,7 +87,7 @@ export async function listPulls(token: string, owner: string, repo: string, deps
     }));
   } catch (e) {
     if (e instanceof ApiError && (e.status === 404 || e.status === 403))
-      throw new ApiError(404, "not_installed", `Cursed Code Review can't see ${owner}/${repo}. Import it to give the app access.`, "/api/auth/github/login?install=1");
+      throw new ApiError(404, "not_installed", `Mateklamar Code Review can't see ${owner}/${repo}. Import it to give the app access.`, "/api/auth/github/login?install=1");
     throw e;
   }
 }

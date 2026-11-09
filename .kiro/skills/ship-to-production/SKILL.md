@@ -1,6 +1,6 @@
 ---
 name: ship-to-production
-description: Release a change to Cursed Code Review through the full quality gate and a pull request into main. Use when preparing to ship, opening a PR, cutting a release, or when asked to run the quality gate before pushing.
+description: Release a change to Mateklamar Code Review through the full quality gate and a pull request into main. Use when preparing to ship, opening a PR, cutting a release, or when asked to run the quality gate before pushing.
 ---
 
 # Ship a change

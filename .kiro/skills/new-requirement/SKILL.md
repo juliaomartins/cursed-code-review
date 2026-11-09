@@ -1,6 +1,6 @@
 ---
 name: new-requirement
-description: Add a feature to Cursed Code Review the spec-first way, as an EARS requirement traced to code and tests. Use when starting a new feature or behaviour change, adding a requirement id, updating a spec's design or tasks, or fixing a traceability gap reported by check:kiro.
+description: Add a feature to Mateklamar Code Review the spec-first way, as an EARS requirement traced to code and tests. Use when starting a new feature or behaviour change, adding a requirement id, updating a spec's design or tasks, or fixing a traceability gap reported by check:kiro.
 ---
 
 # Add a requirement, spec first

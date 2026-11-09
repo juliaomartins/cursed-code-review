@@ -274,7 +274,7 @@ describe("Home doors", () => {
     live({
       "GET /api/github/pulls": () => ({
         status: 404,
-        json: { code: "not_installed", message: "Cursed Code Review can't see juliaomartins/playground-cursed. Import it to give the app access." },
+        json: { code: "not_installed", message: "Mateklamar Code Review can't see juliaomartins/playground-cursed. Import it to give the app access." },
       }),
     });
     renderApp(<Doors />);

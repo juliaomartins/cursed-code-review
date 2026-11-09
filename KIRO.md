@@ -1,4 +1,4 @@
-# Kiro in Cursed Code Review
+# Kiro in Mateklamar Code Review
 
 This page is the evidence package for Kiroween 2026: what the Kiro artefacts are, how they drive and check the code, and how to verify every claim yourself. Everything linked here is in this repository.
 

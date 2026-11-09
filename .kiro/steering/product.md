@@ -1,7 +1,7 @@
 ---
 inclusion: always
 ---
-# Product: Cursed Code Review
+# Product: Mateklamar Code Review
 
 ## Vision
 A code review you can see and trust. Every bug is a monster on the exact line where it hides; every fix is a banishment that really changes the code; every victory brings daylight.

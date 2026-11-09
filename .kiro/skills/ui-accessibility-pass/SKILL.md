@@ -1,6 +1,6 @@
 ---
 name: ui-accessibility-pass
-description: Review and correct a UI change in Cursed Code Review for design-token use, accessibility and reduced motion. Use when editing anything in src/components or src/app, adding a button, dialog, card or animation, changing globals.css, or fixing a jsx-a11y lint error.
+description: Review and correct a UI change in Mateklamar Code Review for design-token use, accessibility and reduced motion. Use when editing anything in src/components or src/app, adding a button, dialog, card or animation, changing globals.css, or fixing a jsx-a11y lint error.
 ---
 
 # Accessibility and design pass on a UI change
