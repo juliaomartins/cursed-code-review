@@ -54,7 +54,9 @@ function onPointer(e: PointerEvent) {
 function onLeave() {
   listeners.forEach((l) => l(-1e6, -1e6));
 }
-function subscribe(l: Listener) {
+/** Join the shared pointer feed. Returns an unsubscribe. Keeps MON-7's single listener intact:
+ *  every subscriber shares the one `pointermove` handler above, batched per animation frame. */
+export function subscribe(l: Listener) {
   if (!listeners.size) {
     window.addEventListener("pointermove", onPointer, { passive: true });
     document.documentElement.addEventListener("pointerleave", onLeave);
@@ -71,7 +73,7 @@ function subscribe(l: Listener) {
   };
 }
 
-const reducedMotion = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+export const reducedMotion = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 export interface LivingMonsterProps {
   kind: MonsterKind;

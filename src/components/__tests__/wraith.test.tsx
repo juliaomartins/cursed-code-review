@@ -1,6 +1,7 @@
 import { act, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MONSTER_ORDER } from "@/lib/monsters";
+import { MateklamarMark } from "../brand/MateklamarMark";
 import { LivingMonster, proximity } from "../LivingMonster";
 import { gaze, WatchingWraith } from "../WatchingWraith";
 
@@ -63,12 +64,15 @@ describe("LivingMonster", () => {
       <>
         <WatchingWraith size={40} />
         <LivingMonster kind="gremlin" size={40} />
+        {/* The brand mark joins the same feed, so it must not add a second listener. */}
+        <MateklamarMark size={40} />
       </>,
     );
     expect(add.mock.calls.filter(([t]) => t === "pointermove")).toHaveLength(1);
-    const svgs = container.querySelectorAll("svg");
-    svgs.forEach((s) => (s.getBoundingClientRect = () => ({ ...box, right: 40, bottom: 40, x: 0, y: 0, toJSON: () => ({}) }) as DOMRect));
+    const all = container.querySelectorAll("svg");
+    all.forEach((s) => (s.getBoundingClientRect = () => ({ ...box, right: 40, bottom: 40, x: 0, y: 0, toJSON: () => ({}) }) as DOMRect));
     move(150, 20);
+    const svgs = container.querySelectorAll<SVGSVGElement>("svg[data-living]");
     for (const s of svgs) {
       expect(s.style.getPropertyValue("--lx")).toBe("1");
       expect(s.style.getPropertyValue("--ux")).toBe("1");
@@ -76,6 +80,22 @@ describe("LivingMonster", () => {
     }
     move(5000, 20);
     expect(svgs[1].style.getPropertyValue("--near")).toBe("0");
+  });
+
+  it("points the brand mark's eyes at the cursor off the same feed", () => {
+    const { container } = render(<MateklamarMark size={40} reach={300} />);
+    const svg = container.querySelector("svg.mk-mark")! as SVGSVGElement;
+    svg.getBoundingClientRect = () => ({ ...box, right: 40, bottom: 40, x: 0, y: 0, toJSON: () => ({}) }) as DOMRect;
+    move(-200, 20);
+    expect(svg.style.getPropertyValue("--lx")).toBe("-1");
+    expect(svg.style.getPropertyValue("--ly")).toBe("0");
+    move(20, 300);
+    expect(svg.style.getPropertyValue("--ly")).toBe("1");
+    expect(svg.style.getPropertyValue("--lx")).toBe("0");
+    // Out of reach: the eyes return to centre rather than staring at the last position.
+    move(5000, 20);
+    expect(svg.style.getPropertyValue("--lx")).toBe("0");
+    expect(svg.style.getPropertyValue("--ly")).toBe("0");
   });
 
   it("stays still for people who prefer reduced motion", () => {

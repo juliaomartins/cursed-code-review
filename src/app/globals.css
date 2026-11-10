@@ -708,10 +708,14 @@ html[data-daybreak] .codex-frame::before { --c: rgba(168, 113, 0, 0.6); }
   50% { transform: translate(0, -10px) rotate(0deg); }
   75% { transform: translate(-2px, -7px) rotate(-5deg); }
 }
-/* The eyes deliberately do not animate. They ride along with the body transform and nothing
-   more: blinking or pulsing a catchlight at this size reads as a flicker, not as life. */
+/* The eyes look toward the cursor. --lx/--ly arrive from the shared pointer feed as -1…1 and
+   are scaled to 2.4 user units: the socket is r5.5 and a pupil r2.2, so 3.3 is the limit
+   before a pupil would cross the rim. The pupils never pulse or blink — at this size that
+   reads as a flicker rather than as life; only the direction of the gaze changes. */
+.mk-pupils { transform: translate(calc(var(--lx, 0) * 2.4px), calc(var(--ly, 0) * 2.4px)); transition: transform 90ms linear; }
 @media (prefers-reduced-motion: reduce) {
   .mk-mark { animation: none !important; }
+  .mk-pupils { transform: none; transition: none; }
 }
 
 /* Entering a room: each page fades in out of the dark. Opacity only, on purpose: an animated transform or

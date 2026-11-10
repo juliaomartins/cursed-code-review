@@ -26,8 +26,8 @@ export default function OpenGraphImage() {
           <path d="M14 40V32A18 18 0 0 1 50 32V40Q44 48 38 40Q32 48 26 40Q20 48 14 40Z" fill="#E8E0D0" />
           <circle cx="25" cy="31" r="5.5" fill="#08090D" />
           <circle cx="39" cy="31" r="5.5" fill="#08090D" />
-          <circle cx="23" cy="29" r="1.8" fill="#E8E0D0" />
-          <circle cx="37" cy="29" r="1.8" fill="#A51F32" />
+          <circle cx="25" cy="31" r="2.2" fill="#E8E0D0" />
+          <circle cx="39" cy="31" r="2.2" fill="#A51F32" />
         </svg>
         <div style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 640 }}>
           <div style={{ fontSize: 22, letterSpacing: 8, color: "#B69A63", textTransform: "uppercase" }}>The Haunted Codex</div>
