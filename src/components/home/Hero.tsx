@@ -1,7 +1,6 @@
 import { ButtonLink } from "../ui/Button";
 import { Icon } from "../ui/Icon";
 import { Monster } from "../Monster";
-import { WatchingWraith } from "../WatchingWraith";
 import { MateklamarMark } from "../brand/MateklamarMark";
 import type { MonsterKind } from "@/lib/types";
 
@@ -51,7 +50,7 @@ export function Hero() {
 
       <div className="relative min-w-0 flex-[1_1_480px] px-2 pt-9 pb-2" aria-hidden="true">
         <div className="absolute -top-1.5 right-1 z-10 animate-[ccr-float_3.4s_ease-in-out_infinite]">
-          <WatchingWraith size={120} />
+          <MateklamarMark size={120} />
         </div>
         <div className="codex-frame -rotate-2 overflow-hidden rounded-2xl border border-line bg-[radial-gradient(circle_220px_at_40%_55%,rgba(232,145,63,0.12),rgba(232,145,63,0)_72%),#0E0F14] font-mono text-sm text-[#E4DCCB] shadow-[0_40px_80px_rgba(0,0,0,0.65)]">
           <div className="flex items-center gap-2 border-b border-line px-4 py-3 text-xs text-ink-4">

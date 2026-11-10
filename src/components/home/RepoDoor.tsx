@@ -6,7 +6,7 @@ import { GitHubError, type InstallationSummary, type PullSummary, type RepoSumma
 import { listPullsLive, listReposLive, scanLinkLive } from "@/lib/githubLive";
 import { reviewFromPullRequest, reviewFromScan } from "@/lib/review/factory";
 import type { Review } from "@/lib/types";
-import { LivingMonster } from "../LivingMonster";
+import { MateklamarMark } from "../brand/MateklamarMark";
 import { Button } from "../ui/Button";
 import { cx } from "../ui/cx";
 import { Icon } from "../ui/Icon";
@@ -57,7 +57,7 @@ function SignInCard({ onSignIn }: { onSignIn: () => void }) {
   return (
     <div className={cx(card, "items-center gap-4 text-center")}>
       <h3 className="m-0 self-stretch text-left text-[21px]">Bring your code from GitHub</h3>
-      <LivingMonster kind="wraith" size={84} />
+      <MateklamarMark size={84} />
       <p className="m-0 max-w-[300px] text-[15px] leading-relaxed text-ink-2">Sign in to see your repositories, open pull requests, and send fixes back.</p>
       <Button variant="ember-outline" onClick={onSignIn} className="min-h-12 self-stretch">
         <Icon name="github" />

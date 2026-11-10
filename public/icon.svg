@@ -3,9 +3,10 @@
        and the dark tile keeps the bone ghost legible on a light browser tab. -->
   <rect width="64" height="64" rx="14" fill="#08090d"/>
   <g transform="translate(32 32) scale(1.12) translate(-32 -29)">
-    <path d="M16 42V28A16 16 0 0 1 48 28V42Q42.67 50 37.33 42Q32 50 26.67 42Q21.33 50 16 42Z" fill="#e8e0d0"/>
-    <path d="M26 23L30 27L26 31L22 27Z" fill="#08090d"/>
-    <path d="M38 23L42 27L38 31L34 27Z" fill="#08090d"/>
-    <path d="M38 24.8L40.2 27L38 29.2L35.8 27Z" fill="#a51f32"/>
+    <path d="M14 40V32A18 18 0 0 1 50 32V40Q44 48 38 40Q32 48 26 40Q20 48 14 40Z" fill="#e8e0d0"/>
+    <circle cx="25" cy="31" r="5.5" fill="#08090d"/>
+    <circle cx="39" cy="31" r="5.5" fill="#08090d"/>
+    <circle cx="23" cy="29" r="1.8" fill="#e8e0d0"/>
+    <circle cx="37" cy="29" r="1.8" fill="#a51f32"/>
   </g>
 </svg>

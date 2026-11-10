@@ -1,8 +1,8 @@
 import type { SVGProps } from "react";
 
 /**
- * The Mateklamar mark: a ghost (mateklamar, Tetum for "ghost") with a softly lobed hem and
- * eye sockets cut as the diamonds of Timorese tais weaving, one holding a crimson glint.
+ * The Mateklamar mark: a small round ghost (mateklamar, Tetum for "ghost") with a softly
+ * lobed hem, big eyes, and one crimson catchlight that is still watching.
  *
  * Drawn on a 64-unit grid as one closed silhouette so the shape itself is recognisable at
  * 16 px, where fine detail would disappear. Only three fills, all design tokens:
@@ -29,14 +29,15 @@ export function MateklamarMark({
       {...rest}
     >
       {title && <title>{title}</title>}
-      {/* Body: domed head over three soft lobes. Taller than wide, and the hem curves match the
-          dome's curvature so the whole silhouette reads as one drawn line. */}
-      <path d="M16 42V28A16 16 0 0 1 48 28V42Q42.67 50 37.33 42Q32 50 26.67 42Q21.33 50 16 42Z" fill="var(--color-ink)" />
-      {/* Eye sockets as tais diamonds, punched in the background colour. */}
-      <path d="M26 23L30 27L26 31L22 27Z" fill="var(--color-crypt)" />
-      <path d="M38 23L42 27L38 31L34 27Z" fill="var(--color-crypt)" />
-      {/* The one glint that is still watching. */}
-      <path className="mk-glint" d="M38 24.8L40.2 27L38 29.2L35.8 27Z" fill="var(--color-crimson)" />
+      {/* Body: a big domed head over a short, softly lobed hem. Head-heavy on purpose — the
+          wide dome and short body are what make it read as cute rather than menacing. */}
+      <path d="M14 40V32A18 18 0 0 1 50 32V40Q44 48 38 40Q32 48 26 40Q20 48 14 40Z" fill="var(--color-ink)" />
+      {/* Big round eyes, punched in the background colour. */}
+      <circle cx="25" cy="31" r="5.5" fill="var(--color-crypt)" />
+      <circle cx="39" cy="31" r="5.5" fill="var(--color-crypt)" />
+      {/* Catchlights. The right one is the crimson glint that is still watching. */}
+      <circle cx="23" cy="29" r="1.8" fill="var(--color-ink)" />
+      <circle className="mk-glint" cx="37" cy="29" r="1.8" fill="var(--color-crimson)" />
     </svg>
   );
 }

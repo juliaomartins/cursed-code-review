@@ -698,18 +698,19 @@ html[data-daybreak] .codex-frame::before { --c: rgba(168, 113, 0, 0.6); }
 .mk-mark { transition: transform 420ms var(--ease-codex); }
 .group:hover .mk-mark,
 .group:focus-visible .mk-mark,
-.mk-mark:hover { animation: mk-float 2600ms ease-in-out infinite; }
-/* Translate only: no rotate (which reads as tilting a sticker) and no scale (which makes a
-   40px mark jitter as it resamples). A slow drift up and sideways is what reads as floating. */
-@keyframes mk-float {
-  0%, 100% { transform: translate(0, 0); }
-  25% { transform: translate(-0.75px, -3px); }
-  50% { transform: translate(0, -4.5px); }
-  75% { transform: translate(0.75px, -3px); }
+.mk-mark:hover { animation: mk-fly 2800ms ease-in-out infinite; }
+/* Flying, not wobbling: it climbs well clear of the baseline and banks a few degrees into
+   each turn, the way something airborne leans. No scale — resampling a 40px mark mid-flight
+   is what made the earlier version jitter. */
+@keyframes mk-fly {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(2px, -7px) rotate(5deg); }
+  50% { transform: translate(0, -10px) rotate(0deg); }
+  75% { transform: translate(-2px, -7px) rotate(-5deg); }
 }
 .group:hover .mk-glint,
 .group:focus-visible .mk-glint,
-.mk-mark:hover .mk-glint { animation: mk-glint 2600ms ease-in-out infinite; }
+.mk-mark:hover .mk-glint { animation: mk-glint 2800ms ease-in-out infinite; }
 @keyframes mk-glint {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
