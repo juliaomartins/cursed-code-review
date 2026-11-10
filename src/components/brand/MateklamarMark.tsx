@@ -35,9 +35,9 @@ export function MateklamarMark({
       {/* Big round eyes, punched in the background colour. */}
       <circle cx="25" cy="31" r="5.5" fill="var(--color-crypt)" />
       <circle cx="39" cy="31" r="5.5" fill="var(--color-crypt)" />
-      {/* Catchlights. The right one is the crimson glint that is still watching. */}
+      {/* Catchlights, both static. The right one is the crimson glint that is still watching. */}
       <circle cx="23" cy="29" r="1.8" fill="var(--color-ink)" />
-      <circle className="mk-glint" cx="37" cy="29" r="1.8" fill="var(--color-crimson)" />
+      <circle cx="37" cy="29" r="1.8" fill="var(--color-crimson)" />
     </svg>
   );
 }

@@ -692,10 +692,10 @@ html[data-daybreak] .codex-frame::before { --c: rgba(168, 113, 0, 0.6); }
 .codex-rule::before, .codex-rule::after { content: ""; height: 1px; flex: 1; background: linear-gradient(90deg, transparent, currentColor 40%, currentColor 60%, transparent); opacity: 0.6; }
 .codex-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--color-gold); }
 /* ───────── Brand mark (brand/MateklamarMark.tsx) ─────────
-   Hovering the logo wakes the ghost: it lifts, tilts, settles back, and the crimson glint
-   blinks once. Pivot is low in the shape so the hem stays put and the head does the moving.
-   Safe to transform: this is a 40px inline mark, never a page wrapper. */
-.mk-mark { transition: transform 420ms var(--ease-codex); }
+   Hovering the logo sends the ghost flying: it climbs clear of the baseline and banks into
+   each turn, looping until the pointer leaves. The whole mark moves as one piece; no part of
+   the face animates on its own. Safe to transform: this is a 40px inline mark, never a page
+   wrapper. */
 .group:hover .mk-mark,
 .group:focus-visible .mk-mark,
 .mk-mark:hover { animation: mk-fly 2800ms ease-in-out infinite; }
@@ -708,15 +708,10 @@ html[data-daybreak] .codex-frame::before { --c: rgba(168, 113, 0, 0.6); }
   50% { transform: translate(0, -10px) rotate(0deg); }
   75% { transform: translate(-2px, -7px) rotate(-5deg); }
 }
-.group:hover .mk-glint,
-.group:focus-visible .mk-glint,
-.mk-mark:hover .mk-glint { animation: mk-glint 2800ms ease-in-out infinite; }
-@keyframes mk-glint {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
+/* The eyes deliberately do not animate. They ride along with the body transform and nothing
+   more: blinking or pulsing a catchlight at this size reads as a flicker, not as life. */
 @media (prefers-reduced-motion: reduce) {
-  .mk-mark, .mk-glint { animation: none !important; }
+  .mk-mark { animation: none !important; }
 }
 
 /* Entering a room: each page fades in out of the dark. Opacity only, on purpose: an animated transform or
