@@ -5,7 +5,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Icon } from "../ui/Icon";
-import { Monster } from "../Monster";
+import { MateklamarMark } from "../brand/MateklamarMark";
 
 const SCOPES = [
   { title: "Read pull requests", detail: "Fetch the changed files of PRs you open in the crypt." },
@@ -38,7 +38,7 @@ export function SignInDialog() {
     >
       <div className="flex flex-col gap-5">
         <div className="flex items-center justify-center gap-4 py-2">
-          <Monster kind="wraith" size={56} />
+          <MateklamarMark size={56} />
           <span className="flex gap-1 text-ink-4" aria-hidden="true">
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
             <span className="h-1.5 w-1.5 rounded-full bg-current" />

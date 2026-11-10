@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useReview } from "@/providers/ReviewProvider";
 import type { Review } from "@/lib/types";
-import { Monster } from "../Monster";
+import { MateklamarMark } from "../brand/MateklamarMark";
 import { Icon } from "../ui/Icon";
 import { Spinner } from "../ui/Spinner";
 
@@ -117,7 +117,7 @@ function SummonOverlay({ title, steps, done }: SummonState) {
             />
           ))}
           <span className="relative animate-float">
-            <Monster kind="wraith" size={78} />
+            <MateklamarMark size={78} />
           </span>
         </div>
         <h2 id="summon-title" className="m-0 font-display text-4xl leading-none">
